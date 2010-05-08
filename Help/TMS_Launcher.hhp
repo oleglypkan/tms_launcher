@@ -1,14 +1,14 @@
-@(#)$RCSfile: TMS_Launcher.hhp,v $$Revision: 1.5 $$Date: 2006/05/29 14:40:52Z $
+@(#)$RCSfile: TMS_Launcher.hhp,v $$Revision: 1.6 $$Date: 2006/09/07 12:52:12Z $
 
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=TMS_Launcher.chm
-Contents file=TMS_Launcher.hhc
+Contents file=D:\mks\sandboxes\TMS_Launcher\Help\TMS_Launcher.hhc
 Default topic=introduction.html
 Display compile progress=Yes
-Index file=TMS_Launcher.hhk
+Index file=D:\mks\sandboxes\TMS_Launcher\Help\TMS_Launcher.hhk
 Language=0x409 English (United States)
-Title=TMS Launcher 2.3 HTML help
+Title=TMS Launcher 2.4 HTML help
 
 
 [FILES]
@@ -29,6 +29,7 @@ Settings\softtest.html
 Settings\autologin_feature.reg
 credits.html
 style.css
+Settings\history.html
 
 [INFOTYPES]
 

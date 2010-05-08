@@ -10,7 +10,7 @@
 #define CMDLINE_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char CmdLine_h[]="@(#)$RCSfile: CmdLine.h,v $$Revision: 1.6 $$Date: 2006/03/23 14:17:23Z $";
+ static char CmdLine_h[]="@(#)$RCSfile: CmdLine.h,v $$Revision: 1.7 $$Date: 2006/09/07 10:07:13Z $";
 #endif
 
 #include <vector>
@@ -22,6 +22,7 @@ class CmdLine
 public:
     void ParseCmdLine(const char *CommandLine);
     void GetTasksList(const char *InputFileName, const char *OutputFileName, bool parent);
+    void GetActionFromTasks(const char *InputFileName, const char *OutputFileName, bool QB);
     CmdLine();
 private:
     CString Parameters[5];

@@ -17,6 +17,7 @@
 #define URL_EDIT_PAGE                   213
 #define DEFECT_EDIT_PAGE                214
 #define SOFTTEST_PAGE                   216
+#define HISTORY_PAGE                    217
 #define IDC_TASKNAME                    1000
 #define VIEW_TASK                       1001
 #define IDC_EXPAND                      1002
@@ -86,6 +87,10 @@
 #define IDC_SOFTTEST_BROWSE             1072
 #define IDC_ST_DEFECTS                  1073
 #define IDC_SOFTTEST_FILTER             1074
+#define IDC_HISTORY_LIST                1075
+#define IDC_BUTTON_DELETE               1076
+#define IDC_BUTTON_CLEAR                1077
+#define IDC_FILL_ID                     1078
 #define ID_MENU_UNDO                    32774
 #define ID_MENU_CUT                     32775
 #define ID_MENU_COPY                    32776
@@ -99,14 +104,15 @@
 #define ID_SETTINGS_DEFECTS             32784
 #define ID_SETTINGS_FORMAT              32785
 #define ID_SETTINGS_SOFTTEST            32786
+#define ID_SETTINGS_HISTORY             32787
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        217
-#define _APS_NEXT_COMMAND_VALUE         32787
-#define _APS_NEXT_CONTROL_VALUE         1075
+#define _APS_NEXT_RESOURCE_VALUE        218
+#define _APS_NEXT_COMMAND_VALUE         32788
+#define _APS_NEXT_CONTROL_VALUE         1079
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

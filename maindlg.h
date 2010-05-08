@@ -14,7 +14,7 @@
 #endif // _MSC_VER >= 1000
 
 #ifdef INCLUDE_VERID
- static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.18 $$Date: 2006/03/21 14:56:08Z $";
+ static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.19 $$Date: 2006/08/22 12:57:59Z $";
 #endif
 
 #include "Systray.h"
@@ -50,6 +50,7 @@ public:
         COMMAND_ID_HANDLER_EX(ID_SETTINGS_DEFECTS,OnSettings)
         COMMAND_ID_HANDLER_EX(ID_SETTINGS_FORMAT,OnSettings)
         COMMAND_ID_HANDLER_EX(ID_SETTINGS_SOFTTEST,OnSettings)
+        COMMAND_ID_HANDLER_EX(ID_SETTINGS_HISTORY,OnSettings)
         COMMAND_ID_HANDLER_EX(ID_SHOW_HIDE_WINDOW,OnShowHide)
         COMMAND_ID_HANDLER_EX(ID_CLEAR_HISTORY,OnClearHistory)
         COMMAND_ID_HANDLER_EX(IDC_EXPAND,OnExpand)
@@ -100,6 +101,8 @@ protected:
     bool GetTaskNameFromClipboard(CString &sTasks);
     void CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID);
     void AddToHistory(const char *item);
+    void LoadHistory();
+    void SaveHistory();
     void OpenDefectsInOneProject(const char *Project, const char *IDs, INT wID);
 };
 

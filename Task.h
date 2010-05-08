@@ -3,14 +3,14 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: January 20, 2006
+    Date of last modification: August 31, 2006
 */
 
 #ifndef TASK_H_INCLUDED
 #define TASK_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char Task_h[]="@(#)$RCSfile: Task.h,v $$Revision: 1.6 $$Date: 2006/03/15 16:19:18Z $";
+ static char Task_h[]="@(#)$RCSfile: Task.h,v $$Revision: 1.7 $$Date: 2006/09/07 10:12:08Z $";
 #endif
 
 #include <vector>
@@ -59,8 +59,10 @@ public:
     int ParseHTMLForParentDefect(CString &DefectToFind, const CString &HTML); // 0 - parent found, 1 - no parent, 2 - no such defect
     int ParseHTMLForChildDefects(const CString &HTML, std::vector<CString> &Tasks);
     int ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML, std::vector<CHILD> &Tasks);
+    void ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskActions, bool QB);
 protected:
     void sort_defects(std::vector<TASKNAME> &Defects);
+    void TASK::FomatActionOutput(CString &Action);
 };
 
 #endif

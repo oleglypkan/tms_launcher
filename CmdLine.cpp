@@ -3,19 +3,19 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: February 1, 2006
+    Date of last modification: September 5, 2006
 */
 
 #include "stdafx.h"
+#include <fstream.h>
 #include "CmdLine.h"
 #include "settings.h"
 #include "MainDlg.h"
-#include "Request.h"
 #include "Task.h"
-#include <fstream.h>
+#include "AmHttpSocket.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.13 $$Date: 2006/03/23 14:17:29Z $"; 
+ static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.15 $$Date: 2006/09/07 11:51:06Z $"; 
 #endif
 
 extern CSettings Settings;
@@ -23,7 +23,7 @@ int CompareNoCaseCP1251(const char *string1, const char *string2);
 
 CmdLine::CmdLine()
 {
-//  Parameters[0] - "-c/p"
+//  Parameters[0] - "-c/p/qb/qc"
 //  Parameters[1] - "-name"
 //  Parameters[2] - "-prod"
 //  Parameters[3] - "-in"
@@ -94,6 +94,12 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
 
     TMS_Launcher.exe <-c> [<-name "TCD">] [<-prod ".X">] <input> <output>
       get the list of child tasks for the given ones
+
+    TMS_Launcher.exe <-qb> <input> <output>
+      get the list of QB actions for the given tasks
+
+    TMS_Launcher.exe <-qc> <input> <output>
+      get the list of QC actions for the given tasks
 */
     std::vector<CString> argv;
     StringToArgv(CommandLine,argv);
@@ -103,46 +109,52 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
         if (argv[i].CompareNoCase("-c") == 0)
         {
             Parameters[0] = "c";
+            continue;
+        }
+        if (argv[i].CompareNoCase("-p") == 0)
+        {
+            Parameters[0] = "p";
+            continue;
+        }
+        if (argv[i].CompareNoCase("-qb") == 0)
+        {
+            Parameters[0] = "b";
+            continue;
+        }
+        if (argv[i].CompareNoCase("-qc") == 0)
+        {
+            Parameters[0] = "q";
+            continue;
+        }
+        if (argv[i].CompareNoCase("-name") == 0)
+        {
+            if (argv.size() > i+1)
+            {
+                Parameters[1] = argv[i+1];
+                i++;
+            }
         }
         else
         {
-            if (argv[i].CompareNoCase("-p") == 0)
+            if (argv[i].CompareNoCase("-prod") == 0)
             {
-                Parameters[0] = "p";
+                if (argv.size() > i+1)
+                {
+                    Parameters[2] = argv[i+1];
+                    i++;
+                }
             }
             else
             {
-                if (argv[i].CompareNoCase("-name") == 0)
+                if (Parameters[3].IsEmpty())
                 {
-                    if (argv.size() > i+1)
-                    {
-                        Parameters[1] = argv[i+1];
-                        i++;
-                    }
+                    Parameters[3] = argv[i];
                 }
                 else
                 {
-                    if (argv[i].CompareNoCase("-prod") == 0)
+                    if (Parameters[4].IsEmpty())
                     {
-                        if (argv.size() > i+1)
-                        {
-                            Parameters[2] = argv[i+1];
-                            i++;
-                        }
-                    }
-                    else
-                    {
-                        if (Parameters[3].IsEmpty())
-                        {
-                            Parameters[3] = argv[i];
-                        }
-                        else
-                        {
-                            if (Parameters[4].IsEmpty())
-                            {
-                                Parameters[4] = argv[i];
-                            }
-                        }
+                        Parameters[4] = argv[i];
                     }
                 }
             }
@@ -157,13 +169,115 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
 
     switch (Parameters[0][0])
     {
-        case 'p':
+        case 'p': // parent
             GetTasksList(Parameters[3],Parameters[4],true);
             break;
-        case 'c':
+        case 'c': // child
             GetTasksList(Parameters[3],Parameters[4],false);
             break;
+        case 'b': // qb
+            GetActionFromTasks(Parameters[3],Parameters[4],true);
+            break;
+        case 'q': // qc
+            GetActionFromTasks(Parameters[3],Parameters[4],false);
+            break;
     }
+}
+
+void CmdLine::GetActionFromTasks(const char *InputFileName, const char *OutputFileName, bool QB)
+{
+    int index = Settings.GetDefaultUrlIndex();
+    if (index == -1) return;
+
+    if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
+    {
+        ofstream OutFile;
+        OutFile.open(OutputFileName, ios::out);
+        OutFile << "Both Login and Password must be specified in settings window for \""+Settings.links[index].Caption+"\" URL";
+        OutFile.close();
+        return;
+    }
+    CString TasksLine = "";
+    ifstream InFile;
+    InFile.open(InputFileName, ios::in);
+    ofstream OutFile;
+    OutFile.open(OutputFileName, ios::out);
+
+    if (QB)
+    {
+        OutFile << "Task            QB action(s)" << endl;
+    }
+    else
+    {
+        OutFile << "Task            QC action(s)" << endl;
+    }
+    OutFile << "--------------------------------------------------------------------" << endl;
+
+    while (!InFile.eof())
+    {
+        InFile.getline(TasksLine.GetBuffer(256),255);
+        TasksLine.ReleaseBuffer();
+        if (!TasksLine.IsEmpty())
+        {
+            std::vector<CString> Tasks;
+            TASK task;
+            task.SimpleParseTasks(TasksLine, Tasks);
+            for (int i=0; i<Tasks.size(); i++)
+            {
+                CString Client, Sep, ID;
+                if (!task.IsTaskNameValid(Tasks[i],Client,Sep,ID))
+                {
+                    OutFile << Tasks[i] << " - invalid task name format" << endl << endl;
+                }
+                else
+                {
+                    CAmHttpSocket Req;
+                    CString Message = "", Request;
+                    bool IsDefect = false;
+                    int defect_index = -1;
+
+                    // checking if a task is SoftTest defect
+                    if (IsDefect = Settings.IsDefect(Client,NULL,&defect_index))
+                    {
+                        OutFile << Tasks[i] << " - is SoftTest defect" << endl << endl;
+                        continue;
+                    }
+                    Request.Format("http://%s:%s@scc1/~alttms/viewtask.php?Client=%s&ID=%s",
+                                   Settings.links[index].Login,Settings.links[index].Password,
+                                   Client, ID);
+                    Message = Req.GetPage(Request);
+                    if (Message.IsEmpty())
+                    {
+                        OutFile << Tasks[i] << " - error occured during reading task" << endl;
+                    }
+                    else
+                    {
+                        OutFile.width(16);
+                        OutFile.setf(OutFile.left);
+                        
+                        std::vector<CString> TaskActions;
+                        task.ParseHTMLForActions(Message,TaskActions,QB);
+                        if (TaskActions.size()==0)
+                        {
+                            OutFile << Tasks[i] << "-----------" << endl << endl;
+                            continue;
+                        }
+                        OutFile << Tasks[i];
+                        OutFile << "#   Date        Time   Person            Assigned to" << endl;
+                        for (int j=0; j<TaskActions.size(); j++)
+                        {
+                            OutFile.width(16);
+                            OutFile.setf(OutFile.left);
+                            OutFile << " " << TaskActions[j] << endl;
+                        }
+                        OutFile << endl;
+                    }
+                }
+            }
+        }
+    }
+    InFile.close();
+    OutFile.close();
 }
 
 void CmdLine::GetTasksList(const char *InputFileName, const char *OutputFileName, bool parent)
@@ -214,8 +328,8 @@ void CmdLine::GetTasksList(const char *InputFileName, const char *OutputFileName
                 }
                 else
                 {
-                    REQUEST Req;
-                    CString HeaderSend, HeaderReceive, Message, Request;
+                    CAmHttpSocket Req;
+                    CString Message = "", Request;
                     bool IsDefect = false;
                     int defect_index = -1;
 
@@ -250,7 +364,8 @@ void CmdLine::GetTasksList(const char *InputFileName, const char *OutputFileName
                                            Client, ID);
                         }
                     }
-                    if (!Req.SendRequest(false, Request, HeaderSend, HeaderReceive, Message))
+                    Message = Req.GetPage(Request);
+                    if (Message.IsEmpty())
                     {
                         OutFile << Tasks[i] << " - error occured during reading task" << endl;
                     }

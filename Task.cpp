@@ -3,7 +3,7 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: February 7, 2006
+    Date of last modification: August 31, 2006
 */
 
 #include "stdafx.h"
@@ -11,7 +11,7 @@
 #include "settings.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.9 $$Date: 2006/03/23 13:16:33Z $"; 
+ static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.10 $$Date: 2006/09/07 10:11:50Z $"; 
 #endif
  
 extern CSettings Settings;
@@ -309,4 +309,86 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
         pos = HTML.Find("<A target=task",pos+1);
     }
     return 0;
+}
+
+void TASK::ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskActions, bool QB)
+{
+    TaskActions.clear();
+    long pos = -1;
+    if (QB)
+    {
+        pos = HTML.Find("QB</td><td");
+    }
+    else
+    {
+        pos = HTML.Find("QC</td><td");
+    }
+    while (pos != -1)
+    {
+        CString Action = HTML.Left(pos);
+        Action = Action.Right(pos-Action.ReverseFind('\"')-1);
+        FomatActionOutput(Action);
+        TaskActions.push_back(Action);
+        // searching for next action
+        if (QB)
+        {
+            pos = HTML.Find("QB</td><td",pos+1);
+        }
+        else
+        {
+            pos = HTML.Find("QC</td><td",pos+1);
+        }
+    }
+}
+
+void TASK::FomatActionOutput(CString &Action)
+{
+    CString Result = "";
+    long pos = Action.Find('>');
+    long section = 0;
+    while (pos != -1)
+    {
+        if (pos < Action.GetLength())
+        {
+            long pos2 = Action.Find('<',pos);
+            if (pos2 != -1)
+            {
+                long length = pos2-pos-1;
+                if (length > 0)
+                {
+                    section++;
+                    Result += Action.Mid(pos+1,length);
+
+                    CString temp = "";
+                    switch (section)
+                    {
+                        case 1:
+                            temp += "    ";
+                            break;
+                        case 2:
+                            temp += "            ";
+                            break;
+                        case 3:
+                            temp += "       ";
+                            break;
+                        case 4:
+                            temp += "                  ";
+                            break;
+                    }
+                    if (!temp.IsEmpty())
+                    {
+                        temp.Delete(0,length);
+                        Result += temp;
+                    }
+                }
+                Action.Delete(0,pos2);
+            }
+            else
+            {
+                break;
+            }
+        }
+        pos = Action.Find('>');
+    }
+    Action = Result;
 }

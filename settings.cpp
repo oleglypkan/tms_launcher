@@ -3,7 +3,7 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: January 17, 2006
+    Date of last modification: August 30, 2006
 */
 
 #include "stdafx.h"
@@ -11,7 +11,7 @@
 #include "About.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.30 $$Date: 2006/05/29 14:15:16Z $"; 
+ static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.32 $$Date: 2006/08/30 14:25:17Z $"; 
 #endif
 
 extern CString szWinName;
@@ -24,7 +24,8 @@ bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
 
 CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
                      const char* DefectsSubKeyName, const char* FormatSubKeyName,
-                     const char* LinksSubKeyName, const char* SoftTestSubKeyName):Reg(HKEY_CURRENT_USER),x(138)
+                     const char* LinksSubKeyName, const char* SoftTestSubKeyName,
+                     const char* HistorySubKeyName):Reg(HKEY_CURRENT_USER),x(138)
 {
     AutoRun = false;
     Expand = false;
@@ -41,10 +42,12 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     FormatSubKey = FormatSubKeyName;
     LinksSubKey = LinksSubKeyName;
     SoftTestSubKey = SoftTestSubKeyName;
+    HistorySubKey = HistorySubKeyName;
     AutoRunRegistryKey = AutoRunRegKey;
     AutoRunValueName = AutoRunValName;
     BrowserPath = "";
     DefaultBrowser = false;
+    FillID = true;
     
     CString SpecialFolder;
     GetEnvironmentVariable("PROGRAMFILES",SpecialFolder.GetBuffer(MAX_PATH+1),MAX_PATH);
@@ -407,11 +410,6 @@ void CSettings::LoadSettings()
 
     // reading format settings
     DWordSize=sizeof(DWORD); // will be changed by ReadValue()
-    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxHistoryItems",REG_DWORD,(LPBYTE)&MaxHistoryItems,DWordSize);
-    if ((MaxHistoryItems < 0)||(MaxHistoryItems > MaxPossibleHistory))
-        MaxHistoryItems = 25;
-
-    DWordSize=sizeof(DWORD);
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxClient",REG_DWORD,(LPBYTE)&MaxClientName,DWordSize);
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxID",REG_DWORD,(LPBYTE)&MaxIDName,DWordSize);
     if (MaxIDName < 1) MaxIDName = 1;
@@ -432,12 +430,52 @@ void CSettings::LoadSettings()
         if (!TASKS_SEPARATORS.IsEmpty()) TasksSeparators = TASKS_SEPARATORS;
     }
     CorrectCRLF(SEPARATORS,TASKS_SEPARATORS);
+    if (Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"FillID",REG_DWORD,(LPBYTE)&DWbuf,DWordSize))
+    {
+        FillID = (DWbuf != 0);
+    }
+
+    // reading history settings
+    DWordSize=sizeof(DWORD); // will be changed by ReadValue()
+    if (!Reg.ReadValue(RegistryKey+"\\"+HistorySubKey,"MaxHistoryItems",REG_DWORD,(LPBYTE)&MaxHistoryItems,DWordSize))
+    {
+        Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxHistoryItems",REG_DWORD,(LPBYTE)&MaxHistoryItems,DWordSize);
+        Reg.DeleteValue(RegistryKey+"\\"+FormatSubKey,"MaxHistoryItems");
+    }
+    if ((MaxHistoryItems < 0)||(MaxHistoryItems > MaxPossibleHistory))
+    {
+        MaxHistoryItems = 25;
+    }
+    DWORD MaxValueNameLength = 255;
+    DWORD MaxValueLength = 16000;
+    DWORD type = 0;
+    int HistoryItems = 0;
+    HistoryItems = Reg.GetNumberOfValues(RegistryKey+"\\"+HistorySubKey,&MaxValueNameLength,&MaxValueLength);
+    MaxValueNameLength++;
+    MaxValueLength++;
+    History.clear();
+    for (int i=0; i < HistoryItems; i++)
+    {
+        DWORD ValueNameLength = MaxValueNameLength;
+        DWORD ValueLength = MaxValueLength;
+        CString ValueName = "", Value = "";
+        bool res = Reg.GetValueName(RegistryKey+"\\"+HistorySubKey,i,ValueName.GetBuffer(ValueNameLength),&ValueNameLength,&type);
+        ValueName.ReleaseBuffer();
+        if (res && (type == REG_SZ))
+        {
+            Reg.ReadValue(RegistryKey+"\\"+HistorySubKey,ValueName,REG_SZ,(LPBYTE)Value.GetBuffer(ValueLength),ValueLength);
+            Value.ReleaseBuffer();
+            History.push_back(Value);
+        }
+    }
+
     // it is possible that some settings are not read and default ones are saved
     SaveGeneralSettings();
     SaveDefectsSettings();
     SaveFormatSettings();
     SaveLinksSettings();
     SaveSoftTestSettings();
+    SaveHistorySettings();
 }
 
 void CSettings::SaveGeneralSettings(bool AfterImporting)
@@ -517,7 +555,7 @@ void CSettings::SaveFormatSettings()
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxExt",REG_DWORD,(const BYTE*)&MaxExt,sizeof(DWORD));
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(const BYTE*)LPCTSTR(Separators),Separators.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"TasksSeparators",REG_SZ,(const BYTE*)LPCTSTR(TasksSeparators),TasksSeparators.GetLength()+1);
-    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxHistoryItems",REG_DWORD,(const BYTE*)&MaxHistoryItems,sizeof(DWORD));
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"FillID",REG_DWORD,(const BYTE*)&FillID,sizeof(DWORD));
 }
 
 void CSettings::SaveSoftTestSettings()
@@ -542,6 +580,19 @@ void CSettings::SaveDefectsSettings()
         value_name.Format("Item%d",i);
         value.Format("%s;%s;%s;%s;%s",defects[i].ClientID,defects[i].STProject,defects[i].DefectURL,defects[i].ChildDefectsURL,defects[i].ParentDefectURL);
         Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+    }
+}
+
+void CSettings::SaveHistorySettings()
+{
+    Reg.DeleteKey(RegistryKey,HistorySubKey);
+    Reg.AddValue(RegistryKey+"\\"+HistorySubKey,"MaxHistoryItems",REG_DWORD,(const BYTE*)&MaxHistoryItems,sizeof(DWORD));
+    CString value_name, value;
+    for (int i=0; i < History.size(); i++)
+    {
+        value_name.Format("Item%d",i);
+        value = History[i];
+        Reg.AddValue(RegistryKey+"\\"+HistorySubKey,value_name,REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
     }
 }
 

@@ -3,13 +3,13 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: January 18, 2006
+    Date of last modification: September 4, 2006
 */
 
 #include "stdafx.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.48 $$Date: 2006/05/04 14:53:44Z $"; 
+ static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.51 $$Date: 2006/09/07 10:07:43Z $"; 
 #endif
 
 #include <fstream.h>
@@ -18,9 +18,9 @@
 #include "Systray.h"
 #include "settings.h"
 #include "tools.h"
-#include "request.h"
 #include "Options.h"
 #include "Task.h"
+#include "AmHttpSocket.h"
 using Mortimer::COptionSheetDialogImpl;
 using Mortimer::COptionSelectionTreeCtrl;
 
@@ -91,6 +91,7 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     TaskNameControl.SetAutoURLDetect(true);
 
     TaskNameCombo.Attach(GetDlgItem(IDC_TASKNAME_COMBO));
+    LoadHistory();
 
     SwitchControls();
 
@@ -138,6 +139,7 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     SettingsSubMenu.AppendMenu(MF_ENABLED,ID_SETTINGS_DEFECTS,"&Defects");
     SettingsSubMenu.AppendMenu(MF_ENABLED,ID_SETTINGS_FORMAT,"&Format");
     SettingsSubMenu.AppendMenu(MF_ENABLED,ID_SETTINGS_SOFTTEST,"&SoftTest");
+    SettingsSubMenu.AppendMenu(MF_ENABLED,ID_SETTINGS_HISTORY,"&History");
 
     SystrayMenu.CreatePopupMenu();
     SystrayMenu.AppendMenu(MF_ENABLED,ID_SHOW_HIDE_WINDOW,"Show &window");
@@ -150,12 +152,44 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     SystrayMenu.AppendMenu(MF_POPUP,(UINT)(HMENU)ClipboardSubMenu,"Clip&board");
     SystrayMenu.AppendMenu(MF_POPUP,(UINT)(HMENU)SettingsSubMenu,"&Settings");
     SystrayMenu.AppendMenu(MF_SEPARATOR);
-    SystrayMenu.AppendMenu(MF_ENABLED,ID_CLEAR_HISTORY,"C&lear history");
+    if (TaskNameCombo.GetCount() == 0)
+    {
+        SystrayMenu.AppendMenu(MF_GRAYED,ID_CLEAR_HISTORY,"C&lear history");
+    }
+    else
+    {
+        SystrayMenu.AppendMenu(MF_ENABLED,ID_CLEAR_HISTORY,"C&lear history");
+    }
     SystrayMenu.AppendMenu(MF_SEPARATOR);
     SystrayMenu.AppendMenu(MF_ENABLED,IDC_CLOSE,"&Exit");
     CreateSysTrayIcon(m_hWnd,LoadIcon(_Module.GetModuleInstance(),MAKEINTRESOURCE(IDI_SYSTRAY_ICON)),szWinName);
 
     return TRUE;
+}
+
+void CMainDlg::LoadHistory()
+{
+    int size = Settings.History.size();
+    if (size > Settings.MaxHistoryItems)
+    {
+        size = Settings.MaxHistoryItems;
+    }
+    for (int i=0; i < size; i++)
+    {
+        TaskNameCombo.AddString(Settings.History[i]);
+    }
+    Settings.History.clear();
+}
+
+void CMainDlg::SaveHistory()
+{
+    Settings.History.clear();
+    for (int i=0; i < TaskNameCombo.GetCount(); i++)
+    {
+        CString Item = "";
+        TaskNameCombo.GetLBText(i,Item);
+        Settings.History.push_back(Item);
+    }
 }
 
 void CMainDlg::OnContents(UINT wNotifyCode, INT wID, HWND hWndCtl)
@@ -254,6 +288,9 @@ void CMainDlg::OnClose(UINT wNotifyCode, INT wID, HWND hWndCtl)
     Settings.xPos = Rect.left;
     Settings.yPos = Rect.top;
     Settings.SaveGeneralSettings();
+    
+    SaveHistory(); // copies values from TaskNameCombo control to internal list
+    Settings.SaveHistorySettings(); // saves values from internal list to Registry
 
     DeleteSysTrayIcon(m_hWnd);
     DestroyMenu(ContextMenu);
@@ -355,12 +392,50 @@ bool CMainDlg::GetTaskNameFromClipboard(CString &sTasks)
     return (!sTasks.IsEmpty());
 }
 
+BOOL CALLBACK AddToHistoryList(HWND hwnd, LPARAM lParam)
+{
+    CListBox HistoryList = ::GetDlgItem(hwnd,IDC_HISTORY_LIST);
+    CButton DeleteButton = ::GetDlgItem(hwnd,IDC_BUTTON_DELETE);
+    CButton ClearButton = ::GetDlgItem(hwnd,IDC_BUTTON_CLEAR);
+    if (HistoryList != NULL && DeleteButton != NULL && ClearButton != NULL)
+    {
+        int pos = HistoryList.FindStringExact(-1,(const char *)lParam);
+        if (pos != CB_ERR)
+        {
+            HistoryList.DeleteString(pos);
+        }
+        else
+        {
+            UINT ItemsNumber = HistoryList.GetCount();
+            if (ItemsNumber == Settings.MaxHistoryItems)
+            {
+                HistoryList.DeleteString(ItemsNumber - 1);
+            }
+        }
+        HistoryList.InsertString(0,(const char *)lParam);
+        DeleteButton.EnableWindow(true);
+        ClearButton.EnableWindow(true);
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
 void CMainDlg::AddToHistory(const char *item)
 {
     if (Settings.MaxHistoryItems == 0)
     {
         return;
     }
+    HWND SettingsWindow = NULL;
+    SettingsWindow = FindWindow(NULL,"TMS Launcher settings");
+    if (SettingsWindow != NULL)
+    {
+        EnumChildWindows(SettingsWindow,(WNDENUMPROC)AddToHistoryList,(LPARAM)item);
+    }
+
     int pos = TaskNameCombo.FindStringExact(-1,item);
     if (pos != CB_ERR)
     {
@@ -376,6 +451,7 @@ void CMainDlg::AddToHistory(const char *item)
     }
 
     TaskNameCombo.InsertString(0,item);
+    SystrayMenu.EnableMenuItem(ID_CLEAR_HISTORY,MF_BYCOMMAND|MF_ENABLED);
 }
 
 void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
@@ -529,7 +605,7 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
         return;
     }
     CString tempID = "00000";
-    if (lstrlen(sIDName)<5)
+    if (lstrlen(sIDName)<5 && Settings.FillID)
     {
         tempID += sIDName;
         tempID.Delete(0,tempID.GetLength()-5);
@@ -538,7 +614,7 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
     {
         tempID = sIDName;
     }
-    
+
     switch (wID)
     {
         case VIEW_TASK:
@@ -572,17 +648,18 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
         case VIEW_PARENT_TASK:
         case VIEW_PARENT_TASK_HOTKEY:
         {
-            CString HeaderSend, HeaderReceive, Message;
-            REQUEST Req;
             if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
             {
                 MessageBox("Both Login and Password must be specified\nin settings window for \""+Settings.links[index].Caption+"\" URL\nto open parent task",szWinName,MB_ICONERROR);
                 break;
             }
+            CString Message = "";
+            CAmHttpSocket Req;
             Request.Format("http://%s:%s@scc1/~alttms/viewtask.php?Client=%s&ID=%s",
                            Settings.links[index].Login,Settings.links[index].Password,
                            sClientName, tempID);
-            if (!Req.SendRequest(false, Request, HeaderSend, HeaderReceive, Message))
+            Message = Req.GetPage(Request);
+            if (Message.IsEmpty())
             {
                 MessageBox("Error while opening parent task",szWinName,MB_ICONERROR);
                 Request = "";
@@ -646,7 +723,7 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
     {
         if (!Settings.links[index].Login.IsEmpty() && !Settings.links[index].Password.IsEmpty())
         {
-            REQUEST::InsertLoginPassword(Request,Settings.links[index].Login,Settings.links[index].Password);
+            CAmHttpSocket::InsertLoginPassword(Request,Settings.links[index].Login,Settings.links[index].Password);
         }
         Request.Insert(0,"\"");
         Request += "\"";
@@ -795,6 +872,9 @@ void CMainDlg::OnSettings(UINT wNotifyCode, INT wID, HWND hWndCtl)
         case ID_SETTINGS_SOFTTEST:
             Sheet.DoModal(::GetActiveWindow(),4);
             break;
+        case ID_SETTINGS_HISTORY:
+            Sheet.DoModal(::GetActiveWindow(),5);
+            break;
         default:
             Sheet.DoModal(::GetActiveWindow(),NULL);
     }
@@ -804,41 +884,43 @@ void CMainDlg::OnSettings(UINT wNotifyCode, INT wID, HWND hWndCtl)
         SwitchControls();
     }
 
-    int items = TaskNameCombo.GetCount(); // actual number of items in ComboBox control
-    if (items > Settings.MaxHistoryItems)
-    {
-        CString Task = "";
-        if (Settings.TaskNameControlType == 1) // ComboBox control
-        {
-            UINT TaskNameLength = TaskNameCombo.GetWindowTextLength();
-            if (TaskNameLength > 0)
-            {
-                ::GetWindowText(TaskNameCombo,Task.GetBuffer(TaskNameLength+1),TaskNameLength+1);
-                Task.ReleaseBuffer();
-            }
-        }
-        if (Settings.MaxHistoryItems == 0)
-        {
-            TaskNameCombo.ResetContent();
-        }
-        else
-        {
-            for (int i = Settings.MaxHistoryItems; i < items; i++)
-            {
-                TaskNameCombo.DeleteString(Settings.MaxHistoryItems);
-            }
-        }
-        if (!Task.IsEmpty())
-        {
-            TaskNameCombo.SetWindowText(Task);
-        }
-    }
-
     SystrayMenu.EnableMenuItem(7,MF_BYPOSITION|MF_ENABLED);
+    if (TaskNameCombo.GetCount() == 0)
+    {
+        SystrayMenu.EnableMenuItem(ID_CLEAR_HISTORY,MF_BYCOMMAND|MF_GRAYED);
+    }
+    else
+    {
+        SystrayMenu.EnableMenuItem(ID_CLEAR_HISTORY,MF_BYCOMMAND|MF_ENABLED);
+    }
+}
+
+BOOL CALLBACK ClearHistoryList(HWND hwnd, LPARAM lParam)
+{
+    CListBox HistoryList = ::GetDlgItem(hwnd,IDC_HISTORY_LIST);
+    CButton DeleteButton = ::GetDlgItem(hwnd,IDC_BUTTON_DELETE);
+    CButton ClearButton = ::GetDlgItem(hwnd,IDC_BUTTON_CLEAR);
+    if (HistoryList != NULL && DeleteButton != NULL && ClearButton != NULL)
+    {
+        HistoryList.ResetContent();
+        DeleteButton.EnableWindow(false);
+        ClearButton.EnableWindow(false);
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
 }
 
 void CMainDlg::OnClearHistory(UINT wNotifyCode, INT wID, HWND hWndCtl)
 {
+    HWND SettingsWindow = NULL;
+    SettingsWindow = FindWindow(NULL,"TMS Launcher settings");
+    if (SettingsWindow != NULL)
+    {
+        EnumChildWindows(SettingsWindow,(WNDENUMPROC)ClearHistoryList,(LPARAM)0);
+    }
     CString Task = "";
     if (Settings.TaskNameControlType == 1) // ComboBox control
     {
@@ -854,6 +936,7 @@ void CMainDlg::OnClearHistory(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
         TaskNameCombo.SetWindowText(Task);
     }
+    SystrayMenu.EnableMenuItem(ID_CLEAR_HISTORY,MF_BYCOMMAND|MF_GRAYED);
 }
 
 void CMainDlg::SwitchControls()

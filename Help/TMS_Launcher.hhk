@@ -27,12 +27,24 @@
 		<param name="Local" value="Settings\general.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="History">
+		<param name="Name" value="History page of settings window">
+		<param name="Local" value="Settings\history.html">
+		<param name="Name" value="Opening TMS tasks">
+		<param name="Local" value="Features\opentasks.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Links">
 		<param name="Local" value="Features\openlinks.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="New features">
 		<param name="Local" value="whats_new.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Settings">
+		<param name="Name" value="Settings">
+		<param name="Local" value="settings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="SoftTest defects">
@@ -43,11 +55,6 @@
 		<param name="Name" value="SoftTest settings">
 		<param name="Name" value="SoftTest settings">
 		<param name="Local" value="Settings\softtest.html">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Settings">
-		<param name="Name" value="Settings">
-		<param name="Local" value="settings.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="System requirements">

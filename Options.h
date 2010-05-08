@@ -3,7 +3,7 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: January 17, 2006
+    Date of last modification: August 16, 2006
 */
 
 // Several pages should be created as dialogs templates with IDs == IDDs from pages classes.
@@ -177,10 +177,10 @@ public:
     // called every time when whole sheet is closed by clicking on OK button
     void OnOK()
     {
-        Settings.AutoRun=(SendDlgItemMessage(IDC_AUTORUN,BM_GETCHECK,0,0)==BST_CHECKED);
-        Settings.Expand=(SendDlgItemMessage(IDC_EXPANDED,BM_GETCHECK,0,0)==BST_CHECKED);
-        Settings.Minimize=(SendDlgItemMessage(IDC_MINIMIZE,BM_GETCHECK,0,0)==BST_CHECKED);
-        Settings.DefaultBrowser=(SendDlgItemMessage(IDC_DEFAULT_BROWSER,BM_GETCHECK,0,0)==BST_CHECKED);
+        Settings.AutoRun = (SendDlgItemMessage(IDC_AUTORUN,BM_GETCHECK,0,0)==BST_CHECKED);
+        Settings.Expand = (SendDlgItemMessage(IDC_EXPANDED,BM_GETCHECK,0,0)==BST_CHECKED);
+        Settings.Minimize = (SendDlgItemMessage(IDC_MINIMIZE,BM_GETCHECK,0,0)==BST_CHECKED);
+        Settings.DefaultBrowser = (SendDlgItemMessage(IDC_DEFAULT_BROWSER,BM_GETCHECK,0,0)==BST_CHECKED);
         Settings.TaskNameControlType = TaskNameControlSetup.GetCurSel();
         Settings.RightClickAction = RightClickAction;
         Settings.RightClickAction2 = RightClickAction2;        
@@ -196,7 +196,7 @@ public:
     void OnCancel() {}
 };
 
-//////////////////////////// General options page //////////////////////
+//////////////////////////// Format options page //////////////////////
 class FormatPage : public Mortimer::COptionPageImpl<FormatPage,CPropPage>
 {
 public:
@@ -257,12 +257,10 @@ public:
         sTasksSeparators.LimitText(255);
         sTasksSeparators.SetWindowText(Settings.TasksSeparators);
 
-        // set minimum and maximum positions of spin button
-        SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETRANGE,0,
-                    (LPARAM)MAKELONG((short)Settings.MaxPossibleHistory,(short)0));
-        // set current position of spin button to Maximum log file size
-        SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETPOS,0,
-                    (LPARAM) MAKELONG ((short)Settings.MaxHistoryItems, 0));
+        if (Settings.FillID)
+        {
+            SendDlgItemMessage(IDC_FILL_ID,BM_SETCHECK,BST_CHECKED,0);
+        }
         return 0;
     }
 
@@ -318,7 +316,8 @@ public:
         Settings.RemoveDuplicateSeparators(temp);
         Settings.TasksSeparators = temp;
 
-        Settings.MaxHistoryItems = GetDlgItemInt(IDC_MAX_HISTORY);
+        Settings.FillID = (SendDlgItemMessage(IDC_FILL_ID,BM_GETCHECK,0,0)==BST_CHECKED);
+
         Settings.SaveFormatSettings();
     }
 
@@ -771,7 +770,7 @@ public:
         if ((wID == IDC_LINK_COPY) || (wID == IDC_LINK_EDIT))
         {
             position = URLsList.GetCurSel();
-            if (position == CB_ERR)
+            if (position == LB_ERR)
             {
                 return;
             }
@@ -829,7 +828,7 @@ public:
         }
         CString SelectedItem;
         int position = URLsList.GetCurSel();
-        if (position == CB_ERR)
+        if (position == LB_ERR)
         {
             return;
         }
@@ -1363,7 +1362,7 @@ public:
         if ((wID == IDC_DEFECT_COPY) || (wID == IDC_DEFECT_EDIT))
         {
             position = DefectsList.GetCurSel();
-            if (position == CB_ERR)
+            if (position == LB_ERR)
             {
                 return;
             }
@@ -1408,7 +1407,7 @@ public:
     {
         int position = DefectsList.GetCurSel();
         CString SelectedItem;
-        if (position == CB_ERR)
+        if (position == LB_ERR)
         {
             return;
         }
@@ -1456,6 +1455,120 @@ public:
 
     // called every time when whole sheet is closed by clicking on Cancel button
     void OnCancel() {}
+};
+
+//////////////////////////// History options page //////////////////////
+class HistoryPage : public Mortimer::COptionPageImpl<HistoryPage,CPropPage>
+{
+public:
+    enum { IDD = HISTORY_PAGE };
+    CComboBox TaskNameCombo;
+    CListBox HistoryList;
+    CButton DeleteButton;
+    CButton ClearButton;
+
+    BEGIN_MSG_MAP(HistoryPage)
+        MSG_WM_INITDIALOG(OnInitDialog)
+        COMMAND_ID_HANDLER_EX(IDC_BUTTON_DELETE,OnItemDelete)
+        COMMAND_ID_HANDLER_EX(IDC_BUTTON_CLEAR,OnListClear)
+    END_MSG_MAP()
+
+    LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
+    {
+        HistoryList.Attach(GetDlgItem(IDC_HISTORY_LIST));
+        DeleteButton.Attach(GetDlgItem(IDC_BUTTON_DELETE));
+        ClearButton.Attach(GetDlgItem(IDC_BUTTON_CLEAR));
+        // copying tasks from Combobox to List
+        TaskNameCombo = ::GetDlgItem(::GetParent(GetParent()),IDC_TASKNAME_COMBO);
+        for (int i=0; i < TaskNameCombo.GetCount(); i++)
+        {
+            CString Item = "";
+            TaskNameCombo.GetLBText(i,Item);
+            HistoryList.AddString(Item);
+        }
+        if (HistoryList.GetCount() == 0)
+        {
+            DeleteButton.EnableWindow(false);
+            ClearButton.EnableWindow(false);
+        }
+        // set minimum and maximum positions of spin button
+        SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETRANGE,0,
+                    (LPARAM)MAKELONG((short)Settings.MaxPossibleHistory,(short)0));
+        // set current position of spin button
+        SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETPOS,0,
+                    (LPARAM) MAKELONG ((short)Settings.MaxHistoryItems, 0));
+        return 0;
+    }
+
+    // called every time when whole sheet is closed by clicking on OK button
+    void OnOK()
+    {
+        Settings.MaxHistoryItems = GetDlgItemInt(IDC_MAX_HISTORY);
+        int items = HistoryList.GetCount(); // actual number of items in HistoryList control
+        if (Settings.MaxHistoryItems == 0)
+        {
+            HistoryList.ResetContent();
+        }
+        else
+        {
+            for (int i = Settings.MaxHistoryItems; i < items; i++)
+            {
+                HistoryList.DeleteString(Settings.MaxHistoryItems);
+            }
+        }
+        // copy tasks from list to combobox
+        CString Task = "";
+        UINT TaskNameLength = TaskNameCombo.GetWindowTextLength();
+        if (TaskNameLength > 0)
+        {
+            ::GetWindowText(TaskNameCombo,Task.GetBuffer(TaskNameLength+1),TaskNameLength+1);
+            Task.ReleaseBuffer();
+        }
+        TaskNameCombo.ResetContent();
+        for (int i = 0; i < HistoryList.GetCount(); i++)
+        {
+            CString Item = "";
+            HistoryList.GetText(i,Item);
+            TaskNameCombo.AddString(Item);
+        }
+        HistoryList.ResetContent();
+        if (!Task.IsEmpty())
+        {
+            TaskNameCombo.SetWindowText(Task);
+        }
+    }
+
+    // called every time when whole sheet is closed by clicking on Cancel button
+    void OnCancel() {}
+
+    void OnItemDelete(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        int pos = HistoryList.GetCurSel();
+        if (pos == LB_ERR)
+        {
+            return;
+        }
+        else
+        {
+            HistoryList.DeleteString(pos);
+            if (HistoryList.GetCount() == 0)
+            {
+                DeleteButton.EnableWindow(false);
+                ClearButton.EnableWindow(false);
+            }
+        }
+    }
+
+    void OnListClear(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        if (MessageBox("Are you sure you want to clear the whole list?",
+                       szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+        {
+            HistoryList.ResetContent();
+            DeleteButton.EnableWindow(false);
+            ClearButton.EnableWindow(false);
+        }
+    }
 };
 
 //////////////////////////// MyOptionSheet //////////////////////////////
@@ -1520,6 +1633,7 @@ public:
             m_PageDefects.Create(this);
             m_PageURLs.Create(this);
             m_PageSoftTest.Create(this);
+            m_PageHistory.Create(this);
         }
 
 #if (USE_ICONS != 0)
@@ -1567,6 +1681,14 @@ public:
         AddItem(NewItem);
         // checking if this page should be active and activate it if so
         if (lParam == 4) SetActiveItem(NewItem);
+
+        NewItem = new COptionSelectionTreeCtrl::CItem(5,5);
+        NewItem->SetPage(&m_PageHistory);
+        NewItem->SetCaption("History");
+        // adding new page
+        AddItem(NewItem);
+        // checking if this page should be active and activate it if so
+        if (lParam == 5) SetActiveItem(NewItem);
 #else
         //In order not to use icons just use the following statements: 
         AddItem(new COptionItem("General", &m_PageGeneral));
@@ -1574,6 +1696,7 @@ public:
         AddItem(new COptionItem("Defects",&m_PageDefects));
         AddItem(new COptionItem("Format", &m_PageFormat));
         AddItem(new COptionItem("SoftTest", &m_PageSoftTest));
+        AddItem(new COptionItem("History", &m_PageHistory));
 #endif
 
         SetFlags(OSF_HASBUTTON_OK|OSF_HASBUTTON_CANCEL);
@@ -1616,6 +1739,7 @@ protected:
     DefectsPage m_PageDefects;
     URLsPage m_PageURLs;
     SoftTestPage m_PageSoftTest;
+    HistoryPage m_PageHistory;
     CStatic m_PageCaption;
     CMenu HelpMenu;
 #if (USE_ICONS != 0)

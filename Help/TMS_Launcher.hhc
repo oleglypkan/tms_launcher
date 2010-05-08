@@ -1,5 +1,3 @@
-<!-- @(#)$RCSfile: TMS_Launcher.hhc,v $$Revision: 1.3 $$Date: 2006/03/31 11:05:27Z $ -->
-
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <HTML>
 <HEAD>
@@ -7,72 +5,76 @@
 <!-- Sitemap 1.0 -->
 </HEAD><BODY>
 <OBJECT type="text/site properties">
-    <param name="Window Styles" value="0x800025">
+	<param name="Window Styles" value="0x800025">
 </OBJECT>
 <UL>
-    <LI> <OBJECT type="text/sitemap">
-        <param name="Name" value="Introduction">
-        <param name="Local" value="introduction.html">
-        </OBJECT>
-    <LI> <OBJECT type="text/sitemap">
-        <param name="Name" value="What's new?">
-        <param name="Local" value="whats_new.html">
-        </OBJECT>
-    <LI> <OBJECT type="text/sitemap">
-        <param name="Name" value="Main features">
-        <param name="Local" value="mainfeatures.html">
-        </OBJECT>
-    <UL>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="Opening TMS tasks">
-            <param name="Local" value="Features\opentasks.html">
-            </OBJECT>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="Opening SoftTest defects">
-            <param name="Local" value="Features\opendefects.html">
-            </OBJECT>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="Opening links">
-            <param name="Local" value="Features\openlinks.html">
-            </OBJECT>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="Command line interface">
-            <param name="Local" value="Features\commandline.html">
-            </OBJECT>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="System tray menu">
-            <param name="Local" value="Features\systraymenu.html">
-            </OBJECT>
-    </UL>
-    <LI> <OBJECT type="text/sitemap">
-        <param name="Name" value="Settings">
-        <param name="Local" value="settings.html">
-        </OBJECT>
-    <UL>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="General page">
-            <param name="Local" value="Settings\general.html">
-            </OBJECT>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="URLs page">
-            <param name="Local" value="Settings\urls.html">
-            </OBJECT>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="Defects page">
-            <param name="Local" value="Settings\defects.html">
-            </OBJECT>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="Format page">
-            <param name="Local" value="Settings\format.html">
-            </OBJECT>
-        <LI> <OBJECT type="text/sitemap">
-            <param name="Name" value="SoftTest page">
-            <param name="Local" value="Settings\softtest.html">
-            </OBJECT>
-    </UL>
-    <LI> <OBJECT type="text/sitemap">
-        <param name="Name" value="Credits">
-        <param name="Local" value="credits.html">
-        </OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Introduction">
+		<param name="Local" value="introduction.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="What's new?">
+		<param name="Local" value="whats_new.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Main features">
+		<param name="Local" value="mainfeatures.html">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Opening TMS tasks">
+			<param name="Local" value="Features\opentasks.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Opening SoftTest defects">
+			<param name="Local" value="Features\opendefects.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Opening links">
+			<param name="Local" value="Features\openlinks.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Command line interface">
+			<param name="Local" value="Features\commandline.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="System tray menu">
+			<param name="Local" value="Features\systraymenu.html">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Settings">
+		<param name="Local" value="settings.html">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="General page">
+			<param name="Local" value="Settings\general.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="URLs page">
+			<param name="Local" value="Settings\urls.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Defects page">
+			<param name="Local" value="Settings\defects.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Format page">
+			<param name="Local" value="Settings\format.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="SoftTest page">
+			<param name="Local" value="Settings\softtest.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="History page">
+			<param name="Local" value="Settings\history.html">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Credits">
+		<param name="Local" value="credits.html">
+		</OBJECT>
 </UL>
 </BODY></HTML>

@@ -13,7 +13,7 @@
 #include "CmdLine.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.20 $$Date: 2006/03/15 16:19:24Z $"; 
+ static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.21 $$Date: 2006/08/22 13:01:52Z $"; 
 #endif
 
 /* 
@@ -34,7 +34,7 @@ const char* AutoRunKeyName = "TMS Launcher";
 const UINT WM_TMS_LAUNCHER_ACTIVATE = ::RegisterWindowMessage("TMS_Launcher_Activate");
 CSettings Settings("Software\\Winchester\\TMS Launcher",
                    "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-                   AutoRunKeyName, "Defects", "Format", "Links", "SoftTest");
+                   AutoRunKeyName, "Defects", "Format", "Links", "SoftTest", "History");
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
                     const char* StringName = "ProductVersion", UINT VersionDigits = 2);
 
@@ -99,6 +99,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         Settings.SaveDefectsSettings();
         Settings.SaveLinksSettings();
         Settings.SaveSoftTestSettings();
+        Settings.SaveHistorySettings();
     }
 
     if (lstrlen(lpstrCmdLine) != 0)

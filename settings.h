@@ -3,14 +3,14 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: January 17, 2006
+    Date of last modification: August 30, 2006
 */
 
 #ifndef SETTINGS_H_INCLUDED
 #define SETTINGS_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.22 $$Date: 2006/05/29 14:15:32Z $";
+ static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.24 $$Date: 2006/08/30 14:25:40Z $";
 #endif
 
 #include "resource.h"
@@ -104,9 +104,11 @@ public:
     int MaxPossibleHistory;
     std::vector<link>links;
     std::vector<defect> defects;
+    std::vector<CString> History;
     // Task name format: [%CLIENT%-]%ID%[-%EXT%]
     CString Separators;
     CString TasksSeparators;
+    bool FillID;
     int MinClientName;
     int MaxClientName;
     int MinIDName;
@@ -129,7 +131,8 @@ public:
     CString ParentDefectFilter;  // contents of TMS Launcher's filter for SoftTest for parent defect
     const CString& GetSoftTestCommandLine(const char *Project);
     CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
-              const char* DefectsSubKeyName, const char* TasksSubKeyName, const char* LinksSubKeyName, const char* SoftTestSubKeyName);
+              const char* DefectsSubKeyName, const char* TasksSubKeyName, const char* LinksSubKeyName,
+              const char* SoftTestSubKeyName, const char* HistorySubKeyName);
     void LoadSettings();
     void ImportSettings(LPCTSTR lpSubKey);
     void SaveGeneralSettings(bool AfterImporting = false);
@@ -137,6 +140,7 @@ public:
     void SaveDefectsSettings();
     void SaveLinksSettings();
     void SaveSoftTestSettings();
+    void SaveHistorySettings();
     bool SettingsAvailable();
     int RemoveUnacceptableSeparators(CString &String);
     int RemoveDuplicateSeparators(CString &String);
@@ -152,6 +156,7 @@ protected:
     CString FormatSubKey;
     CString LinksSubKey;
     CString SoftTestSubKey;
+    CString HistorySubKey;
     CString AutoRunRegistryKey;
     CString AutoRunValueName;
     CString SoftTestCommandLine; // command line that used to launch SoftTest
