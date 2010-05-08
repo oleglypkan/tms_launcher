@@ -3,7 +3,6 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: November 28, 2006
 */
 
 // Several pages should be created as dialogs templates with IDs == IDDs from pages classes.
@@ -37,12 +36,21 @@
 #include "htmlhelp.h"
 #include "controls.h"
 
+#ifdef _DEBUG
+#include <crtdbg.h>
+#include <stdlib.h>
+#define _CRTDBG_MAP_ALLOC 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+#endif
+
 extern CSettings Settings;
 extern CString szWinName;
 extern UINT LINK_MAX;
 const int max_value_length = 2;
 const char *HelpFileName = "TMS_Launcher.chm";
 
+bool isalpha_cp1251(char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
 
 //////////////////////////// General options page //////////////////////
@@ -56,13 +64,14 @@ public:
     int RightClickAction2;
     bool SingleClick;
     CEdit PathToBrowser;
+    CString sBrowser;
+    bool sCheckMark;
 
     BEGIN_MSG_MAP(GeneralPage)
         MSG_WM_INITDIALOG(OnInitDialog)
         COMMAND_ID_HANDLER_EX(IDC_BROWSE,OnBrowse)
         COMMAND_ID_HANDLER_EX(IDC_SINGLE_CLICK,OnCheckBoxClick)
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelChanged)
-
     END_MSG_MAP()
 
     // called once when options dialog is opened
@@ -78,8 +87,9 @@ public:
 
         RightClickCombo.Attach(GetDlgItem(IDC_RIGHT_CLICK));
         RightClickCombo.AddString("View Task");
-        RightClickCombo.AddString("View Child Task");
+        RightClickCombo.AddString("View Child Tasks");
         RightClickCombo.AddString("View Parent Task");
+        RightClickCombo.AddString("View Related Tasks");
 
         switch (Settings.TaskNameControlType)
         {
@@ -106,6 +116,8 @@ public:
             if (Settings.SingleClick) SendDlgItemMessage(IDC_SINGLE_CLICK,BM_SETCHECK,BST_CHECKED,0);
         }
         if (Settings.DefaultBrowser) SendDlgItemMessage(IDC_DEFAULT_BROWSER,BM_SETCHECK,BST_CHECKED,0);
+        sCheckMark = Settings.DefaultBrowser;
+        sBrowser = Settings.BrowserPath;
         PathToBrowser.Attach(GetDlgItem(IDC_BROWSER_PATH));
         PathToBrowser.LimitText(MAX_PATH);
         PathToBrowser.SetWindowText(Settings.BrowserPath);
@@ -150,7 +162,7 @@ public:
                     case 1: // ComboBox control
                         SendDlgItemMessage(IDC_SINGLE_CLICK,BM_SETCHECK,BST_UNCHECKED,0);
                         ::EnableWindow(GetDlgItem(IDC_SINGLE_CLICK),FALSE);
-                        RightClickCombo.DeleteString(3);
+                        RightClickCombo.DeleteString(4);
                         RightClickCombo.SetCurSel(RightClickAction2);
                         break;
                 }
@@ -172,6 +184,9 @@ public:
     // called every time when the page is deactivated
     bool OnKillActive(COptionItem *pItem)
     {
+        sCheckMark = (SendDlgItemMessage(IDC_DEFAULT_BROWSER,BM_GETCHECK,0,0)==BST_CHECKED);
+        PathToBrowser.GetWindowText(sBrowser.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        sBrowser.ReleaseBuffer();
         return true;
     }
 
@@ -274,7 +289,7 @@ public:
         CString temp;
         CEdit EditControl;
         EditControl.Attach(GetDlgItem(ControlID));
-        EditControl.GetWindowText(temp.GetBuffer(max_value_length),max_value_length+1);
+        EditControl.GetWindowText(temp.GetBuffer(max_value_length+1),max_value_length+1);
         temp.ReleaseBuffer();
         int i=0;
         while (i<temp.GetLength())
@@ -296,23 +311,23 @@ public:
     {
         CString temp;
         // %CLIENT%
-        sMaxClientName.GetWindowText(temp.GetBuffer(max_value_length),max_value_length+1);
+        sMaxClientName.GetWindowText(temp.GetBuffer(max_value_length+1),max_value_length+1);
         temp.ReleaseBuffer();
         Settings.MaxClientName = atoi(temp);
         // %ID%
-        sMaxIDName.GetWindowText(temp.GetBuffer(max_value_length),max_value_length+1);
+        sMaxIDName.GetWindowText(temp.GetBuffer(max_value_length+1),max_value_length+1);
         temp.ReleaseBuffer();
         Settings.MaxIDName = atoi(temp);
         // %EXT%
-        sMaxExtName.GetWindowText(temp.GetBuffer(max_value_length),max_value_length+1);
+        sMaxExtName.GetWindowText(temp.GetBuffer(max_value_length+1),max_value_length+1);
         temp.ReleaseBuffer();
         Settings.MaxExt = atoi(temp);
 
-        sSeparators.GetWindowText(temp.GetBuffer(255),255+1);
+        sSeparators.GetWindowText(temp.GetBuffer(256),256);
         temp.ReleaseBuffer();
         Settings.RemoveDuplicateSeparators(temp);
         Settings.Separators = temp;
-        sTasksSeparators.GetWindowText(temp.GetBuffer(255),255+1);
+        sTasksSeparators.GetWindowText(temp.GetBuffer(256),256);
         temp.ReleaseBuffer();
         Settings.RemoveDuplicateSeparators(temp);
         Settings.TasksSeparators = temp;
@@ -333,46 +348,46 @@ public:
         int max_value;
 
         // %CLIENT%
-        sMaxClientName.GetWindowText(temp.GetBuffer(max_value_length),max_value_length+1);
+        sMaxClientName.GetWindowText(temp.GetBuffer(max_value_length+1),max_value_length+1);
         temp.ReleaseBuffer();
         max_value = atoi(temp);
         if (max_value < Settings.MinClientName)
         {
-            MessageBox("Maximum %CLIENT% length cannot be less than minimum one.\nPlease enter correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"Maximum %CLIENT% length cannot be less than minimum one.\nPlease enter correct value",szWinName,MB_ICONERROR);
             return false;
         }
         // %ID%
-        sMaxIDName.GetWindowText(temp.GetBuffer(max_value_length),max_value_length+1);
+        sMaxIDName.GetWindowText(temp.GetBuffer(max_value_length+1),max_value_length+1);
         temp.ReleaseBuffer();
         max_value = atoi(temp);
         if (max_value < Settings.MinIDName)
         {
-            MessageBox("Maximum %ID% length cannot be less than minimum one.\nPlease enter correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"Maximum %ID% length cannot be less than minimum one.\nPlease enter correct value",szWinName,MB_ICONERROR);
             return false;
         }
         // %EXT%
-        sMaxExtName.GetWindowText(temp.GetBuffer(max_value_length),max_value_length+1);
+        sMaxExtName.GetWindowText(temp.GetBuffer(max_value_length+1),max_value_length+1);
         temp.ReleaseBuffer();
         max_value = atoi(temp);
         if (max_value < Settings.MinExt)
         {
-            MessageBox("Maximum %EXT% length cannot be less than minimum one.\nPlease enter correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"Maximum %EXT% length cannot be less than minimum one.\nPlease enter correct value",szWinName,MB_ICONERROR);
             return false;
         }
 
         // checking for "Separators" and "TasksSeparators" fields are filled correctly
-        sSeparators.GetWindowText(temp.GetBuffer(255),255+1);
+        sSeparators.GetWindowText(temp.GetBuffer(256),256);
         temp.ReleaseBuffer();
         if (temp.IsEmpty())
         {
-            MessageBox("\"Separators\" field must not be empty.\nPlease enter correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"\"Separators\" field must not be empty.\nPlease enter correct value",szWinName,MB_ICONERROR);
             return false;
         }
         for (int i=0; i<temp.GetLength(); i++)
         {
-            if (isalnum(temp[i]))
+            if (((unsigned char)(temp[i]) == '_') || (isalpha_cp1251((unsigned char)(temp[i]))) || (isdigit((unsigned char)(temp[i]))))
             {
-                if (MessageBox("\"Separators\" field has character(s) that cannot be used as separators.\nWould you like the character(s) to be removed automatically?",szWinName,MB_YESNO|MB_ICONERROR)==IDYES)
+                if (MyMessageBox(m_hWnd,"\"Separators\" field has character(s) that cannot be used as separators.\nWould you like the character(s) to be removed automatically?",szWinName,MB_YESNO|MB_ICONERROR)==IDYES)
                 {
                     Settings.RemoveUnacceptableSeparators(temp);
                     sSeparators.SetWindowText(temp);
@@ -381,18 +396,18 @@ public:
             }
         }
 
-        sTasksSeparators.GetWindowText(temp2.GetBuffer(255),255+1);
+        sTasksSeparators.GetWindowText(temp2.GetBuffer(256),256);
         temp2.ReleaseBuffer();
         if (temp2.IsEmpty())
         {
-            MessageBox("\"Tasks separators\" field must not be empty.\nPlease enter correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"\"Tasks separators\" field must not be empty.\nPlease enter correct value",szWinName,MB_ICONERROR);
             return false;
         }
         for (i=0; i<temp2.GetLength(); i++)
         {
-            if (isalnum(temp2[i]))
+            if (((unsigned char)(temp2[i]) == '_') || (isalpha_cp1251((unsigned char)(temp2[i]))) || (isdigit((unsigned char)(temp2[i]))))
             {
-                if (MessageBox("\"Tasks separators\" field has character(s) that cannot be used as separators.\nWould you like the character(s) to be removed automatically?",szWinName,MB_YESNO|MB_ICONERROR)==IDYES)
+                if (MyMessageBox(m_hWnd,"\"Tasks separators\" field has character(s) that cannot be used as separators.\nWould you like the character(s) to be removed automatically?",szWinName,MB_YESNO|MB_ICONERROR)==IDYES)
                 {
                     Settings.RemoveUnacceptableSeparators(temp2);
                     sTasksSeparators.SetWindowText(temp2);
@@ -405,14 +420,14 @@ public:
         {
             CString Message;
             Message.Format("Character '%c' is entered to both \"Separators\" and \"Tasks separators\" fields.\nPlease remove it from one of the fields",temp[pos]);
-            MessageBox(Message,szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,Message,szWinName,MB_ICONERROR);
             return false;
         }
         if (Settings.CorrectCRLF(temp,temp2)) // correction was done
         {
             sSeparators.SetWindowText(temp);
             sTasksSeparators.SetWindowText(temp2);
-            MessageBox("Characters 'CR' and 'LF' should be used simultaneously as a separator.\nNecessary corrections have been made to the settings",szWinName,MB_ICONINFORMATION);
+            MyMessageBox(m_hWnd,"Characters 'CR' and 'LF' should be used simultaneously as a separator.\nNecessary corrections have been made to the settings",szWinName,MB_ICONINFORMATION);
         }
         return true;
     }
@@ -430,21 +445,39 @@ public:
     link URL;
     int MaxStringLength;
     std::vector<link> *Links;
+    UINT *HotKey;
+    UINT WinKey;
+    bool IE;
+    bool use_iexplore;
 
     CEdit CaptionEdit;
     CEdit TaskURL;
     CEdit ChildTasksURL;
+    CEdit RelatedTasksURL;
     CEdit Login;
     CEdit Password;
     CWindow TaskHotkey;
     CWindow ChildTasksHotkey;
     CWindow ParentTaskHotkey;
+    CWindow RelatedTasksHotkey;
 
-    URLEditPage(int action, link url, std::vector<link> *links):URL(url)
+    URLEditPage(int action, link url, std::vector<link> *links, UINT *ForbiddenHotkey, UINT *uWinKey, bool use_DEF, bool use_IE):URL(url)
     {
         Action = action;
         Links = links;
         MaxStringLength = 255;
+        HotKey = NULL;
+        if (ForbiddenHotkey != NULL)
+        {
+            HotKey = ForbiddenHotkey;
+        }
+        WinKey = 0;
+        if (uWinKey != NULL)
+        {
+            WinKey = *uWinKey;
+        }
+        IE = use_DEF;
+        use_iexplore = use_IE;
     }
 
     BEGIN_MSG_MAP(URLEditPage)
@@ -462,6 +495,8 @@ public:
         TaskURL.LimitText(LINK_MAX);
         ChildTasksURL.Attach(GetDlgItem(IDC_CHILD_TASKS_URL));
         ChildTasksURL.LimitText(LINK_MAX);
+        RelatedTasksURL.Attach(GetDlgItem(IDC_RELATED_TASKS_URL));
+        RelatedTasksURL.LimitText(LINK_MAX);
         Login.Attach(GetDlgItem(IDC_LOGIN));
         Login.LimitText(MaxStringLength);
         Password.Attach(GetDlgItem(IDC_PASSWORD));
@@ -469,15 +504,18 @@ public:
         TaskHotkey.Attach(GetDlgItem(VIEW_TASK_HOTKEY));
         ChildTasksHotkey.Attach(GetDlgItem(VIEW_CHILD_TASKS_HOTKEY));
         ParentTaskHotkey.Attach(GetDlgItem(VIEW_PARENT_TASK_HOTKEY));
+        RelatedTasksHotkey.Attach(GetDlgItem(VIEW_RELATED_TASKS_HOTKEY));
 
         CaptionEdit.SetWindowText(URL.Caption);
         TaskURL.SetWindowText(URL.TaskURL);
         ChildTasksURL.SetWindowText(URL.ChildTasksURL);
+        RelatedTasksURL.SetWindowText(URL.RelatedTasksURL);
         Login.SetWindowText(URL.Login);
         Password.SetWindowText(URL.Password);
         TaskHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewTaskHotKey,0);
         ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewChildTasksHotKey,0);
         ParentTaskHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewParentTaskHotKey,0);
+        RelatedTasksHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewRelatedTasksHotKey,0);
         SendDlgItemMessage(IDC_ST_DEFECTS,BM_SETCHECK,URL.DefectsInSoftTest ? BST_CHECKED : BST_UNCHECKED,0);
 
         switch(Action)
@@ -497,94 +535,212 @@ public:
         return 0;
     }
 
+    bool IExploreDefaultBrowserOnXP()
+    {
+        // checking if Microsoft Internet Explorer is default browser on Windows prior to Vista
+        Registry ClassesRootKey(HKEY_CLASSES_ROOT);
+        bool CLASSES_ROOT_HTTP = false;
+        bool CLASSES_ROOT_HTTPS = false;
+        CString Str = "";
+        if (ClassesRootKey.ReadValue("http\\shell\\open\\command","",REG_SZ,(LPBYTE)Str.GetBuffer(MAX_PATH+1),MAX_PATH+1))
+        {
+            Str.ReleaseBuffer();
+            Str.MakeUpper();
+            if (Str.Find("IEXPLORE") != -1)
+            {
+                CLASSES_ROOT_HTTP = true;
+            }
+        }
+        Str = "";
+        if (ClassesRootKey.ReadValue("https\\shell\\open\\command","",REG_SZ,(LPBYTE)Str.GetBuffer(MAX_PATH+1),MAX_PATH+1))
+        {
+            Str.ReleaseBuffer();
+            Str.MakeUpper();
+            if (Str.Find("IEXPLORE") != -1)
+            {
+                CLASSES_ROOT_HTTPS = true;
+            }
+        }
+        if (CLASSES_ROOT_HTTP && CLASSES_ROOT_HTTPS)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool IExploreDefaultBrowser()
+    {
+        // checking if Microsoft Internet Explorer is default browser
+        if (CMainDlg::OsMajorVer()>=6) // OS is Windows Vista or higher
+        {
+            Registry CurrentUserKey(HKEY_CURRENT_USER);
+            if (!CurrentUserKey.KeyPresent("Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\http\\UserChoice")
+                && !CurrentUserKey.KeyPresent("Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice"))
+            {
+                return IExploreDefaultBrowserOnXP();
+            }
+            bool CURRENT_USER_HTTP = false;
+            bool CURRENT_USER_HTTPS = false;
+            CString Str = "";
+            if (CurrentUserKey.ReadValue("Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\http\\UserChoice","Progid",REG_SZ,(LPBYTE)Str.GetBuffer(MAX_PATH+1),MAX_PATH+1))
+            {
+                Str.ReleaseBuffer();
+                Str.MakeUpper();
+                if (Str.Find("IE.HTTP") != -1)
+                {
+                    CURRENT_USER_HTTP = true;
+                }
+            }
+            Str = "";
+            if (CurrentUserKey.ReadValue("Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice","Progid",REG_SZ,(LPBYTE)Str.GetBuffer(MAX_PATH+1),MAX_PATH+1))
+            {
+                Str.ReleaseBuffer();
+                Str.MakeUpper();
+                if (Str.Find("IE.HTTPS") != -1)
+                {
+                    CURRENT_USER_HTTPS = true;
+                }
+            }
+            if (CURRENT_USER_HTTP && CURRENT_USER_HTTPS)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else // other Operating systems
+        {
+            return IExploreDefaultBrowserOnXP();
+        }
+    }
+
     LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
     {
         if (wID == IDOK)
         {
             // checking for unique and non-empty URLCaption
             CString strURLCaption;
-            CaptionEdit.GetWindowText(strURLCaption.GetBuffer(MaxStringLength),MaxStringLength+1);
+            CaptionEdit.GetWindowText(strURLCaption.GetBuffer(MaxStringLength+1),MaxStringLength+1);
             strURLCaption.ReleaseBuffer();
         
             if (strURLCaption.IsEmpty())
             {
-                MessageBox("\"URL caption\" field must not be empty.\nPlease enter a value in the field",szWinName,MB_ICONERROR);
+                MyMessageBox(m_hWnd,"\"URL caption\" field must not be empty.\nPlease enter a value in the field",szWinName,MB_ICONERROR);
                 return 0;
             }
             if (GetPosByCaption(strURLCaption) != -1) // new caption is not unique
             {
                 if (CompareNoCaseCP1251(URL.Caption,strURLCaption) != 0)
                 {
-                    MessageBox("The value entered in \"URL caption\" field is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"The value entered in \"URL caption\" field is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
                     return 0;
                 }
             }
             // checking for non-empty links
-            CString strTaskURL, strChildTasksURL;
-            TaskURL.GetWindowText(strTaskURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            CString strTaskURL = "", strChildTasksURL = "", strRelatedTasksURL = "";
+            TaskURL.GetWindowText(strTaskURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
             strTaskURL.ReleaseBuffer();
             if (strTaskURL.IsEmpty())
             {
-                MessageBox("URL to view Task cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
+                MyMessageBox(m_hWnd,"URL to view Task cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
                 return 0;
             }
-            ChildTasksURL.GetWindowText(strChildTasksURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            ChildTasksURL.GetWindowText(strChildTasksURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
             strChildTasksURL.ReleaseBuffer();
             if (strChildTasksURL.IsEmpty())
             {
-                MessageBox("URL to view Child Tasks cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
+                MyMessageBox(m_hWnd,"URL to view Child Tasks cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
                 return 0;
             }
+            RelatedTasksURL.GetWindowText(strRelatedTasksURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
+            strRelatedTasksURL.ReleaseBuffer();
+/*
+            if (strRelatedTasksURL.IsEmpty())
+            {
+                MyMessageBox(m_hWnd,"URL to view Related Tasks cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
+                return 0;
+            }
+*/
             // reading login and password
             CString strLogin, strPassword;
-            Login.GetWindowText(strLogin.GetBuffer(MaxStringLength),MaxStringLength+1);
+            Login.GetWindowText(strLogin.GetBuffer(MaxStringLength+1),MaxStringLength+1);
             strLogin.ReleaseBuffer();
-            Password.GetWindowText(strPassword.GetBuffer(MaxStringLength),MaxStringLength+1);
+            Password.GetWindowText(strPassword.GetBuffer(MaxStringLength+1),MaxStringLength+1);
             strPassword.ReleaseBuffer();
             // checking hotkeys
             UINT Hotkey1 = (UINT)TaskHotkey.SendMessage(HKM_GETHOTKEY,0,0);
             UINT Hotkey2 = (UINT)ChildTasksHotkey.SendMessage(HKM_GETHOTKEY,0,0);
             UINT Hotkey3 = (UINT)ParentTaskHotkey.SendMessage(HKM_GETHOTKEY,0,0);
+            UINT Hotkey4 = (UINT)RelatedTasksHotkey.SendMessage(HKM_GETHOTKEY,0,0);
 
-            if ( ((Hotkey1)&&(Hotkey1 == Hotkey2)) || ((Hotkey1)&&(Hotkey1 == Hotkey3)) || ((Hotkey2)&&(Hotkey2 == Hotkey3)))
+            if ( 
+                 ((Hotkey1)&&(Hotkey1 == Hotkey2)) || ((Hotkey1)&&(Hotkey1 == Hotkey3)) || ((Hotkey1)&&(Hotkey1 == Hotkey4)) ||
+                 ((Hotkey2)&&(Hotkey2 == Hotkey3)) || ((Hotkey2)&&(Hotkey2 == Hotkey4)) || ((Hotkey3)&&(Hotkey3 == Hotkey4))
+               )
             {
-                MessageBox("At least two entered hotkeys are the same.\nPlease use different ones.",szWinName,MB_ICONERROR);
+                MyMessageBox(m_hWnd,"At least two entered hotkeys are the same.\nPlease use different ones.",szWinName,MB_ICONERROR);
                 return 0;
             }
-            for (int i=0; i<(*Links).size(); i++)
+            for (unsigned int i=0; i<(*Links).size(); i++)
             {
                 if (CompareNoCaseCP1251(URL.Caption,(*Links)[i].Caption)==0)
                 {
                     continue;
                 }
-                if ((Hotkey1)&&((Hotkey1 == (*Links)[i].ViewTaskHotKey)||
-                   (Hotkey1 == (*Links)[i].ViewChildTasksHotKey)||
-                   (Hotkey1 == (*Links)[i].ViewParentTaskHotKey)))
+                if (!CheckAndReassignHotkey(Hotkey1, 1, i))
                 {
-                    CString message;
-                    message.Format("Hotkey entered in \"HotKey to View Task\" field\nis already used in \"%s\" URL.\nPlease enter another one",(*Links)[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
                     return 0;
                 }
-                if ((Hotkey2)&&((Hotkey2 == (*Links)[i].ViewTaskHotKey)||
-                   (Hotkey2 == (*Links)[i].ViewChildTasksHotKey)||
-                   (Hotkey2 == (*Links)[i].ViewParentTaskHotKey)))
+                if (!CheckAndReassignHotkey(Hotkey2, 2, i))
                 {
-                    CString message;
-                    message.Format("Hotkey entered in \"HotKey to View Child Tasks\" field\nis already used in \"%s\" URL.\nPlease enter another one",(*Links)[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
                     return 0;
                 }
-                if ((Hotkey3)&&((Hotkey3 == (*Links)[i].ViewTaskHotKey)||
-                   (Hotkey3 == (*Links)[i].ViewChildTasksHotKey)||
-                   (Hotkey3 == (*Links)[i].ViewParentTaskHotKey)))
+                if (!CheckAndReassignHotkey(Hotkey3, 3, i))
                 {
-                    CString message;
-                    message.Format("Hotkey entered in \"HotKey to View Parent Task\" field\nis already used in \"%s\" URL.\nPlease enter another one",(*Links)[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
+                    return 0;
+                }
+                if (!CheckAndReassignHotkey(Hotkey4, 4, i))
+                {
                     return 0;
                 }
             }
+            if ((!WinKey) && (HotKey != NULL))
+            {
+                CString message = "";
+                if (Hotkey1 && (Hotkey1 == *HotKey))
+                {
+                    message.Format("Hotkey entered in \"HotKey to View Task\" field\nis already used for fast window activation.\nYou can re-assign entered hotkey to current URL\nor choose another hotkey.\n\nWould you like to re-assign the hotkey?");
+                }
+                if (Hotkey2 && (Hotkey2 == *HotKey))
+                {
+                    message.Format("Hotkey entered in \"HotKey to View Child Tasks\" field\nis already used for fast window activation.\nYou can re-assign entered hotkey to current URL\nor choose another hotkey.\n\nWould you like to re-assign the hotkey?");
+                }
+                if (Hotkey3 && (Hotkey3 == *HotKey))
+                {
+                    message.Format("Hotkey entered in \"HotKey to View Parent Task\" field\nis already used for fast window activation.\nYou can re-assign entered hotkey to current URL\nor choose another hotkey.\n\nWould you like to re-assign the hotkey?");
+                }
+                if (Hotkey4 && (Hotkey4 == *HotKey))
+                {
+                    message.Format("Hotkey entered in \"HotKey to View Related Tasks\" field\nis already used for fast window activation.\nYou can re-assign entered hotkey to current URL\nor choose another hotkey.\n\nWould you like to re-assign the hotkey?");
+                }
+                if (!message.IsEmpty())
+                {
+                    if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO) == IDYES)
+                    {
+                        *HotKey = 0;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+                }
+            }
+
             UINT HotKeyID = 0;
             if (Hotkey1)
             {
@@ -593,7 +749,7 @@ public:
                                HIBYTE(LOWORD(Hotkey1))^5:HIBYTE(LOWORD(Hotkey1)))),
                                LOBYTE(LOWORD(Hotkey1))))
                 {
-                    MessageBox("Hotkey entered in \"HotKey to View Task\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"Hotkey entered in \"HotKey to View Task\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
                     return 0;
                 }
                 UnregisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID);
@@ -606,7 +762,7 @@ public:
                                 HIBYTE(LOWORD(Hotkey2))^5:HIBYTE(LOWORD(Hotkey2)))),
                                 LOBYTE(LOWORD(Hotkey2))))
                 {
-                    MessageBox("Hotkey entered in \"To View Child Tasks\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"Hotkey entered in \"To View Child Tasks\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
                     return 0;
                 }
                 UnregisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID);
@@ -619,7 +775,20 @@ public:
                                HIBYTE(LOWORD(Hotkey3))^5:HIBYTE(LOWORD(Hotkey3)))),
                                LOBYTE(LOWORD(Hotkey3))))
                 {
-                    MessageBox("Hotkey entered in \"To View Parent Task\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"Hotkey entered in \"To View Parent Task\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+                UnregisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID);
+            }
+            HotKeyID++;
+            if (Hotkey4)
+            {
+                if (!RegisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID,(!(Hotkey4&0x500)?
+                               HIBYTE(LOWORD(Hotkey4)):((Hotkey4&0x500)<0x500?
+                               HIBYTE(LOWORD(Hotkey4))^5:HIBYTE(LOWORD(Hotkey4)))),
+                               LOBYTE(LOWORD(Hotkey4))))
+                {
+                    MyMessageBox(m_hWnd,"Hotkey entered in \"To View Related Tasks\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
                     return 0;
                 }
                 UnregisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID);
@@ -628,20 +797,131 @@ public:
             URL.Caption = strURLCaption;
             URL.TaskURL = strTaskURL;
             URL.ChildTasksURL = strChildTasksURL;
+            URL.RelatedTasksURL = strRelatedTasksURL;
             URL.Login = strLogin;
             URL.Password = strPassword;
             URL.ViewTaskHotKey = Hotkey1;
             URL.ViewChildTasksHotKey = Hotkey2;
             URL.ViewParentTaskHotKey = Hotkey3;
+            URL.ViewRelatedTasksHotKey = Hotkey4;
             URL.DefectsInSoftTest = (SendDlgItemMessage(IDC_ST_DEFECTS,BM_GETCHECK,0,0) == BST_CHECKED);
+             // enabling FEATURE_HTTP_USERNAME_PASSWORD_DISABLE if needed
+            if (!URL.Login.IsEmpty() && !URL.Password.IsEmpty())
+            {
+                if ((IExploreDefaultBrowser() && IE) || use_iexplore) // (Internet Explorer is default browser AND it is used to open tasks) OR Internet Explorer is used although it is not default
+                {
+                    // checking if FEATURE_HTTP_USERNAME_PASSWORD_DISABLE is disabled 
+                    DWORD iexplore = 1; // assume that it is disabled
+                    DWORD iexplore2 = 1; // assume that it is disabled
+                    DWORD DWordSize = sizeof(DWORD);
+                    Registry HTTP_USERNAME2(HKEY_CURRENT_USER);
+                    bool r = HTTP_USERNAME2.ReadValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
+                                             "iexplore.exe",REG_DWORD,(LPBYTE)&iexplore2,DWordSize);
+                    if (iexplore2 == 1) // either key is absent or "iexplore.exe" is equal to 1
+                    {
+                        DWordSize = sizeof(DWORD);
+                        Registry HTTP_USERNAME(HKEY_LOCAL_MACHINE);
+                        HTTP_USERNAME.ReadValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
+                                                "iexplore.exe",REG_DWORD,(LPBYTE)&iexplore,DWordSize);
+                        if ((iexplore == 1) || ((iexplore == 0) && r)) // either key is absent or "iexplore.exe" is equal to 1
+                        {
+                            if (MyMessageBox(m_hWnd,"You have entered login and password to automatically login to the site,\nhowever, autologin feature is currently disabled for your browser.\n\nWould you like to enable autologin feature?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+                            {
+                                DWORD buf = 0;
+                                HTTP_USERNAME2.AddValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
+                                                       "iexplore.exe",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
+                                HTTP_USERNAME2.AddValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
+                                                       "explorer.exe",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
+                            }
+                        }
+                    }
+                }
+            }
         }
         EndDialog(wID);
         return 0;
     }
 
+    // checks if HotkeyToCheck entered to HotkeyField of current URL is already used in another URL
+    // re-assigns the hotkey to current URL by user's request
+    // HotkeyField: 1 - ViewTaskHotKey, 2 - ViewChildTasksHotKey, 3 - ViewParentTaskHotKey, 4 - ViewRelatedTasksHotKey
+    // returns "false" if HotkeyToCheck is already used in another URL and user canceled re-assignment, otherwise returns "true"
+    bool CheckAndReassignHotkey(const UINT HotkeyToCheck, const int HotkeyField, const unsigned int URLindex)
+    {
+        CString message = "";
+        CString sHotkeyField = "";
+        switch (HotkeyField)
+        {
+            case 1: // ViewTaskHotKey
+                sHotkeyField = "HotKey to View Task";
+                break;
+            case 2: // ViewChildTasksHotKey
+                sHotkeyField = "HotKey to View Child Tasks";
+                break;
+            case 3: // ViewParentTaskHotKey
+                sHotkeyField = "HotKey to View Parent Task";
+                break;
+            case 4: // ViewRelatedTasksHotKey
+                sHotkeyField = "HotKey to View Related Tasks";
+                break;
+        }
+        if (HotkeyToCheck)
+        {
+            if (HotkeyToCheck == (*Links)[URLindex].ViewTaskHotKey)
+            {
+                message.Format("Hotkey entered in \"%s\" field is already used\nin \"%s\" URL as \"HotKey to View Task\".\nYou can re-assign entered hotkey to current URL or choose\nanother hotkey.\n\nWould you like to re-assign the hotkey?",sHotkeyField,(*Links)[URLindex].Caption);
+                if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO)==IDYES)
+                {
+                    (*Links)[URLindex].ViewTaskHotKey = 0;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            if (HotkeyToCheck == (*Links)[URLindex].ViewChildTasksHotKey)
+            {
+                message.Format("Hotkey entered in \"%s\" field is already used\nin \"%s\" URL as \"HotKey to View Child Tasks\".\nYou can re-assign entered hotkey to current URL or choose\nanother hotkey.\n\nWould you like to re-assign the hotkey?",sHotkeyField,(*Links)[URLindex].Caption);
+                if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO)==IDYES)
+                {
+                    (*Links)[URLindex].ViewChildTasksHotKey = 0;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            if (HotkeyToCheck == (*Links)[URLindex].ViewParentTaskHotKey)
+            {
+                message.Format("Hotkey entered in \"%s\" field is already used\nin \"%s\" URL as \"HotKey to View Parent Task\".\nYou can re-assign entered hotkey to current URL or choose\nanother hotkey.\n\nWould you like to re-assign the hotkey?",sHotkeyField,(*Links)[URLindex].Caption);
+                if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO)==IDYES)
+                {
+                    (*Links)[URLindex].ViewParentTaskHotKey = 0;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            if (HotkeyToCheck == (*Links)[URLindex].ViewRelatedTasksHotKey)
+            {
+                message.Format("Hotkey entered in \"%s\" field is already used\nin \"%s\" URL as \"HotKey to View Related Tasks\".\nYou can re-assign entered hotkey to current URL or choose\nanother hotkey.\n\nWould you like to re-assign the hotkey?",sHotkeyField,(*Links)[URLindex].Caption);
+                if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO)==IDYES)
+                {
+                    (*Links)[URLindex].ViewRelatedTasksHotKey = 0;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     int GetPosByCaption(const char *caption)
     {
-        for (int i=0; i<(*Links).size(); i++)
+        for (unsigned int i=0; i<(*Links).size(); i++)
         {
             if (CompareNoCaseCP1251((*Links)[i].Caption,caption)==0)
             {
@@ -663,6 +943,10 @@ public:
     CButton CopyButton;
     CButton DeleteButton;
     std::vector<link> temp_links;
+    UINT *ForbiddenHotkey;
+    UINT *uWinKey;
+    CString *Browser;
+    bool *CheckMark;
 
     BEGIN_MSG_MAP(URLsPage)
         MSG_WM_INITDIALOG(OnInitDialog)
@@ -675,9 +959,17 @@ public:
         REFLECT_NOTIFICATIONS()
     END_MSG_MAP()
 
+    URLsPage()
+    {
+        ForbiddenHotkey = NULL;
+        uWinKey = NULL;
+        Browser = NULL;
+        CheckMark = NULL;
+    }
+
     int GetPosByCaption(const char *caption)
     {
-        for (int i=0; i<temp_links.size(); i++)
+        for (unsigned int i=0; i<temp_links.size(); i++)
         {
             if (CompareNoCaseCP1251(temp_links[i].Caption,caption)==0)
             {
@@ -700,8 +992,10 @@ public:
 
         UINT HotkeyID = 0;
         int Default = 0;
-        for (int i=0; i<Settings.links.size(); i++)
+        for (unsigned int i=0; i<Settings.links.size(); i++)
         {
+            UnregisterHotKey(::GetParent(GetParent()),HotkeyID);
+            HotkeyID++;
             UnregisterHotKey(::GetParent(GetParent()),HotkeyID);
             HotkeyID++;
             UnregisterHotKey(::GetParent(GetParent()),HotkeyID);
@@ -732,7 +1026,7 @@ public:
         {
             return;
         }
-        for (int i=0; i<temp_links.size(); i++)
+        for (unsigned int i=0; i<temp_links.size(); i++)
         {
             if (i == position)
             {
@@ -748,7 +1042,18 @@ public:
     void OnNewLink(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
         int position, realpos;
-        URLEditPage URLEditDlg(0,link("","","",0,0,0,false,"","",false),&temp_links);
+        CString tmp = "";
+        bool check = false;
+        if (CheckMark != NULL)
+        {
+            check = *CheckMark;
+        }
+        if (Browser != NULL)
+        {
+            tmp = *Browser;
+            tmp.MakeUpper();
+        }
+        URLEditPage URLEditDlg(0,link("","","","",0,0,0,0,false,"","",false),&temp_links,ForbiddenHotkey,uWinKey,(check || tmp.IsEmpty()), (tmp.Find("IEXPLORE")!=-1));
 
         if ((wID == IDC_LINK_COPY) || (wID == IDC_LINK_EDIT))
         {
@@ -810,10 +1115,10 @@ public:
     {
         if (URLsList.GetCount()==1)
         {
-            MessageBox("At least one record should stay in the list.\nIt cannot be deleted",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"At least one record should stay in the list.\nIt cannot be deleted",szWinName,MB_ICONERROR);
             return;
         }
-        if (MessageBox("Are you sure you want to delete selected record?",szWinName,MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES)
+        if (MyMessageBox(m_hWnd,"Are you sure you want to delete selected record?",szWinName,MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES)
         {
             return;
         }
@@ -839,7 +1144,7 @@ public:
         {
             URLsList.GetText(0,SelectedItem);
             temp_links[GetPosByCaption(SelectedItem)].Default = true;
-            MessageBox("You have just deleted the default record.\nThe first record will be marked as default",szWinName,MB_ICONINFORMATION);
+            MyMessageBox(m_hWnd,"You have just deleted the default record.\nThe first record will be marked as default",szWinName,MB_ICONINFORMATION);
             DefaultURL.SetCurSel(0);
         }
         URLsList.SetCurSel(0);
@@ -863,7 +1168,7 @@ public:
         DefaultURL.ResetContent();
         Settings.links.clear();
         UINT HotkeyID = 0;
-        for (int i=0; i<temp_links.size(); i++)
+        for (unsigned int i=0; i<temp_links.size(); i++)
         {
             Settings.links.push_back(temp_links[i]);
             UINT HotKey = Settings.links[i].ViewTaskHotKey;
@@ -877,7 +1182,7 @@ public:
                     CString message;
                     message.Format("Hotkey used to View Task in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
                                    Settings.links[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,message,szWinName,MB_ICONERROR);
                 }
             }
             HotkeyID++;
@@ -892,7 +1197,7 @@ public:
                     CString message;
                     message.Format("Hotkey used to View Child Tasks in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
                                    Settings.links[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,message,szWinName,MB_ICONERROR);
                 }
             }
             HotkeyID++;
@@ -907,7 +1212,22 @@ public:
                     CString message;
                     message.Format("Hotkey used to View Parent Task in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
                                    Settings.links[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,message,szWinName,MB_ICONERROR);
+                }
+            }
+            HotkeyID++;
+            HotKey = Settings.links[i].ViewRelatedTasksHotKey;
+            if (HotKey)
+            {
+                if (!RegisterHotKey(::GetParent(GetParent()),HotkeyID,(!(HotKey&0x500)?
+                               HIBYTE(LOWORD(HotKey)):((HotKey&0x500)<0x500?
+                               HIBYTE(LOWORD(HotKey))^5:HIBYTE(LOWORD(HotKey)))),
+                               LOBYTE(LOWORD(HotKey))))
+                {
+                    CString message;
+                    message.Format("Hotkey used to View Related Tasks in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
+                                   Settings.links[i].Caption);
+                    MyMessageBox(m_hWnd,message,szWinName,MB_ICONERROR);
                 }
             }
             HotkeyID++;
@@ -921,7 +1241,7 @@ public:
     void OnCancel()
     {
         UINT HotkeyID = 0;
-        for (int i=0; i<Settings.links.size(); i++)
+        for (unsigned int i=0; i<Settings.links.size(); i++)
         {
             UINT HotKey = Settings.links[i].ViewTaskHotKey;
             if (HotKey)
@@ -934,7 +1254,7 @@ public:
                     CString message;
                     message.Format("Hotkey used to View Task in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
                                    Settings.links[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,message,szWinName,MB_ICONERROR);
                 }
             }
             HotkeyID++;
@@ -949,7 +1269,7 @@ public:
                     CString message;
                     message.Format("Hotkey used to View Child Tasks in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
                                    Settings.links[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,message,szWinName,MB_ICONERROR);
                 }
             }
             HotkeyID++;
@@ -964,7 +1284,22 @@ public:
                     CString message;
                     message.Format("Hotkey used to View Parent Task in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
                                    Settings.links[i].Caption);
-                    MessageBox(message,szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,message,szWinName,MB_ICONERROR);
+                }
+            }
+            HotkeyID++;
+            HotKey = Settings.links[i].ViewRelatedTasksHotKey;
+            if (HotKey)
+            {
+                if (!RegisterHotKey(::GetParent(GetParent()),HotkeyID,(!(HotKey&0x500)?
+                               HIBYTE(LOWORD(HotKey)):((HotKey&0x500)<0x500?
+                               HIBYTE(LOWORD(HotKey))^5:HIBYTE(LOWORD(HotKey)))),
+                               LOBYTE(LOWORD(HotKey))))
+                {
+                    CString message;
+                    message.Format("Hotkey used to View Related Tasks in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
+                                   Settings.links[i].Caption);
+                    MyMessageBox(m_hWnd,message,szWinName,MB_ICONERROR);
                 }
             }
             HotkeyID++;
@@ -989,6 +1324,7 @@ public:
     CEdit Link;
     CEdit ChildLink;
     CEdit ParentLink;
+    CEdit RelatedLink;
 
     DefectEditPage(int action, defect def, std::vector<defect> *defects):DEFECT(def)
     {
@@ -1017,12 +1353,15 @@ public:
         ChildLink.LimitText(LINK_MAX);
         ParentLink.Attach(GetDlgItem(IDC_DEFECTS_LINK3));
         ParentLink.LimitText(LINK_MAX);
+        RelatedLink.Attach(GetDlgItem(IDC_DEFECTS_LINK4));
+        RelatedLink.LimitText(LINK_MAX);
 
         DefectEdit.SetWindowText(DEFECT.ClientID);
         ProjectEdit.SetWindowText(DEFECT.STProject);
         Link.SetWindowText(DEFECT.DefectURL);
         ChildLink.SetWindowText(DEFECT.ChildDefectsURL);
         ParentLink.SetWindowText(DEFECT.ParentDefectURL);
+        RelatedLink.SetWindowText(DEFECT.RelatedDefectsURL);
 
         switch(Action)
         {
@@ -1043,7 +1382,7 @@ public:
 
     int GetPosByCaption(const char *caption)
     {
-        for (int i=0; i<(*Defects).size(); i++)
+        for (unsigned int i=0; i<(*Defects).size(); i++)
         {
             if (CompareNoCaseCP1251((*Defects)[i].ClientID,caption)==0)
             {
@@ -1059,37 +1398,43 @@ public:
         {
             // checking for duplicates and non-empty Project
             CString strDefect, strProject;
-            DefectEdit.GetWindowText(strDefect.GetBuffer(MaxStringLength),MaxStringLength+1);
+            DefectEdit.GetWindowText(strDefect.GetBuffer(MaxStringLength+1),MaxStringLength+1);
             strDefect.ReleaseBuffer();
-            ProjectEdit.GetWindowText(strProject.GetBuffer(MaxStringLength),MaxStringLength+1);
+            ProjectEdit.GetWindowText(strProject.GetBuffer(MaxStringLength+1),MaxStringLength+1);
             strProject.ReleaseBuffer();
         
+            if (!strDefect.IsEmpty() && !TASK::IsClientNameValid(strDefect))
+            {
+                MyMessageBox(m_hWnd,"Client name contains invalid character(s)",szWinName,MB_ICONERROR);
+                return 0;
+            }
             if (GetPosByCaption(strDefect) != -1) // ClientID is not unique
             {
                 if (CompareNoCaseCP1251(DEFECT.ClientID,strDefect) != 0)
                 {
-                    MessageBox("Entered client name is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"Entered client name is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
                     return 0;
                 }
             }
-            if (strDefect.Find(';') != -1)
-            {
-                MessageBox("Symbol \';\' cannot be used as a part of Client name",szWinName,MB_ICONERROR);
-                return 0;
-            }
             if (strProject.IsEmpty())
             {
-                MessageBox("Project field must not be empty.",szWinName,MB_ICONERROR);
+                MyMessageBox(m_hWnd,"Project field must not be empty.",szWinName,MB_ICONERROR);
                 return 0;
             }
-
-            CString DefectURL, ChildDefectsURL, ParentDefectURL;
-            Link.GetWindowText(DefectURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            if (strProject.Find(';') != -1)
+            {
+                MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of Project name",szWinName,MB_ICONERROR);
+                return 0;
+            }
+            CString DefectURL = "", ChildDefectsURL = "", ParentDefectURL = "", RelatedDefectsURL = "";
+            Link.GetWindowText(DefectURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
             DefectURL.ReleaseBuffer();
-            ChildLink.GetWindowText(ChildDefectsURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            ChildLink.GetWindowText(ChildDefectsURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
             ChildDefectsURL.ReleaseBuffer();
-            ParentLink.GetWindowText(ParentDefectURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            ParentLink.GetWindowText(ParentDefectURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
             ParentDefectURL.ReleaseBuffer();
+            RelatedLink.GetWindowText(RelatedDefectsURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
+            RelatedDefectsURL.ReleaseBuffer();
             bool Default = false;
             if (DefectURL.IsEmpty())
             {
@@ -1100,7 +1445,7 @@ public:
             {
                 if (DefectURL.Find(';') != -1)
                 {
-                    MessageBox("Symbol \';\' cannot be used as a part of an URL",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL\nPlease correct \"URL to open defects\"",szWinName,MB_ICONERROR);
                     return 0;
                 }
             }
@@ -1113,7 +1458,7 @@ public:
             {
                 if (ChildDefectsURL.Find(';') != -1)
                 {
-                    MessageBox("Symbol \';\' cannot be used as a part of an URL",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL\nPlease correct \"URL to open child defects\"",szWinName,MB_ICONERROR);
                     return 0;
                 }
             }
@@ -1126,13 +1471,26 @@ public:
             {
                 if (ParentDefectURL.Find(';') != -1)
                 {
-                    MessageBox("Symbol \';\' cannot be used as a part of an URL",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL.\nPlease correct \"URL to open parent defects\"",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (RelatedDefectsURL.IsEmpty())
+            {
+                RelatedDefectsURL = Settings.RelatedDefectsLink;
+                Default = true;
+            }
+            else
+            {
+                if (RelatedDefectsURL.Find(';') != -1)
+                {
+                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL.\nPlease correct \"URL to open related defects\"",szWinName,MB_ICONERROR);
                     return 0;
                 }
             }
             if (Default)
             {
-                MessageBox("Some URLs were not entered. Default values will be used",szWinName,MB_ICONINFORMATION);
+                MyMessageBox(m_hWnd,"Some URLs were not entered. Default values will be used",szWinName,MB_ICONINFORMATION);
             }
 
             DEFECT.ClientID = strDefect;
@@ -1140,6 +1498,7 @@ public:
             DEFECT.DefectURL = DefectURL;
             DEFECT.ChildDefectsURL = ChildDefectsURL;
             DEFECT.ParentDefectURL = ParentDefectURL;
+            DEFECT.RelatedDefectsURL = RelatedDefectsURL;
         }
         EndDialog(wID);
         return 0;
@@ -1212,7 +1571,7 @@ public:
         temp.TrimRight();
         if (temp.IsEmpty())
         {
-            MessageBox("\"Path to SoftTest\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"\"Path to SoftTest\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
             return false;
         }
         // checking for correct SoftTest filter name value
@@ -1221,12 +1580,12 @@ public:
         temp.ReleaseBuffer();
         if (temp.IsEmpty())
         {
-            MessageBox("\"SoftTest filter name\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"\"SoftTest filter name\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
             return false;
         }
         if (temp.Find("%PROJECT%") == -1)
         {
-            MessageBox("%PROJECT% variable must not be removed\nfrom filter name. Please add it to filter name",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"%PROJECT% variable must not be removed\nfrom filter name. Please add it to filter name",szWinName,MB_ICONERROR);
             return false;
         }
         CString login = "";
@@ -1234,7 +1593,7 @@ public:
         login.ReleaseBuffer();
         if (login.IsEmpty())
         {
-            MessageBox("\"Login\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"\"Login\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
             return false;
         }
         CString password = "";
@@ -1242,7 +1601,7 @@ public:
         password.ReleaseBuffer();
         if (password.IsEmpty() && login.Compare("guest")!=0)
         {
-            MessageBox("\"Password\" field must not be empty unless login is \"guest\".\nPlease fill it with correct value",szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,"\"Password\" field must not be empty unless login is \"guest\".\nPlease fill it with correct value",szWinName,MB_ICONERROR);
             return false;
         }
         return true;
@@ -1296,10 +1655,10 @@ public:
 
     void sort_defects()
     {
-        for (int i=0; i<projects.size()-1; i++)
+        for (unsigned int i=0; i<projects.size()-1; i++)
         {
             bool exchange = false;
-            for (int j=1; j<projects.size()-i; j++)
+            for (unsigned int j=1; j<projects.size()-i; j++)
             {
                 if (CompareNoCaseCP1251(projects[j-1].ClientID,projects[j].ClientID)>0)
                 {
@@ -1315,7 +1674,7 @@ public:
 
     int GetPosByCaption(const char *caption)
     {
-        for (int i=0; i<projects.size(); i++)
+        for (unsigned int i=0; i<projects.size(); i++)
         {
             if (CompareNoCaseCP1251(projects[i].ClientID,caption)==0)
             {
@@ -1335,7 +1694,7 @@ public:
 
         DefectsList.Attach(GetDlgItem(IDC_DEFECTS_LIST));
 
-        for (int i=0; i<Settings.defects.size(); i++)
+        for (unsigned int i=0; i<Settings.defects.size(); i++)
         {
             DefectsList.AddString(Settings.defects[i].ClientID);
             projects.push_back(Settings.defects[i]);
@@ -1349,7 +1708,7 @@ public:
     void OnNewDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
         int position, realpos;
-        DefectEditPage DefectEditDlg(0,defect("","","","",""),&projects);
+        DefectEditPage DefectEditDlg(0,defect("","","","","",""),&projects);
 
         if ((wID == IDC_DEFECT_COPY) || (wID == IDC_DEFECT_EDIT))
         {
@@ -1407,7 +1766,7 @@ public:
         {
             DefectsList.GetText(position,SelectedItem);
         }
-        if (MessageBox("Are you sure you want to delete selected record?",szWinName,MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES)
+        if (MyMessageBox(m_hWnd,"Are you sure you want to delete selected record?",szWinName,MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES)
         {
             return;
         }
@@ -1444,7 +1803,7 @@ public:
         sort_defects();
         DefectsList.ResetContent();
         Settings.defects.clear();
-        for (int i=0; i<projects.size(); i++)
+        for (unsigned int i=0; i<projects.size(); i++)
         {
             Settings.defects.push_back(projects[i]);
         }
@@ -1464,18 +1823,26 @@ public:
     enum { IDD = HISTORY_PAGE };
     CComboBox TaskNameCombo;
     CMyListBox HistoryList;
+    CButton ViewButton;
+    CButton CopyButton;
     CButton DeleteButton;
     CButton ClearButton;
 
     BEGIN_MSG_MAP(HistoryPage)
         MSG_WM_INITDIALOG(OnInitDialog)
+        COMMAND_ID_HANDLER_EX(IDC_BUTTON_VIEW,OnViewButton)
+        COMMAND_ID_HANDLER_EX(IDC_BUTTON_COPY,OnCopyButton)
         COMMAND_ID_HANDLER_EX(IDC_BUTTON_DELETE,OnItemDelete)
         COMMAND_ID_HANDLER_EX(IDC_BUTTON_CLEAR,OnListClear)
+        COMMAND_CODE_HANDLER_EX(LBN_DBLCLK,OnListNotify)
+        REFLECT_NOTIFICATIONS()
     END_MSG_MAP()
 
     LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
     {
         HistoryList.Attach(GetDlgItem(IDC_HISTORY_LIST));
+        ViewButton.Attach(GetDlgItem(IDC_BUTTON_VIEW));
+        CopyButton.Attach(GetDlgItem(IDC_BUTTON_COPY));
         DeleteButton.Attach(GetDlgItem(IDC_BUTTON_DELETE));
         ClearButton.Attach(GetDlgItem(IDC_BUTTON_CLEAR));
         // copying tasks from Combobox to List
@@ -1488,8 +1855,14 @@ public:
         }
         if (HistoryList.GetCount() == 0)
         {
+            ViewButton.EnableWindow(false);
+            CopyButton.EnableWindow(false);
             DeleteButton.EnableWindow(false);
             ClearButton.EnableWindow(false);
+        }
+        else
+        {
+            HistoryList.SetSel(0);
         }
         // set minimum and maximum positions of spin button
         SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETRANGE,0,
@@ -1540,26 +1913,395 @@ public:
 
     // called every time when whole sheet is closed by clicking on Cancel button
     void OnCancel() {}
+ 
+    void OnViewButton(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        if (FillHistoryTasks() && (Settings.MainDialog != NULL))
+        {
+            Settings.MainDialog->OnViewTask(0,IDC_BUTTON_VIEW,0);
+        }
+    }
+
+    void OnListNotify(UINT code, int ControlID, HWND ControlHandle)
+    {
+        if ((code == LBN_DBLCLK) && (ControlID == IDC_HISTORY_LIST))
+        {
+            if (FillHistoryTasks() && (Settings.MainDialog != NULL))
+            {
+                Settings.MainDialog->OnViewTask(0,IDC_BUTTON_VIEW,0);
+            }
+        }
+    }
+
+    bool FillHistoryTasks()
+    {
+        std::vector<CString> SelItems;
+        bool res = HistoryList.GetSelectedItems(SelItems);
+        if (res)
+        {
+            Settings.HistoryTasks = "";
+            for (unsigned int i = 0; i < SelItems.size(); i++)
+            {
+                Settings.HistoryTasks += SelItems[i] + Settings.TasksSeparators[0];
+            }
+            if (!Settings.HistoryTasks.IsEmpty())
+            {
+                Settings.HistoryTasks.Delete(Settings.HistoryTasks.GetLength()-1, 1);
+            }
+        }
+        return res;
+    }
+
+    void OnCopyButton(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        if (!FillHistoryTasks())
+        {
+            return;
+        }
+        Settings.HistoryTasks.Replace((CString)Settings.TasksSeparators[0], "\r\n");
+        if (!::OpenClipboard(m_hWnd)) return;
+        if (!::EmptyClipboard())
+        {
+            CloseClipboard();
+            return;
+        }
+        HGLOBAL hglb = GlobalAlloc(GMEM_MOVEABLE,Settings.HistoryTasks.GetLength()+1);
+        if (hglb == NULL)
+        {
+            CloseClipboard();
+            return;
+        }
+        LPTSTR lptstr = (LPTSTR)GlobalLock(hglb); 
+        memcpy(lptstr,Settings.HistoryTasks.GetBuffer(Settings.HistoryTasks.GetLength()),Settings.HistoryTasks.GetLength());
+        lptstr[Settings.HistoryTasks.GetLength()] = '\0';
+        Settings.HistoryTasks.ReleaseBuffer();
+        GlobalUnlock(hglb);
+        SetClipboardData(CF_TEXT, hglb);
+        CloseClipboard();
+    }
 
     void OnItemDelete(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
-        HistoryList.DeleteSelItems();
+        HistoryList.DeleteSelectedItems();
         if (HistoryList.GetCount() == 0)
         {
+            ViewButton.EnableWindow(false);
+            CopyButton.EnableWindow(false);
             DeleteButton.EnableWindow(false);
             ClearButton.EnableWindow(false);
+        }
+        else
+        {
+            HistoryList.SetSel(0);
         }
     }
 
     void OnListClear(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
-        if (MessageBox("Are you sure you want to clear the whole list?",
+        if (MyMessageBox(m_hWnd,"Are you sure you want to clear the whole list?",
                        szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
         {
             HistoryList.ResetContent();
+            ViewButton.EnableWindow(false);
+            CopyButton.EnableWindow(false);
             DeleteButton.EnableWindow(false);
             ClearButton.EnableWindow(false);
         }
+    }
+};
+
+//////////////////////////// Other options page //////////////////////
+class OtherPage : public Mortimer::COptionPageImpl<OtherPage,CPropPage>
+{
+public:
+    enum { IDD = OTHER_PAGE };
+    CTrackBarCtrl InactiveTrackBar;
+    CTrackBarCtrl ActiveTrackBar;
+    CStatic InactivePercentage;
+    CStatic ActivePercentage;
+    std::vector<link> *Links;
+    UINT HotKey, WinKey;
+    bool Highlight;
+
+    BEGIN_MSG_MAP(OtherPage)
+        MSG_WM_INITDIALOG(OnInitDialog)
+        MSG_WM_HSCROLL(OnSliderMove)
+        COMMAND_ID_HANDLER_EX(IDC_ENABLE_OPACITY,OnCheckBoxClick)
+        COMMAND_ID_HANDLER_EX(IDC_SETFOCUS,OnCheckBoxClick)
+        COMMAND_ID_HANDLER_EX(IDC_HIGHLIGHT,OnCheckBoxClick)
+    END_MSG_MAP()
+
+    OtherPage()
+    {
+        Links = NULL;
+        HotKey = Settings.HotKey;
+        WinKey = Settings.WinKey;
+        Highlight = Settings.HighlightTaskName;
+    }
+
+    bool IsHotkeyUsed(UINT Hotkey)
+    {
+        if (Links == NULL)
+        {
+            return false;
+        }
+        for (unsigned int i=0; i<(*Links).size(); i++)
+        {
+            if (Hotkey)
+            {
+                CString message = "";
+                if (Hotkey == (*Links)[i].ViewTaskHotKey)
+                {
+                    message.Format("Hotkey entered for fast window activation is already used\nin \"%s\" URL as \"HotKey to View Task\".\nYou can re-assign entered hotkey for fast window activation\nor choose another hotkey.\n\nWould you like to re-assign the hotkey?",(*Links)[i].Caption);
+                    if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO) == IDYES)
+                    {
+                        (*Links)[i].ViewTaskHotKey = 0;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                if (Hotkey == (*Links)[i].ViewChildTasksHotKey)
+                {
+                    message.Format("Hotkey entered for fast window activation is already used\nin \"%s\" URL as \"HotKey to View Child Tasks\".\nYou can re-assign entered hotkey for fast window activation\nor choose another hotkey.\n\nWould you like to re-assign the hotkey?",(*Links)[i].Caption);
+                    if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO) == IDYES)
+                    {
+                        (*Links)[i].ViewChildTasksHotKey = 0;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                if (Hotkey == (*Links)[i].ViewParentTaskHotKey)
+                {
+                    message.Format("Hotkey entered for fast window activation is already used\nin \"%s\" URL as \"HotKey to View Parent Task\".\nYou can re-assign entered hotkey for fast window activation\nor choose another hotkey.\n\nWould you like to re-assign the hotkey?",(*Links)[i].Caption);
+                    if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO) == IDYES)
+                    {
+                        (*Links)[i].ViewParentTaskHotKey = 0;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                if (Hotkey == (*Links)[i].ViewRelatedTasksHotKey)
+                {
+                    message.Format("Hotkey entered for fast window activation is already used\nin \"%s\" URL as \"HotKey to View Related Tasks\".\nYou can re-assign entered hotkey for fast window activation\nor choose another hotkey.\n\nWould you like to re-assign the hotkey?",(*Links)[i].Caption);
+                    if (MyMessageBox(m_hWnd,message,szWinName,MB_ICONQUESTION|MB_YESNO) == IDYES)
+                    {
+                        (*Links)[i].ViewRelatedTasksHotKey = 0;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    void EnableDisableControls(bool enable)
+    {
+        if (!enable)
+        {
+            ::EnableWindow(GetDlgItem(IDC_INACTIVE_STATIC),FALSE);
+            ::EnableWindow(GetDlgItem(IDC_ACTIVE_STATIC),FALSE);
+            ::EnableWindow(GetDlgItem(IDC_INACTIVE_SLIDER),FALSE);
+            ::EnableWindow(GetDlgItem(IDC_ACTIVE_SLIDER),FALSE);
+            ::EnableWindow(GetDlgItem(IDC_INOP_PER),FALSE);
+            ::EnableWindow(GetDlgItem(IDC_AOP_PER),FALSE);            
+        }
+        else
+        {
+            ::EnableWindow(GetDlgItem(IDC_INACTIVE_STATIC),TRUE);
+            ::EnableWindow(GetDlgItem(IDC_ACTIVE_STATIC),TRUE);
+            ::EnableWindow(GetDlgItem(IDC_INACTIVE_SLIDER),TRUE);
+            ::EnableWindow(GetDlgItem(IDC_ACTIVE_SLIDER),TRUE);
+            ::EnableWindow(GetDlgItem(IDC_INOP_PER),TRUE);
+            ::EnableWindow(GetDlgItem(IDC_AOP_PER),TRUE);            
+        }
+    }
+
+    void OnCheckBoxClick(UINT code, int idFrom, HWND hwndFrom)
+    {
+        switch (idFrom)
+        {
+            case IDC_ENABLE_OPACITY:
+                EnableDisableControls(SendDlgItemMessage(IDC_ENABLE_OPACITY,BM_GETCHECK,0,0) == BST_CHECKED);
+                break;
+            case IDC_SETFOCUS:
+                if (SendDlgItemMessage(IDC_SETFOCUS,BM_GETCHECK,0,0)==BST_CHECKED)
+                {
+                    ::EnableWindow(GetDlgItem(IDC_HIGHLIGHT),TRUE);
+                    SendDlgItemMessage(IDC_HIGHLIGHT,BM_SETCHECK,Highlight ? BST_CHECKED : BST_UNCHECKED,0);
+                }
+                else
+                {
+                    ::EnableWindow(GetDlgItem(IDC_HIGHLIGHT),FALSE);
+                    SendDlgItemMessage(IDC_HIGHLIGHT,BM_SETCHECK,BST_UNCHECKED,0);
+                }
+                break;
+            case IDC_HIGHLIGHT:
+                Highlight = (SendDlgItemMessage(IDC_HIGHLIGHT,BM_GETCHECK,0,0)==BST_CHECKED);
+                break;
+        }
+    }
+
+    LRESULT OnSliderMove(int code, short pos, HWND hwndFrom)
+    {
+        CString str =  "";
+        switch (::GetDlgCtrlID(hwndFrom))
+        {
+            case IDC_INACTIVE_SLIDER:
+                str.Format("%d",InactiveTrackBar.GetPos());
+                str += "%";
+                InactivePercentage.SetWindowText(str);
+                break;
+            case IDC_ACTIVE_SLIDER:
+                str.Format("%d",ActiveTrackBar.GetPos());
+                str += "%";
+                ActivePercentage.SetWindowText(str);
+                break;
+        }
+        return 0;
+    }
+
+    LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
+    {
+        InactiveTrackBar.Attach(GetDlgItem(IDC_INACTIVE_SLIDER));
+        ActiveTrackBar.Attach(GetDlgItem(IDC_ACTIVE_SLIDER));
+        InactivePercentage.Attach(GetDlgItem(IDC_INOP_PER));
+        ActivePercentage.Attach(GetDlgItem(IDC_AOP_PER));
+
+        InactiveTrackBar.SetRange(0, 100, TRUE);
+        InactiveTrackBar.SetPos(Settings.InactiveOpacity);
+        InactiveTrackBar.SetPageSize(10);
+
+        ActiveTrackBar.SetRange(0, 100, TRUE);
+        ActiveTrackBar.SetPos(Settings.ActiveOpacity);
+        ActiveTrackBar.SetPageSize(10);
+
+        CString str =  "";
+        str.Format("%d",Settings.InactiveOpacity);
+        str += "%";
+        InactivePercentage.SetWindowText(str);
+        str.Format("%d",Settings.ActiveOpacity);
+        str += "%";
+        ActivePercentage.SetWindowText(str);
+        
+        if (CMainDlg::OsMajorVer()<5) // OS is lower than Win2000
+        {
+            ::EnableWindow(GetDlgItem(IDC_ENABLE_OPACITY),FALSE);
+            EnableDisableControls(false);
+        }
+        else
+        {
+            if (Settings.EnableOpacity)
+            {
+                SendDlgItemMessage(IDC_ENABLE_OPACITY,BM_SETCHECK,BST_CHECKED,0);
+            }
+            EnableDisableControls(Settings.EnableOpacity);
+        }
+        SendDlgItemMessage(IDC_HOTKEY,HKM_SETHOTKEY,HotKey,0);
+        if (WinKey == MOD_WIN)
+        {
+            SendDlgItemMessage(IDC_WINKEY,BM_SETCHECK,BST_CHECKED,0);
+        }
+        UnregisterHotKey(::GetParent(GetParent()),Settings.GlobalHotkeyID);
+
+        if (Settings.SetFocusToTaskName)
+        {
+            SendDlgItemMessage(IDC_SETFOCUS,BM_SETCHECK,BST_CHECKED,0);
+            if (Highlight)
+            {
+                SendDlgItemMessage(IDC_HIGHLIGHT,BM_SETCHECK,BST_CHECKED,0);
+            }
+        }
+        else
+        {
+            ::EnableWindow(GetDlgItem(IDC_HIGHLIGHT),FALSE);
+        }
+        return 0;
+    }
+
+    // called every time when the page is activated
+    bool OnSetActive(COptionItem *pItem)
+    {
+        SendDlgItemMessage(IDC_HOTKEY,HKM_SETHOTKEY,HotKey,0);
+        return true;
+    }
+
+    // called every time when the page is deactivated
+    bool OnKillActive(COptionItem *pItem)
+    {
+        WinKey = (SendDlgItemMessage(IDC_WINKEY,BM_GETCHECK,0,0)==BST_CHECKED) ? MOD_WIN : 0;
+        HotKey = (UINT)SendDlgItemMessage(IDC_HOTKEY,HKM_GETHOTKEY,0,0);
+        if (HotKey || WinKey)
+        {
+            if (!RegisterHotKey(::GetParent(GetParent()),Settings.GlobalHotkeyID,WinKey|(!(HotKey&0x500)?HIBYTE(LOWORD(HotKey)):
+            ((HotKey&0x500)<0x500?HIBYTE(LOWORD(HotKey))^5:HIBYTE(LOWORD(HotKey)))),LOBYTE(LOWORD(HotKey)))) 
+            {
+                MyMessageBox(m_hWnd,"The hotkey is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
+                return false;
+            }
+            else
+            {
+                UnregisterHotKey(::GetParent(GetParent()),Settings.GlobalHotkeyID);
+            }
+        }
+        if (HotKey && !WinKey)
+        {
+            return !IsHotkeyUsed(HotKey);
+        }
+        return true;
+    }
+
+    // called every time when whole sheet is closed by clicking on Cancel button
+    void OnCancel()
+    {
+        if (Settings.HotKey || Settings.WinKey)
+        {
+            if (!RegisterHotKey(::GetParent(GetParent()),Settings.GlobalHotkeyID,Settings.WinKey|(!(Settings.HotKey&0x500)?HIBYTE(LOWORD(Settings.HotKey)):
+            ((Settings.HotKey&0x500)<0x500?HIBYTE(LOWORD(Settings.HotKey))^5:HIBYTE(LOWORD(Settings.HotKey)))),LOBYTE(LOWORD(Settings.HotKey)))) 
+            {
+                MyMessageBox(m_hWnd,"The hotkey entered on \"Other\" page is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",szWinName,MB_ICONERROR);
+            }
+        }
+     }
+
+    // called every time when whole sheet is closed by clicking on OK button
+    void OnOK()
+    {
+        WinKey = (SendDlgItemMessage(IDC_WINKEY,BM_GETCHECK,0,0)==BST_CHECKED) ? MOD_WIN : 0;
+        HotKey = (UINT)SendDlgItemMessage(IDC_HOTKEY,HKM_GETHOTKEY,0,0);
+        if (HotKey)
+        {
+            if (!RegisterHotKey(::GetParent(GetParent()),Settings.GlobalHotkeyID,WinKey|(!(HotKey&0x500)?HIBYTE(LOWORD(HotKey)):
+            ((HotKey&0x500)<0x500?HIBYTE(LOWORD(HotKey))^5:HIBYTE(LOWORD(HotKey)))),LOBYTE(LOWORD(HotKey)))) 
+            {
+                MyMessageBox(m_hWnd,"The hotkey entered on \"Other\" page is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",szWinName,MB_ICONERROR);
+            }
+            else
+            {
+                Settings.HotKey = HotKey;
+                Settings.WinKey = WinKey;
+            }
+        }
+        else
+        {
+            Settings.HotKey = HotKey;
+            Settings.WinKey = WinKey;
+        }
+
+        Settings.EnableOpacity = (SendDlgItemMessage(IDC_ENABLE_OPACITY,BM_GETCHECK,0,0) == BST_CHECKED);
+        Settings.InactiveOpacity = InactiveTrackBar.GetPos();
+        Settings.ActiveOpacity = ActiveTrackBar.GetPos();
+        Settings.SetFocusToTaskName = (SendDlgItemMessage(IDC_SETFOCUS,BM_GETCHECK,0,0)==BST_CHECKED);
+        Settings.HighlightTaskName = Highlight;
+        Settings.SaveOtherSettings();
     }
 };
 
@@ -1624,8 +2366,14 @@ public:
             m_PageFormat.Create(this);
             m_PageDefects.Create(this);
             m_PageURLs.Create(this);
+            m_PageURLs.Browser = &(m_PageGeneral.sBrowser);
+            m_PageURLs.CheckMark = &(m_PageGeneral.sCheckMark);
             m_PageSoftTest.Create(this);
             m_PageHistory.Create(this);
+            m_PageOther.Create(this);
+            m_PageOther.Links = &(m_PageURLs.temp_links);
+            m_PageURLs.ForbiddenHotkey = &(m_PageOther.HotKey);
+            m_PageURLs.uWinKey = &(m_PageOther.WinKey);
         }
 
 #if (USE_ICONS != 0)
@@ -1681,6 +2429,15 @@ public:
         AddItem(NewItem);
         // checking if this page should be active and activate it if so
         if (lParam == 5) SetActiveItem(NewItem);
+
+        NewItem = new COptionSelectionTreeCtrl::CItem(6,6);
+        NewItem->SetPage(&m_PageOther);
+        NewItem->SetCaption("Other");
+        // adding new page
+        AddItem(NewItem);
+        // checking if this page should be active and activate it if so
+        if (lParam == 6) SetActiveItem(NewItem);
+
 #else
         //In order not to use icons just use the following statements: 
         AddItem(new COptionItem("General", &m_PageGeneral));
@@ -1689,6 +2446,7 @@ public:
         AddItem(new COptionItem("Format", &m_PageFormat));
         AddItem(new COptionItem("SoftTest", &m_PageSoftTest));
         AddItem(new COptionItem("History", &m_PageHistory));
+        AddItem(new COptionItem("Other", &m_PageOther));
 #endif
 
         SetFlags(OSF_HASBUTTON_OK|OSF_HASBUTTON_CANCEL);
@@ -1713,7 +2471,7 @@ public:
         {
             CString ErrorMessage;
             ErrorMessage.Format("Help file \"%s\" was not found\nor your system does not support HTML help",HelpFileName);
-            MessageBox(ErrorMessage,szWinName,MB_ICONERROR);
+            MyMessageBox(m_hWnd,ErrorMessage,szWinName,MB_ICONERROR);
         }
     }
 
@@ -1732,6 +2490,7 @@ protected:
     URLsPage m_PageURLs;
     SoftTestPage m_PageSoftTest;
     HistoryPage m_PageHistory;
+    OtherPage m_PageOther;
     CStatic m_PageCaption;
     CMenu HelpMenu;
 #if (USE_ICONS != 0)

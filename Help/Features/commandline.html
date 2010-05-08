@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: commandline.html,v $$Revision: 1.10 $$Date: 2008/03/23 16:34:32Z $ -->
+<!-- @(#)$RCSfile: commandline.html,v $$Revision: 1.11 $$Date: 2009/04/09 14:58:34Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
@@ -27,7 +27,7 @@ the syntax was extended and in current version is the following:
 </tr>
 </table>
 <font class="font">
-  <b><i>NAME</i></b> - task name mask. It is regular expression task name should match to be displayed. <b>-name</b> is optional parameter<br>
+  <b><i>NAME</i></b> - task name mask. It is regular expression found parent task name should match to be displayed. <b>-name</b> is optional parameter<br>
   <b><i>input_file</i></b> - file that contains the list of tasks/defects<br>
   <b><i>output_file</i></b> - file that will contain the list of parent tasks/defects for the given ones
 </font>
@@ -39,12 +39,28 @@ the syntax was extended and in current version is the following:
 </tr>
 </table>
 <font class="font">
-  <b><i>NAME</i></b> - task name mask. It is regular expression task name should match to be displayed
+  <b><i>NAME</i></b> - task name mask. It is regular expression found child task name should match to be displayed
   <br><b><i>PROD</i></b> - product version mask. It is regular expression product version should match to be displayed
   <br><b><i>STAT</i></b> - task status mask. It is regular expression task status should match to be displayed
   <br><b><i>input_file</i></b> - file that contains the list of tasks/defects
   <br><b><i>output_file</i></b> - file that will contain the list of child tasks/defects for the given ones
   <br>Parameters <b>-name</b>, <b>-prod</b> and <b>-stat</b> are optional. If they are not specified all child tasks for the given parent will be displayed
+</font>
+
+<table align="center" border="0">
+<tr><td height="10"></td></tr>
+<tr>
+  <td bgcolor="#DDDDDD" class="font"><b>TMS_Launcher.exe -spc [-name "<i>NAME</i>"] [-prod "<i>PROD</i>"] [-stat "<i>STAT</i>"] [-msp "<i>MSP</i>"] <i>input_file output_file</i></b></td>
+</tr>
+</table>
+<font class="font">
+  <b><i>NAME</i></b> - task name mask. It is regular expression found SPC linked task name should match to be displayed
+  <br><b><i>PROD</i></b> - product version mask. It is regular expression product version should match to be displayed
+  <br><b><i>STAT</i></b> - task status mask. It is regular expression task status should match to be displayed
+  <br><b><i>MSP</i></b> - MS Project mask. It is regular expression for MS Project where task should be included to be displayed
+  <br><b><i>input_file</i></b> - file that contains the list of tasks
+  <br><b><i>output_file</i></b> - file that will contain the list of SPC linked tasks for the given ones
+  <br>Parameters <b>-name</b>, <b>-prod</b>, <b>-stat</b> and <b>-msp</b> are optional. If they are not specified all SPC linked tasks for the given one will be displayed
 </font>
 
 <table align="center" border="0">
@@ -79,6 +95,33 @@ the syntax was extended and in current version is the following:
   <b><i>NAME</i></b> - SCC EMPLOYEE ID mask. It is regular expression SCC EMPLOYEE ID should match to be displayed. <b>-name</b> is optional parameter<br>
   <b><i>input_file</i></b> - file that contains the list of tasks<br>
   <b><i>output_file</i></b> - file that will contain the list of timesheets for the given tasks
+</font>
+
+<table align="center" border="0">
+<tr><td height="10"></td></tr>
+<tr>
+  <td bgcolor="#DDDDDD" class="font"><b>TMS_Launcher.exe -inf [-name "<i>NAME</i>"] [-prod "<i>PROD</i>"] [-stat "<i>STAT</i>"] [-msp "<i>MSP</i>"] <i>input_file output_file</i></b></td>
+</tr>
+</table>
+<font class="font">
+  <b><i>NAME</i></b> - task name mask. It is regular expression task name should match to be displayed
+  <br><b><i>PROD</i></b> - product version mask. It is regular expression product version should match to be displayed
+  <br><b><i>STAT</i></b> - task status mask. It is regular expression task status should match to be displayed
+  <br><b><i>MSP</i></b> - MS Project mask. It is regular expression for MS Project where task should be included to be displayed
+  <br><b><i>input_file</i></b> - file that contains the list of tasks
+  <br><b><i>output_file</i></b> - file that will contain information (PRODUCT, STATUS, MSP) about given tasks
+  <br>Parameters <b>-name</b>, <b>-prod</b>, <b>-stat</b> and <b>-msp</b> are optional. If they are not specified all tasks will be displayed
+</font>
+
+<table align="center" border="0">
+<tr><td height="10"></td></tr>
+<tr>
+  <td bgcolor="#DDDDDD" class="font"><b>TMS_Launcher.exe -exp "<i>EXPRESSION</i>" <i>input_file output_file</i></b></td>
+</tr>
+</table>
+<font class="font">
+  <b><i>input_file</i></b> - file that contains the list of tasks<br>
+  <b><i>output_file</i></b> - file that will contain the list of tasks whose content matches regular expression. All matched sub-expressions will also be printed
 </font>
 
 <p class="font">In order command line features work, it is necessary to specify Login and Password for URL

@@ -1,9 +1,7 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by TMS_Launcher.rc
 //
-#define CREATEPROCESS_MANIFEST_RESOURCE_ID 1
-#define RT_MANIFEST                     24
 #define TMS_LAUNCHER_DIALOG             129
 #define IDI_SYSTRAY_ICON                202
 #define GENERAL_PAGE                    204
@@ -18,6 +16,8 @@
 #define DEFECT_EDIT_PAGE                214
 #define SOFTTEST_PAGE                   216
 #define HISTORY_PAGE                    217
+#define OTHER_PAGE                      218
+#define IDI_SETTINGS                    220
 #define IDC_TASKNAME                    1000
 #define VIEW_TASK                       1001
 #define IDC_EXPAND                      1002
@@ -43,7 +43,6 @@
 #define IDC_DEFECT_COPY                 1028
 #define IDC_DEFECT_PROJECT              1029
 #define IDC_MIN_CLIENT                  1030
-#define IDC_CLIENT_ID2                  1030
 #define IDC_MAX_CLIENT                  1031
 #define IDC_MAX_ID                      1032
 #define IDC_MIN_ID                      1033
@@ -56,13 +55,14 @@
 #define IDC_LINK_NEW                    1037
 #define IDC_DEFECTS_LINK3               1037
 #define IDC_LINK_EDIT                   1038
+#define IDC_DEFECTS_LINK4               1038
 #define IDC_LINK_SAVE                   1039
 #define IDC_LINK_DELETE                 1040
 #define IDC_URL_CAPTION                 1041
 #define IDC_TASK_URL                    1042
 #define IDC_URL_DEFAULT                 1043
 #define IDC_CHILD_TASKS_URL             1044
-#define IDC_URL_CAPTION2                1045
+#define IDC_RELATED_TASKS_URL           1045
 #define IDC_CLIENT_EDIT                 1046
 #define IDC_URL_EDIT                    1047
 #define IDC_SEPARATORS                  1048
@@ -93,6 +93,21 @@
 #define IDC_FILL_ID                     1078
 #define IDC_COMPANY                     1079
 #define IDC_COPYRIGHT                   1080
+#define IDC_HOTKEY                      1082
+#define IDC_WINKEY                      1083
+#define IDC_ENABLE_OPACITY              1084
+#define IDC_INACTIVE_SLIDER             1085
+#define IDC_ACTIVE_SLIDER               1086
+#define IDC_INOP_PER                    1087
+#define IDC_AOP_PER                     1088
+#define IDC_INACTIVE_STATIC             1089
+#define IDC_ACTIVE_STATIC               1090
+#define IDC_SETFOCUS                    1091
+#define IDC_HIGHLIGHT                   1092
+#define VIEW_RELATED_TASKS              1093
+#define VIEW_RELATED_TASKS_HOTKEY       1094
+#define IDC_BUTTON_VIEW                 1095
+#define IDC_BUTTON_COPY                 1096
 #define ID_MENU_UNDO                    32774
 #define ID_MENU_CUT                     32775
 #define ID_MENU_COPY                    32776
@@ -107,14 +122,15 @@
 #define ID_SETTINGS_FORMAT              32785
 #define ID_SETTINGS_SOFTTEST            32786
 #define ID_SETTINGS_HISTORY             32787
+#define ID_SETTINGS_OTHER               32788
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        218
-#define _APS_NEXT_COMMAND_VALUE         32788
-#define _APS_NEXT_CONTROL_VALUE         1081
+#define _APS_NEXT_RESOURCE_VALUE        221
+#define _APS_NEXT_COMMAND_VALUE         32789
+#define _APS_NEXT_CONTROL_VALUE         1097
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

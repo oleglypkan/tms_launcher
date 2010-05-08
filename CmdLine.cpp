@@ -3,11 +3,9 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: Match 9, 2008
 */
 
 #include "stdafx.h"
-#include <fstream.h>
 #include "CmdLine.h"
 #include "settings.h"
 #include "MainDlg.h"
@@ -17,26 +15,30 @@
 using namespace boost;
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.19 $$Date: 2008/03/19 20:38:41Z $"; 
+ static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.32 $$Date: 2009/04/09 14:54:26Z $"; 
+#endif
+
+#ifdef _DEBUG
+#include <crtdbg.h>
+#include <stdlib.h>
+#define _CRTDBG_MAP_ALLOC 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
 #endif
 
 extern CSettings Settings;
+extern CString szWinName;
 int CompareNoCaseCP1251(const char *string1, const char *string2);
 
 CmdLine::CmdLine()
 {
-//  Parameters[0] - "-c/p/qb/qc/t"
-//  Parameters[1] - "-name"
-//  Parameters[2] - "-prod"
-//  Parameters[3] - "-stat"
-//  Parameters[4] - "-in"
-//  Parameters[5] - "-out"
-    Parameters[0] = "";
-    Parameters[1] = "";
-    Parameters[2] = "";
-    Parameters[3] = "";
-    Parameters[4] = "";
-    Parameters[5] = "";
+    Parameters[0] = ""; // "-c/p/qb/qc/t/spc/inf/exp"
+    Parameters[1] = ""; // "-name"
+    Parameters[2] = ""; // "-prod"
+    Parameters[3] = ""; // "-stat"
+    Parameters[4] = ""; // "-msp"
+    Parameters[5] = ""; // "-in"
+    Parameters[6] = ""; // "-out"
 }
 
 void CmdLine::StringToArgv(const char *CommandLine, std::vector<CString> &params)
@@ -88,30 +90,34 @@ void CmdLine::StringToArgv(const char *CommandLine, std::vector<CString> &params
     }
 }
 
+void CmdLine::ShowUsage()
+{
+    CString Usage = "The following command line parameters are correct:\n\n\
+TMS_Launcher -p [-name \"PCC\"] in out\n\
+    - get the list of parent tasks for the given ones\n\n\
+TMS_Launcher -c [-name \"TCD\"] [-prod \".X\"] [-stat \"C1\"] in out\n\
+    - get the list of child tasks for the given ones\n\n\
+TMS_Launcher -spc [-name \"PCC\"] [-prod \".X\"] [-stat \"C1\"] [-msp \"LABG4.0.4.5\"] in out\n\
+    - get the list of SPC linked tasks with the given ones\n\n\
+TMS_Launcher -qb in out\n\
+    - get the list of QB actions for the given tasks\n\n\
+TMS_Launcher -qc in out\n\
+    - get the list of QC actions for the given tasks\n\n\
+TMS_Launcher -t [-name \"OLEG L\"] in out\n\
+    - get timesheets for the given tasks\n\n\
+TMS_Launcher -inf [-name \"PCC\"] [-prod \".X\"] [-stat \"C1\"] [-msp \"LABG4.0.4.5\"] in out\n\
+    - get information (product, status, MSP) for the given tasks\n\n\
+TMS_Launcher -exp \"expression\" in out\n\
+    - get timesheets for the given tasks";
+    MessageBox(NULL, Usage, szWinName, MB_OK | MB_ICONINFORMATION);
+}
+
 void CmdLine::ParseCmdLine(const char *CommandLine)
 {
-/*
-    The following parameters are correct:
-    
-    TMS_Launcher.exe <-p> [<-name "PCC">] <input> <output>
-      get the list of parent tasks for the given ones
-
-    TMS_Launcher.exe <-c> [<-name "TCD">] [<-prod ".X">] [<-stat "C1">] <input> <output>
-      get the list of child tasks for the given ones
-
-    TMS_Launcher.exe <-qb> <input> <output>
-      get the list of QB actions for the given tasks
-
-    TMS_Launcher.exe <-qc> <input> <output>
-      get the list of QC actions for the given tasks
-
-    TMS_Launcher.exe <-t> [<-name "OLEG L">] <input> <output>
-      get timesheets for the given tasks
-*/
     std::vector<CString> argv;
     StringToArgv(CommandLine,argv);
 
-    for (int i = 0; i < argv.size(); i++)
+    for (unsigned int i = 0; i < argv.size(); i++)
     {
         if (argv[i].CompareNoCase("-c") == 0)
         {
@@ -137,6 +143,31 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
         {
             Parameters[0] = "t";
             continue;
+        }
+        if (argv[i].CompareNoCase("-spc") == 0)
+        {
+            Parameters[0] = "s";
+            continue;
+        }
+        if (argv[i].CompareNoCase("-inf") == 0)
+        {
+            Parameters[0] = "i";
+            continue;
+        }
+        if (argv[i].CompareNoCase("-exp") == 0)
+        {
+            if (argv.size() > i+1)
+            {
+                Parameters[0] = "e";
+                Parameters[1] = argv[i+1];
+                i++;
+                continue;
+            }
+            else
+            {
+                ShowUsage();
+                return;
+            }
         }
         if (argv[i].CompareNoCase("-name") == 0)
         {
@@ -165,25 +196,35 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
             }
             continue;
         }
-        if (Parameters[4].IsEmpty())
+        if (argv[i].CompareNoCase("-msp") == 0)
         {
-            Parameters[4] = argv[i];
+            if (argv.size() > i+1)
+            {
+                Parameters[4] = argv[i+1];
+                i++;
+            }
+            continue;
+        }
+        if (Parameters[5].IsEmpty())
+        {
+            Parameters[5] = argv[i];
         }
         else
         {
-            if (Parameters[5].IsEmpty())
+            if (Parameters[6].IsEmpty())
             {
-                Parameters[5] = argv[i];
+                Parameters[6] = argv[i];
             }
         }
     }
 
     // checking for correct parameters
-    if (Parameters[0].IsEmpty() || Parameters[4].IsEmpty() || Parameters[5].IsEmpty())
+    if (Parameters[0].IsEmpty() || Parameters[5].IsEmpty() || Parameters[6].IsEmpty())
     {
+        ShowUsage();
         return;
     }
-    for (i = 1; i <= 3; i++)
+    for (i = 1; i <= 4; i++)
     {
         if (!Parameters[i].IsEmpty())
         {
@@ -194,6 +235,24 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
             }
             catch (bad_expression)
             {
+                CString Message = "", IncorrectParam = "";
+                switch(i)
+                {
+                    case 1:
+                        IncorrectParam = "-name/-exp";
+                        break;
+                    case 2:
+                        IncorrectParam = "-prod";
+                        break;
+                    case 3:
+                        IncorrectParam = "-stat";
+                        break;
+                    case 4:
+                        IncorrectParam = "-msp";
+                        break;
+                }
+                Message.Format("Regular expression passed with %s parameter is incorrect", IncorrectParam);
+                MessageBox(NULL, Message, szWinName, MB_OK | MB_ICONERROR);
                 return;
             }
         }
@@ -202,447 +261,51 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
     switch (Parameters[0][0])
     {
         case 'p': // parent
-            GetTasksList(Parameters[4],Parameters[5],true);
-            break;
         case 'c': // child
-            GetTasksList(Parameters[4],Parameters[5],false);
-            break;
+        case 's': // SPC linked tasks
         case 'b': // qb
-            GetActionFromTasks(Parameters[4],Parameters[5],true);
-            break;
         case 'q': // qc
-            GetActionFromTasks(Parameters[4],Parameters[5],false);
-            break;
         case 't': // timesheets
-            GetTimesheetsFromTasks(Parameters[4],Parameters[5]);
+        case 'i': // information about task
+        case 'e': // check if task matches regular expression
+            ProcessInputFile(Parameters[5],Parameters[6],Parameters[0][0]);
             break;
     }
 }
 
-void CmdLine::GetTimesheetsFromTasks(const char *InputFileName, const char *OutputFileName)
+void CmdLine::GetTimesheetsFromTasks(TASK &task, const CString &Message, const char *OriginalTask, ofstream &OutFile)
 {
-    int index = Settings.GetDefaultUrlIndex();
-    if (index == -1) return;
-
-    if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
+    std::vector<CString> Timesheets;
+    bool filtered = false;
+    task.ParseHTMLForTimesheets(Message,Timesheets,Parameters[1],filtered);
+    if (Timesheets.size() == 0)
     {
-        ofstream OutFile;
-        OutFile.open(OutputFileName, ios::out);
-        OutFile << "Both Login and Password must be specified in settings window for \""+Settings.links[index].Caption+"\" URL";
-        OutFile.close();
+        OutFile << OriginalTask;
+        if (!filtered)
+        {
+            OutFile << "-----------";
+        }
+        OutFile << endl << endl;
         return;
     }
-    CString TasksLine = "";
-    ifstream InFile;
-    InFile.open(InputFileName, ios::in);
-    ofstream OutFile;
-    OutFile.open(OutputFileName, ios::out);
+    OutFile << OriginalTask;
+    OutFile << "Date            Employee          Time        Comments" << endl;
 
-    OutFile << "Task            Timesheets" << endl;
-    OutFile << "-----------------------------------------------------------------------" << endl;
-
-    while (!InFile.eof())
+    for (unsigned int j = 0; j < Timesheets.size(); j++)
     {
-        InFile.getline(TasksLine.GetBuffer(256),255);
-        TasksLine.ReleaseBuffer();
-        if (!TasksLine.IsEmpty())
-        {
-            std::vector<CString> Tasks;
-            TASK task;
-            task.SimpleParseTasks(TasksLine, Tasks);
-            for (int i=0; i<Tasks.size(); i++)
-            {
-                CString Client, Sep, ID;
-                if (!task.IsTaskNameValid(Tasks[i],Client,Sep,ID))
-                {
-                    OutFile << Tasks[i] << " - invalid task name format" << endl << endl;
-                }
-                else
-                {
-                    CAmHttpSocket Req;
-                    CString Message = "", Request;
-                    bool IsDefect = false;
-                    int defect_index = -1;
-
-                    // checking if a task is SoftTest defect
-                    if (IsDefect = Settings.IsDefect(Client,NULL,&defect_index))
-                    {
-                        OutFile << Tasks[i] << " - is SoftTest defect" << endl << endl;
-                        continue;
-                    }
-                    Request.Format("http://%s:%s@scc1.softcomputer.com/~alttms/tmsh.php?Client=%s&ID=%s",
-                                   Settings.links[index].Login,Settings.links[index].Password,
-                                   Client, ID);
-                    Message = Req.GetPage(Request);
-                    if (Message.IsEmpty())
-                    {
-                        OutFile << Tasks[i] << " - error occured during reading task" << endl;
-                    }
-                    else
-                    {
-                        OutFile.width(16);
-                        OutFile.setf(OutFile.left);
-                        
-                        std::vector<CString> Timesheets;
-                        bool filtered = false;
-                        task.ParseHTMLForTimesheets(Message,Timesheets,Parameters[1],filtered);
-                        if (Timesheets.size()==0)
-                        {
-                            OutFile << Tasks[i];
-                            if (!filtered)
-                            {
-                                OutFile << "-----------";
-                            }
-                            OutFile << endl << endl;
-                            continue;
-                        }
-                        OutFile << Tasks[i];
-                        OutFile << "Date            Employee          Hours       Comments" << endl;
-                        
-                        for (int j=0; j<Timesheets.size(); j++)
-                        {
-                            OutFile.width(16);
-                            OutFile.setf(OutFile.left);
-                            OutFile << " " << Timesheets[j] << endl;
-                        }
-                        OutFile << endl;
-                    }
-                }
-            }
-        }
+        OutFile.width(16);
+        OutFile.setf(OutFile.left);
+        OutFile << " " << Timesheets[j] << endl;
     }
-    InFile.close();
-    OutFile.close();
+    OutFile << endl;
 }
 
-void CmdLine::GetActionFromTasks(const char *InputFileName, const char *OutputFileName, bool QB)
+void CmdLine::PrintSubExpressions(const CString &Message, const char *OriginalTask, ofstream &OutFile)
 {
-    int index = Settings.GetDefaultUrlIndex();
-    if (index == -1) return;
+    if (Parameters[1].IsEmpty()) return;
 
-    if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
-    {
-        ofstream OutFile;
-        OutFile.open(OutputFileName, ios::out);
-        OutFile << "Both Login and Password must be specified in settings window for \""+Settings.links[index].Caption+"\" URL";
-        OutFile.close();
-        return;
-    }
-    CString TasksLine = "";
-    ifstream InFile;
-    InFile.open(InputFileName, ios::in);
-    ofstream OutFile;
-    OutFile.open(OutputFileName, ios::out);
-
-    if (QB)
-    {
-        OutFile << "Task            QB/QR action(s)" << endl;
-    }
-    else
-    {
-        OutFile << "Task            QC action(s)" << endl;
-    }
-    OutFile << "-----------------------------------------------------------------------" << endl;
-
-    while (!InFile.eof())
-    {
-        InFile.getline(TasksLine.GetBuffer(256),255);
-        TasksLine.ReleaseBuffer();
-        if (!TasksLine.IsEmpty())
-        {
-            std::vector<CString> Tasks;
-            TASK task;
-            task.SimpleParseTasks(TasksLine, Tasks);
-            for (int i=0; i<Tasks.size(); i++)
-            {
-                CString Client, Sep, ID;
-                if (!task.IsTaskNameValid(Tasks[i],Client,Sep,ID))
-                {
-                    OutFile << Tasks[i] << " - invalid task name format" << endl << endl;
-                }
-                else
-                {
-                    CAmHttpSocket Req;
-                    CString Message = "", Request;
-                    bool IsDefect = false;
-                    int defect_index = -1;
-
-                    // checking if a task is SoftTest defect
-                    if (IsDefect = Settings.IsDefect(Client,NULL,&defect_index))
-                    {
-                        OutFile << Tasks[i] << " - is SoftTest defect" << endl << endl;
-                        continue;
-                    }
-                    Request.Format("http://%s:%s@scc1.softcomputer.com/~alttms/viewtask.php?Client=%s&ID=%s",
-                                   Settings.links[index].Login,Settings.links[index].Password,
-                                   Client, ID);
-                    Message = Req.GetPage(Request);
-                    if (Message.IsEmpty())
-                    {
-                        OutFile << Tasks[i] << " - error occured during reading task" << endl;
-                    }
-                    else
-                    {
-                        OutFile.width(16);
-                        OutFile.setf(OutFile.left);
-                        
-                        std::vector<CString> TaskActions;
-                        task.ParseHTMLForActions(Message,TaskActions,QB);
-                        if (TaskActions.size()==0)
-                        {
-                            OutFile << Tasks[i] << "-----------" << endl << endl;
-                            continue;
-                        }
-                        OutFile << Tasks[i];
-                        if (QB)
-                        {
-                            OutFile << "#   Date        Time   Person            Assigned to" << endl;
-                        }
-                        else
-                        {
-                            OutFile << "#   Date        Time   Person            Requirement(s)" << endl;
-                        }
-                        for (int j=0; j<TaskActions.size(); j++)
-                        {
-                            OutFile.width(16);
-                            OutFile.setf(OutFile.left);
-                            OutFile << " " << TaskActions[j] << endl;
-                        }
-                        OutFile << endl;
-                    }
-                }
-            }
-        }
-    }
-    InFile.close();
-    OutFile.close();
-}
-
-void CmdLine::GetTasksList(const char *InputFileName, const char *OutputFileName, bool parent)
-{
-    int index = Settings.GetDefaultUrlIndex();
-    if (index == -1) return;
-
-    if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
-    {
-        ofstream OutFile;
-        OutFile.open(OutputFileName, ios::out);
-        OutFile << "Both Login and Password must be specified in settings window for \""+Settings.links[index].Caption+"\" URL";
-        OutFile.close();
-        return;
-    }
-    CString TasksLine = "";
-    ifstream InFile;
-    InFile.open(InputFileName, ios::in);
-    ofstream OutFile;
-    OutFile.open(OutputFileName, ios::out);
-
-    if (parent)
-    {
-        OutFile << "Task            Parent task" << endl;
-        OutFile << "---------------------------" << endl;
-    }
-    else
-    {
-        OutFile << "Task            Child tasks     Product                 Status" << endl;
-        OutFile << "--------------------------------------------------------------" << endl;
-    }
-
-    while (!InFile.eof())
-    {
-        InFile.getline(TasksLine.GetBuffer(256),255);
-        TasksLine.ReleaseBuffer();
-        if (!TasksLine.IsEmpty())
-        {
-            std::vector<CString> Tasks;
-            TASK task;
-            task.SimpleParseTasks(TasksLine, Tasks);
-            for (int i=0; i<Tasks.size(); i++)
-            {
-                CString Client, Sep, ID;
-                if (!task.IsTaskNameValid(Tasks[i],Client,Sep,ID))
-                {
-                    OutFile << Tasks[i] << " - invalid task name format" << endl;
-                }
-                else
-                {
-                    CAmHttpSocket Req;
-                    CString Message = "", Request;
-                    bool IsDefect = false;
-                    int defect_index = -1;
-
-                    // checking if a task is SoftTest defect
-                    if (IsDefect = Settings.IsDefect(Client,NULL,&defect_index))
-                    {
-                        if (parent)
-                        {
-                            Request = Settings.defects[defect_index].ParentDefectURL;
-                        }
-                        else
-                        {
-                            Request = Settings.defects[defect_index].ChildDefectsURL;
-                        }
-                        Request.Replace("%PROJECT%",Settings.defects[defect_index].STProject);
-                        Request.Replace("%ID%",ID);
-                    }
-                    
-                    if (!IsDefect)
-                    {
-                        if (parent)
-                        {
-                            Request.Format("http://%s:%s@scc1.softcomputer.com/~alttms/viewtask.php?Client=%s&ID=%s",
-                                           Settings.links[index].Login,Settings.links[index].Password,
-                                           Client, ID);
-                        }
-                        else
-                        {
-                            
-                            Request.Format("http://%s:%s@scc1.softcomputer.com/~alttms/showtasks.php?ParentClient=%s&ParentID=%s",
-                                           Settings.links[index].Login,Settings.links[index].Password,
-                                           Client, ID);
-                        }
-                    }
-                    Message = Req.GetPage(Request);
-                    if (Message.IsEmpty())
-                    {
-                        OutFile << Tasks[i] << " - error occured during reading task" << endl;
-                    }
-                    else
-                    {
-                        OutFile.width(16);
-                        OutFile.setf(OutFile.left);
-                        
-                        CString ParentTask = Tasks[i];
-
-                        // get parent/child for SoftTest defect
-                        if (IsDefect)
-                        {
-                            if (parent)
-                            {
-                                switch (task.ParseHTMLForParentDefect(ParentTask, Message))
-                                {
-                                    case 0:
-                                        if (!Client.IsEmpty()) Client += "-";
-                                        OutFile << Tasks[i] << Client+ParentTask << endl;
-                                        break;
-                                    case 1:
-                                    case 2:
-                                        if (ParentTask.Find("does not have parent") != -1)
-                                        {
-                                            OutFile << Tasks[i] << "-----------" << endl;
-                                        }
-                                        else
-                                        {
-                                            OutFile << ParentTask << endl;
-                                        }
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                std::vector<CString> ChildTasks;
-                                switch(task.ParseHTMLForChildDefects(Message,ChildTasks))
-                                {
-                                    case 0:
-                                        {
-                                            if (!Client.IsEmpty()) Client += "-";
-                                            OutFile << Tasks[i] << endl;
-                                            for (int j = 0; j < ChildTasks.size(); j++)
-                                            {
-                                                OutFile.width(16);
-                                                OutFile.setf(OutFile.left);
-                                                OutFile << " " << Client+ChildTasks[j] << endl;
-                                            }
-                                        }
-                                        break;
-                                    case 1:
-                                        OutFile << Tasks[i] << "-----------" << endl;
-                                        break;
-                                }
-                            }
-                        }
-                        else // get parent/child for TMS task
-                        {
-                            if (parent)
-                            {
-                                switch (task.ParseHTMLForParentTask(ParentTask, Message))
-                                {
-                                    case 0:
-                                        if (!FilterTask(ParentTask,Parameters[1]))
-                                        {
-                                            OutFile << Tasks[i] << ParentTask << endl;
-                                        }
-                                        else
-                                        {
-                                            OutFile << Tasks[i] << endl;
-                                        }
-                                        break;
-                                    case 1:
-                                    case 2:
-                                        if (ParentTask.Find("does not have parent") != -1)
-                                        {
-                                            OutFile << Tasks[i] << "-----------" << endl;
-                                        }
-                                        else
-                                        {
-                                            OutFile << ParentTask << endl;
-                                        }
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                std::vector<CHILD> ChildTasks;
-                                switch(task.ParseHTMLForChildTasks(ParentTask,Message,ChildTasks))
-                                {
-                                    case 0:
-                                        {
-                                            OutFile << Tasks[i] << endl;
-                                            for (int j = 0; j < ChildTasks.size(); j++)
-                                            {
-                                                if (!FilterTask(ChildTasks[j].TaskName,Parameters[1])) // filtering by task name
-                                                {
-                                                    if (!FilterTask(ChildTasks[j].Product,Parameters[2])) // filtering by product
-                                                    {
-                                                        if (!FilterTask(ChildTasks[j].Status,Parameters[3])) // filtering by status
-                                                        {
-                                                            PrintTask(OutFile, ChildTasks[j]);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case 1:
-                                        OutFile << Tasks[i] << "-----------" << endl;
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    InFile.close();
-    OutFile.close();
-    return;
-}
-
-// true  - task should NOT be printed
-// false - task should be printed
-bool CmdLine::FilterTask(const CString &string, const CString &mask)
-{
-    if (mask.IsEmpty()) return false;
-
-    // filter that allows to use regular expressions
-    RegEx expr;
-    expr.SetExpression(mask,true);
-    return !expr.Search(string,match_any);
-
-/*
-    // simple filter that allows "!" to be used as "NOT"
-    CString temp = mask;
+    // additional functionality to allow "!" to be used in regular expressions meaning NOT match
+    CString temp = Parameters[1];
     bool exclude = false;
 
     if (temp[0] == '!')
@@ -652,30 +315,506 @@ bool CmdLine::FilterTask(const CString &string, const CString &mask)
         {
             exclude = true;
         }
+        else
+        {
+            return;
+        }
     }
 
-    if (string.Find(temp) != -1) // temp is found in string
+    // filter that allows to use regular expressions
+    RegEx expr;
+    expr.SetExpression(temp,true);
+    if (!expr.Search(Message,match_any))
     {
-        return exclude;
+        exclude = !exclude;
+    }
+
+    if (!exclude)
+    {
+        OutFile << OriginalTask;
+        for (unsigned long i = 1; i < expr.Marks(); i++)
+        {
+            CString line = expr.Matched(i) ? expr.What(i).c_str() : "";
+            OutFile << line << " ";
+            if ((i % 2) == 0) OutFile << "    ";
+        }
+        OutFile << endl;
+    }
+}
+
+void CmdLine::GetInformationAboutTask(const CString &Message, const char *OriginalTask, ofstream &OutFile, const CString &Client, const CString &ID)
+{
+    RegEx expr; // regular expression object to be used to parse HTML
+    try
+    {
+        expr.SetExpression(": <a title=\"View Task\".+<b>"+Client+"-"+ID+"</b></a>.+\"Add Task To Timesheet\".+(<td[^>]*>[^<]*</td>){4}<td[^>]*>([^<]+)</td><td[^>]*>([^<]+)</td>(<td[^>]*>[^<]*</td>){3}<td[^>]*>(&nbsp;?){5}([^<]*)</td>",true);
+    }
+    catch (bad_expression)
+    {
+        return;
+    }
+    if (expr.Search(Message,match_any))
+    {
+        CHILD Task;
+        Task.Product = expr.Matched(2) ? expr.What(2).c_str() : "";
+        Task.Product.TrimLeft();
+        Task.Product.TrimRight();
+
+        Task.Status = expr.Matched(3) ? expr.What(3).c_str() : "";
+        Task.Status.TrimLeft();
+        Task.Status.TrimRight();
+
+        Task.MSP = expr.Matched(6) ? expr.What(6).c_str() : "";
+        Task.MSP.TrimLeft();
+        Task.MSP.TrimRight();
+
+        // task filtering
+        if (!TASK::FilterTask(Client+"-"+ID,Parameters[1])) // filtering by task name
+        {
+            if (!TASK::FilterTask(Task.Product,Parameters[2])) // filtering by product
+            {
+                if (!TASK::FilterTask(Task.Status,Parameters[3])) // filtering by status
+                {
+                    if (!TASK::FilterTask(Task.MSP,Parameters[4])) // filtering by MSP
+                    {
+                        // task printing
+                        CString line = "";
+                        line.Format("%-16s%-24s%-8s%s", OriginalTask, Task.Product, Task.Status, Task.MSP);
+                        OutFile << line << endl;
+                    }
+                }
+            }
+        }
     }
     else
     {
-        return !exclude;
+        OutFile << OriginalTask << "- cannot get information about task" << endl;
     }
-*/
 }
 
-void CmdLine::PrintTask(ofstream &OutFile, CHILD &ChildTask)
+void CmdLine::GetActionsFromTasks(TASK &task, const CString &Message, const char *OriginalTask, ofstream &OutFile, bool QB)
 {
-    OutFile.width(16);
-    OutFile.setf(OutFile.left);
-    OutFile << " ";
-    OutFile.width(16);
-    OutFile.setf(OutFile.left);
-    OutFile << ChildTask.TaskName;
-    OutFile.width(24);
-    OutFile.setf(OutFile.left);
-    OutFile << ChildTask.Product;
-    OutFile.setf(OutFile.left);
-    OutFile << ChildTask.Status << endl;
+    std::vector<CString> TaskActions;
+    task.ParseHTMLForActions(Message,TaskActions,QB);
+    if (TaskActions.size() == 0)
+    {
+        OutFile << OriginalTask << "-----------" << endl << endl;
+        return;
+    }
+    OutFile << OriginalTask;
+    if (QB)
+    {
+        OutFile << "#   Date        Time   Person            Assigned to" << endl;
+    }
+    else
+    {
+        OutFile << "#   Date        Time   Person            Requirement(s)" << endl;
+    }
+    for (unsigned int j = 0; j < TaskActions.size(); j++)
+    {
+        OutFile.width(16);
+        OutFile.setf(OutFile.left);
+        OutFile << " " << TaskActions[j] << endl;
+    }
+    OutFile << endl;
+}
+
+void CmdLine::GetParentTasksList(TASK &task, const CString &Message, const char *OriginalTask, ofstream &OutFile, CString &Client, bool IsDefect)
+{                        
+    CString ParentTask = OriginalTask;
+
+    if (IsDefect) // get parent for SoftTest defect
+    {
+        switch (task.ParseHTMLForParentDefect(ParentTask, Message))
+        {
+            case 0:
+                if (!Client.IsEmpty()) Client += "-";
+                OutFile << OriginalTask << Client+ParentTask << endl;
+                break;
+            case 1:
+            case 2:
+                if (ParentTask.Find("does not have parent") != -1)
+                {
+                    OutFile << OriginalTask << "-----------" << endl;
+                }
+                else
+                {
+                    OutFile << ParentTask << endl;
+                }
+                break;
+        }
+    }
+    else // get parent task for given TMS task
+    {
+        switch (task.ParseHTMLForParentTask(ParentTask, Message))
+        {
+            case 0:
+                if (!task.FilterTask(ParentTask,Parameters[1]))
+                {
+                    OutFile << OriginalTask << ParentTask << endl;
+                }
+                else
+                {
+                    OutFile << OriginalTask << endl;
+                }
+                break;
+            case 1:
+            case 2:
+                if (ParentTask.Find("does not have parent") != -1)
+                {
+                    OutFile << OriginalTask << "-----------" << endl;
+                }
+                else
+                {
+                    OutFile << ParentTask << endl;
+                }
+                break;
+        }
+    }
+}
+
+void CmdLine::GetChildTasksList(TASK &task, const CString &Message, const char *OriginalTask, ofstream &OutFile, CString &Client, const CString &ID, bool IsDefect, const char type)
+{                        
+    CString ParentTask = OriginalTask;
+
+    if (IsDefect) // get children for SoftTest defect
+    {
+        std::vector<CString> ChildTasks;
+        switch(task.ParseHTMLForChildDefects(Message,ChildTasks))
+        {
+            case 0:
+                {
+                    if (!Client.IsEmpty()) Client += "-";
+                    OutFile << OriginalTask;
+                    for (unsigned int j = 0; j < ChildTasks.size(); j++)
+                    {
+                        if (j != 0)
+                        {
+                            OutFile.width(16);
+                            OutFile.setf(OutFile.left);
+                            OutFile << " ";
+                        }
+                        OutFile << Client+ChildTasks[j] << endl;
+                    }
+                    OutFile << endl;
+                }
+                break;
+            case 1:
+                OutFile << OriginalTask << "-----------" << endl;
+                OutFile << endl;
+                break;
+        }
+    }
+    else // get child/SPC linked tasks for given TMS task
+    {
+        std::vector<CHILD> ChildTasks;
+        int result = -1;
+        if (type == 'c') // find child tasks
+        {
+            result = task.ParseHTMLForChildTasks(Client+"-"+ID,Message,ChildTasks);
+        }
+        else // find SPC linked tasks
+        {
+            result = task.ParseHTMLForSPCtasks(Message,ChildTasks);
+        }
+        switch(result)
+        {
+            case 0:
+                {
+                    OutFile << OriginalTask;
+                    unsigned int printed = 0;
+                    for (unsigned int j = 0; j < ChildTasks.size(); j++)
+                    {
+                        if (!task.FilterTask(ChildTasks[j].TaskName,Parameters[1])) // filtering by task name
+                        {
+                            if (!task.FilterTask(ChildTasks[j].Product,Parameters[2])) // filtering by product
+                            {
+                                if (!task.FilterTask(ChildTasks[j].Status,Parameters[3])) // filtering by status
+                                {
+                                    if (type == 'c')
+                                    {
+                                        PrintTask(OutFile, ChildTasks[j], (printed==0));
+                                        printed++;
+                                    }
+                                    else
+                                    {
+                                        if (!task.FilterTask(ChildTasks[j].MSP,Parameters[4])) // filtering by MSP
+                                        {
+                                            PrintSPCtask(OutFile, ChildTasks[j], (ChildTasks[j].TaskName.CompareNoCase(Client+"-"+ID) == 0), (printed==0));
+                                            printed++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    OutFile << endl;
+                    if (printed == 0)
+                    {
+                        OutFile << endl;
+                    }
+                }
+                break;
+            case 1:
+                OutFile << OriginalTask << "-----------" << endl;
+                OutFile << endl;
+                break;
+        }
+    }
+}
+
+void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFileName, const char type)
+{
+    int index = Settings.GetDefaultUrlIndex();
+    if (index == -1) return;
+
+    ifstream InFile;
+    InFile.open(InputFileName, ios::in);
+    if (InFile.fail())
+    {
+        CString Message = "";
+        Message.Format("Input file \"%s\" does not exist. Please specify existing one", InputFileName);
+        MessageBox(NULL, Message, szWinName, MB_OK | MB_ICONERROR);
+        return;
+    }
+
+    ofstream OutFile;
+    OutFile.open(OutputFileName, ios::out);
+    if (OutFile.fail())
+    {
+        CString Message = "";
+        Message.Format("Output file \"%s\" is read only or disk is write protected", OutputFileName);
+        MessageBox(NULL, Message, szWinName, MB_OK | MB_ICONERROR);
+        InFile.close();
+        return;
+    }
+
+    if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
+    {
+        OutFile << "Both Login and Password must be specified in settings window for \""+Settings.links[index].Caption+"\" URL";
+        OutFile.close();
+        InFile.close();
+        return;
+    }
+
+    CAmHttpSocket Req;
+
+    // Print request specific title
+    switch (type)
+    {
+        case 'p': // parent task
+            OutFile << "Task            Parent task" << endl;
+            OutFile << "---------------------------" << endl;
+            break;
+        case 'c': // child tasks
+            OutFile << "Task            Child tasks     Product                 Status" << endl;
+            OutFile << "--------------------------------------------------------------" << endl;
+            break;
+        case 's': // SPC linked tasks
+            OutFile << "Task             Linked tasks            Product                 Status  MSP" << endl;
+            OutFile << "------------------------------------------------------------------------------------" << endl;
+            break;
+        case 'b': // qb actions
+            OutFile << "Task            QB/QR action(s)" << endl;
+            OutFile << "-----------------------------------------------------------------------" << endl;
+            break;
+        case 'q': // qc actions
+            OutFile << "Task            QC action(s)" << endl;
+            OutFile << "-----------------------------------------------------------------------" << endl;
+            break;
+        case 't': // timesheets
+            OutFile << "Task            Timesheets" << endl;
+            OutFile << "-----------------------------------------------------------------------" << endl;
+            break;
+        case 'i': // information about task
+            OutFile << "Task            Product                 Status  MSP" << endl;
+            OutFile << "-----------------------------------------------------------" << endl;
+            break;
+        case 'e': // check if task matches regular expression
+            OutFile << "Task            Sub-expression(s)" << endl;
+            OutFile << "-----------------------------------------------------------" << endl;
+            break;
+    }
+
+    while (!InFile.eof())
+    {
+        CString TasksLine = "";
+        InFile.getline(TasksLine.GetBuffer(256),255);
+        TasksLine.ReleaseBuffer();
+        if (!TasksLine.IsEmpty())
+        {
+            std::vector<CString> Tasks;
+            TASK task;
+            task.SimpleParseTasks(TasksLine, Tasks);
+            for (unsigned int i=0; i<Tasks.size(); i++)
+            {
+                CString Client = "", Sep = "", ID = "";
+                if (!task.IsTaskNameValid(Tasks[i],Client,Sep,ID))
+                {
+                    OutFile.width(16);
+                    OutFile << Tasks[i] << "- invalid task name format" << endl;
+                    if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
+                }
+                else
+                {
+                    CString Message = "", Request = "";
+                    bool IsDefect = false;
+                    int defect_index = -1;
+
+                    // checking if a task is SoftTest defect
+                    if (IsDefect = Settings.IsDefect(Client,NULL,&defect_index))
+                    {
+                        // build URL to open request specific page for SoftTest defects
+                        switch (type)
+                        {
+                            case 'p': // parent task
+                                Request = Settings.defects[defect_index].ParentDefectURL;
+                                Request.Replace("%PROJECT%",Settings.defects[defect_index].STProject);
+                                Request.Replace("%ID%",ID);
+                                break;
+                            case 'c': // child tasks
+                                Request = Settings.defects[defect_index].ChildDefectsURL;
+                                Request.Replace("%PROJECT%",Settings.defects[defect_index].STProject);
+                                Request.Replace("%ID%",ID);
+                                break;
+                            case 's': // SPC linked tasks
+                            case 'b': // qb actions
+                            case 'q': // qc actions
+                            case 't': // timesheets
+                            case 'i': // information about task
+                            case 'e': // check if task matches regular expression
+                                OutFile.width(16);
+                                OutFile << Tasks[i] << "- is SoftTest defect" << endl;
+                                if ((type != 'i') && (type != 'e')) OutFile << endl;
+                                continue;
+                        }
+                    }
+                    else // task is TMS task
+                    {
+                        // build URL to open request specific page for TMS tasks
+                        TASK::FillupTaskID(ID); // Settings.FillID is ignored because GetPage() request will not be successfully completed for not complete ID
+                        switch (type)
+                        {
+                            case 'p': // parent task
+                                Request.Format(Settings.iTMSviewTask, Client, ID);
+                                break;
+                            case 'c': // child tasks
+                                Request.Format(Settings.iTMSviewChildTasks, Client, ID);
+                                break;
+                            case 's': // SPC linked tasks
+                                Request.Format(Settings.iTMSviewRelatedTasks, Client, ID);
+                                break;
+                            case 'b': // qb actions
+                            case 'q': // qc actions
+                                Request.Format(Settings.iTMSviewTask, Client, ID);
+                                break;
+                            case 't': // timesheets
+                                Request.Format(Settings.iTMSviewTimesheets, Client, ID);
+                                break;
+                            case 'i': // information about task
+                                Request.Format(Settings.iTMSviewRelatedTasks, Client, ID); // use the same URL as for SPC linked tasks
+                                break;
+                            case 'e': // check if task matches regular expression
+                                Request.Format(Settings.iTMSviewTask, Client, ID);
+                                break;
+                        }
+                    }
+#ifdef DEBUG
+Req.OutFile = &OutFile;
+OutFile << "GetHeaders started" << endl;
+#endif
+                    CString reply = Req.GetHeaders(Request);
+#ifdef DEBUG
+OutFile << "GetPageStatusCode: " << Req.GetPageStatusCode() << endl;
+#endif
+                    if (Req.GetPageStatusCode() == 401) // Authorization Required
+                    {
+                        CAmHttpSocket::InsertLoginPassword(Request,Settings.links[index].Login,Settings.links[index].Password);
+#ifdef DEBUG
+OutFile << "GetHeaders started with authorization" << endl;
+#endif
+                        reply = Req.GetHeaders(Request);
+#ifdef DEBUG
+OutFile << "GetPageStatusCode: " << Req.GetPageStatusCode() << endl;
+#endif
+                    }
+#ifdef DEBUG
+OutFile << "GetPage started" << endl;
+#endif
+                    Message = Req.GetPage(Request);
+#ifdef DEBUG
+OutFile << "GetPage finished" << endl;
+#endif
+                    OutFile.width(16);
+                    OutFile.setf(OutFile.left);
+
+                    if (Message.IsEmpty() || (Message.Find("You don't have access to this site") != -1))
+                    {
+                        OutFile << Tasks[i] << "- error occured during reading task, probably incorrect login/password or request was timed out" << endl;
+                        if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
+                    }
+                    else
+                    {
+                        // request specific task processing
+                        switch (type)
+                        {
+                            case 'p': // parent task
+                                GetParentTasksList(task, Message, Tasks[i], OutFile, Client, IsDefect);
+                                break;
+                            case 'c': // child tasks
+                            case 's': // SPC linked tasks
+                                GetChildTasksList(task, Message, Tasks[i], OutFile, Client, ID, IsDefect, type);
+                                break;
+                            case 'b': // qb actions
+                            case 'q': // qc actions
+                                GetActionsFromTasks(task, Message, Tasks[i], OutFile, (type == 'b'));
+                                break;
+                            case 't': // timesheets
+                                GetTimesheetsFromTasks(task, Message, Tasks[i], OutFile);
+                                break;
+                            case 'i': // information about task
+                                GetInformationAboutTask(Message, Tasks[i], OutFile, Client, ID);
+                                break;
+                            case 'e': // check if task matches regular expression
+                                PrintSubExpressions(Message, Tasks[i], OutFile);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    InFile.close();
+    OutFile.close();
+}
+
+void CmdLine::PrintTask(ofstream &OutFile, CHILD &ChildTask, bool first)
+{
+    CString line = "";
+    if (first)
+    {
+        line.Format("%-16s%-24s%s", ChildTask.TaskName, ChildTask.Product, ChildTask.Status);
+    }
+    else
+    {
+        line.Format("%16s%-16s%-24s%s", " ", ChildTask.TaskName, ChildTask.Product, ChildTask.Status);
+    }
+    OutFile << line << endl;
+}
+
+void CmdLine::PrintSPCtask(ofstream &OutFile, CHILD &ChildTask, bool OrigTask, bool first)
+{
+    ChildTask.TaskName.Insert(0,"        ");
+    ChildTask.TaskName.Delete(0,2*(5-ChildTask.level));
+
+    CString line = "";
+    if (first)
+    {
+        line.Format("%s%-24s%-24s%-8s%s", (OrigTask ? "*" : " "), ChildTask.TaskName, ChildTask.Product, ChildTask.Status, ChildTask.MSP);
+    }
+    else
+    {
+        line.Format("%17s%-24s%-24s%-8s%s", (OrigTask ? "*" : " "), ChildTask.TaskName, ChildTask.Product, ChildTask.Status, ChildTask.MSP);
+    }
+    OutFile << line << endl;
 }

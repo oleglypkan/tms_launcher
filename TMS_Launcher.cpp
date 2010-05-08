@@ -3,7 +3,6 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: November 24, 2006
 */
 
 #include "stdafx.h"
@@ -13,17 +12,19 @@
 #include "CmdLine.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.24 $$Date: 2008/03/19 20:36:32Z $"; 
+ static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.31 $$Date: 2009/04/09 14:55:17Z $"; 
 #endif
 
 /* 
-   The next 3 statements are used to track memory leaks in the program
+   The next statements are used to track memory leaks in the program
    They work only in Debug mode
 */
 #ifdef _DEBUG
-    #define _CRTDBG_MAP_ALLOC 
-    #include <stdlib.h>
     #include <crtdbg.h>
+    #include <stdlib.h>
+    #define _CRTDBG_MAP_ALLOC 
+    #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+    #define new DEBUG_NEW
 #endif
 
 CAppModule _Module;
@@ -34,7 +35,7 @@ const char* AutoRunKeyName = "TMS Launcher";
 const UINT WM_TMS_LAUNCHER_ACTIVATE = ::RegisterWindowMessage("TMS_Launcher_Activate");
 CSettings Settings("Software\\Winchester\\TMS Launcher",
                    "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-                   AutoRunKeyName, "Defects", "Format", "Links", "SoftTest", "History");
+                   AutoRunKeyName, "Defects", "Format", "Links", "SoftTest", "History", "Other");
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
                     const char* StringName = "ProductVersion", UINT VersionDigits = 2,
                     const CString &ModulePath = "");
@@ -91,7 +92,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 
     if (Settings.SettingsAvailable())
     {
-        Settings.AddingNewURLs(); // Adding new URLs
+        Settings.ConvertSettings(); // convert some settings from previous to new version
+        Settings.AddingNewURLs();   // Adding new URLs
         Settings.LoadSettings();
     }
     else
@@ -102,6 +104,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         Settings.SaveLinksSettings();
         Settings.SaveSoftTestSettings();
         Settings.SaveHistorySettings();
+        Settings.SaveOtherSettings();
     }
 
     if (lstrlen(lpstrCmdLine) != 0)
@@ -123,6 +126,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
     CMainDlg dlgMain;
 
     HWND hWnd = dlgMain.Create(NULL);
+
+    Settings.MainDialog = &dlgMain;
 
     if (Settings.Minimize)
     {
@@ -165,7 +170,7 @@ bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
 
     if (ModulePath.IsEmpty())
     {
-        GetModuleFileName(NULL,FileName.GetBuffer(MAX_PATH),MAX_PATH);
+        GetModuleFileName(NULL,FileName.GetBuffer(MAX_PATH+1),MAX_PATH+1);
         FileName.ReleaseBuffer();
     }
     else
@@ -173,11 +178,11 @@ bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
         FileName = ModulePath;
     }
 
-    DWORD VersionInfoSize = GetFileVersionInfoSize(FileName,&Handle);
+    DWORD VersionInfoSize = GetFileVersionInfoSize(FileName.GetBuffer(MAX_PATH+1),&Handle);
     if (VersionInfoSize)
     {
         char *VersionInfo = new char[VersionInfoSize];
-        if (GetFileVersionInfo(FileName.GetBuffer(MAX_PATH),0,VersionInfoSize,VersionInfo))
+        if (GetFileVersionInfo(FileName.GetBuffer(MAX_PATH+1),0,VersionInfoSize,VersionInfo))
         {
             char *SubBlockBuffer;
             UINT SubBlockSize;

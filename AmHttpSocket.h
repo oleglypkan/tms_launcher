@@ -12,12 +12,17 @@
 #define HTTPSOCKET_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char AmHttpSocket_h[]="@(#)$RCSfile: AmHttpSocket.h,v $$Revision: 1.1 $$Date: 2006/09/07 10:09:40Z $";
+ static char AmHttpSocket_h[]="@(#)$RCSfile: AmHttpSocket.h,v $$Revision: 1.3 $$Date: 2008/09/28 17:16:34Z $";
 #endif
 
 #include <tchar.h>
 #include <windows.h>
 #include <wininet.h>
+
+#ifdef DEBUG
+#include <fstream> // to be removed
+using namespace std;
+#endif
 
 /*
     custom errorcodes:
@@ -27,6 +32,9 @@
 class CAmHttpSocket
 {
 public:
+  #ifdef DEBUG
+    ofstream *OutFile; // only for DEBUG
+  #endif
     int GetPageStatusCode(); //get the HTTP statuscode for the last received page
     TCHAR* GetHeaders(const TCHAR *url); //return a pointer to the headers from an url
     CAmHttpSocket();

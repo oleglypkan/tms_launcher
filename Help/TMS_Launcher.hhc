@@ -71,6 +71,10 @@
 			<param name="Name" value="History page">
 			<param name="Local" value="Settings\history.html">
 			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Other page">
+			<param name="Local" value="Settings\other.html">
+			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Credits">

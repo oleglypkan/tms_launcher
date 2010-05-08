@@ -13,7 +13,7 @@
 #include <vector>
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: AmHttpSocket.cpp,v $$Revision: 1.1 $$Date: 2006/09/07 10:09:02Z $"; 
+ static char verid[]="@(#)$RCSfile: AmHttpSocket.cpp,v $$Revision: 1.3 $$Date: 2008/09/28 17:16:48Z $"; 
 #endif
 
 #define AgentName _T("Mozilla/4.0")
@@ -86,13 +86,33 @@ DWORD strnpos(const char *buffer, const char ch, DWORD size)
 
 CAmHttpSocket::CAmHttpSocket()
 {
+#ifdef DEBUG
+    OutFile = NULL; // only for DEBUG
+#endif
     LastError = 0;
     ReceivedData = NULL;
     Headers = NULL;
     hIO = NULL;
     hIS = NULL;
     hCO = NULL;
-    hIO = InternetOpen(AgentName, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);   
+    hIO = InternetOpen(AgentName, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+
+    // set new options if necessary
+    DWORD dwSize = sizeof(DWORD);
+    DWORD Timeout = 0;
+    InternetQueryOption(hIO,INTERNET_OPTION_CONNECT_TIMEOUT,&Timeout,&dwSize);
+    if (Timeout < 300000) // timeout is less than 5 minutes
+    {
+        Timeout = 300000;
+        InternetSetOption(hIO,INTERNET_OPTION_CONNECT_TIMEOUT,&Timeout,dwSize);
+    }
+    Timeout = 0;
+    InternetQueryOption(hIO,INTERNET_OPTION_RECEIVE_TIMEOUT,&Timeout,&dwSize);
+    if (Timeout < 300000) // timeout is less than 5 minutes
+    {
+        Timeout = 300000;
+        InternetSetOption(hIO,INTERNET_OPTION_RECEIVE_TIMEOUT,&Timeout,dwSize);
+    }
 }
 
 CAmHttpSocket::~CAmHttpSocket()
@@ -106,24 +126,48 @@ CAmHttpSocket::~CAmHttpSocket()
 
 bool CAmHttpSocket::OpenUrl(const TCHAR *url)
 {
-    if (hIS != NULL) InternetCloseHandle(hIS);
+    if (hIS != NULL)
+    {
+        InternetCloseHandle(hIS);
+        hIS = NULL;
+    }
 
     CString protocol, host, request, port, login, password;
     ParseURL(url,protocol,login,password,host,request,port);
-    CString AuthString = "";
     CString headers = "";
-    if (!login.IsEmpty() && !password.IsEmpty())
+    headers = GetHeaderLine("WWW-Authenticate");
+    if (!headers.IsEmpty() && !login.IsEmpty() && !password.IsEmpty())
     {
-        AuthString = login + ":" + password;
+        CString AuthString = login + ":" + password;
         Base64Encode(AuthString);
-        headers = "Authorization: Basic "+AuthString+" realm=\"Enter your TMS EMPLOYEE ID and TMS password\"\r\n";
+        headers.Replace("WWW-Authenticate","Authorization");
+        headers.Insert(headers.Find("realm"),AuthString+" ");
+        headers += "\r\n";
+    }
+    else
+    {
+        headers = "";
     }
 
+#ifdef DEBUG
+if (OutFile != NULL) *OutFile << "    InternetOpenUrl started...";
+#endif
+
     hIS = InternetOpenUrl(hIO, protocol+"://"+host+":"+port+request, headers, -1L, INTERNET_FLAG_RAW_DATA, 0);
-    if (hIS != NULL) return true;
+
+    if (hIS != NULL)
+    {
+#ifdef DEBUG
+if (OutFile != NULL) *OutFile << "finished successfully" << endl;
+#endif
+        return true;
+    }
     else
     {
         LastError = GetLastError();
+#ifdef DEBUG
+if (OutFile != NULL) *OutFile << "finished with error - " << LastError << endl;
+#endif
         return false;
     }
 }
@@ -197,7 +241,7 @@ TCHAR* CAmHttpSocket::GetHeaders(const TCHAR *url)
         return NULL;
     }
     //open the url...
-    OpenUrl(url);
+    if (!OpenUrl(url)) return NULL;
     //delete old headers...
     if (Headers != NULL) free(Headers);
     Headers = (TCHAR*)calloc(1, sizeof(TCHAR));
@@ -227,25 +271,94 @@ char* CAmHttpSocket::GetPage(const TCHAR *url, bool Post, const char *PostData, 
     else
     {
         // use http get
-        if (!OpenUrl(url)) return NULL;
+        //if (!OpenUrl(url)) return NULL; // OpenUrl() function was already called in GetHeaders() and no need to call it again
     }
-    const DWORD rdsize = 65535;
-    char mr[rdsize] = "";
+    // initializing variables
+    char *mr = NULL;    
     DWORD rd = 0;
     DWORD curpos = 0;
-    if (ReceivedData != NULL) free(ReceivedData);
-    while (InternetReadFile(hIS, mr, rdsize - 1, &rd))
+    DWORD dwNumberOfBytesAvailable = 0;
+    if (ReceivedData != NULL)
     {
+        free(ReceivedData); ReceivedData = NULL; 
+    }
+
+#ifdef DEBUG
+if (OutFile != NULL) *OutFile << "    InternetQueryDataAvailable started" << endl;
+#endif
+
+    // get amount of available data
+    if (!InternetQueryDataAvailable(hIS, &dwNumberOfBytesAvailable, 0, 0))
+    {
+        LastError = GetLastError();
+        return NULL;
+    }
+    if (dwNumberOfBytesAvailable != 0)
+    {
+        mr = new char[dwNumberOfBytesAvailable];
+    }
+    else
+    {
+        return NULL;
+    }
+    // receiving data...
+#ifdef DEBUG
+if (OutFile != NULL) *OutFile << "    InternetReadFile started in loop";
+#endif
+
+    while (InternetReadFile(hIS, mr, dwNumberOfBytesAvailable, &rd))
+    {
+
+#ifdef DEBUG
+if (OutFile != NULL)
+{
+    *OutFile << ".";
+    OutFile->flush();
+}
+#endif
+
         if (rd == 0) break;
         ReceivedData = (char*)realloc(ReceivedData, curpos + rd + 1);
         memcpy(ReceivedData+curpos, mr, rd);
         curpos += rd;
+        if (mr != NULL) 
+        {
+            delete [] mr; 
+            mr = NULL;
+        }
+        dwNumberOfBytesAvailable = 0;
+        if (!InternetQueryDataAvailable(hIS, &dwNumberOfBytesAvailable, 0, 0))
+        {
+            LastError = GetLastError();
+            return NULL;
+        }
+        if (dwNumberOfBytesAvailable != 0)
+        {
+            mr = new char[dwNumberOfBytesAvailable];
+        }
+        else
+        {
+            break;
+        }
+
     }
-    ReceivedData[curpos] = '\0';
-    DWORD pos = -1;
-    while ((pos = strnpos(ReceivedData,'\0',curpos)) != -1)
+#ifdef DEBUG
+if (OutFile != NULL) *OutFile << endl << "    InternetReadFile finished" << endl;
+#endif
+
+    if (mr != NULL)
     {
-        ReceivedData[pos] = ' ';
+        delete [] mr;
+    }
+    // replacing '\0' character in received data with ' ' character
+    if (ReceivedData != NULL)
+    {
+        ReceivedData[curpos] = '\0';
+        DWORD pos = -1;
+        while ((pos = strnpos(ReceivedData,'\0',curpos)) != -1)
+        {
+            ReceivedData[pos] = ' ';
+        }
     }
     return ReceivedData;
 }
@@ -480,9 +593,9 @@ void CAmHttpSocket::Base64Encode(CString &string)
         Base64Digits.push_back(Result);
     }
     string = "";
-    for (i = 0; i < Base64Digits.size(); i++)
+    for (unsigned int j = 0; j < Base64Digits.size(); j++)
     {
-        string += Base64Table[Base64Digits[i]];
+        string += Base64Table[Base64Digits[j]];
     }
     for (i = 0; i < PaddingChars; i++)
     {
@@ -525,9 +638,9 @@ bool CAmHttpSocket::Base64Decode(CString &string)
             PaddingChars++;
         }
     }
-    for (i = 0; i < Base64Digits.size(); i++)
+    for (unsigned int h = 0; h < Base64Digits.size(); h++)
     {
-        unsigned char ch = (unsigned char)Base64Digits[i];
+        unsigned char ch = (unsigned char)Base64Digits[h];
         // decimal to binary
         CString temp = "";
         while (ch > 0)

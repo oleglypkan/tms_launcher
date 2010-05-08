@@ -1,4 +1,4 @@
-@(#)$RCSfile: TMS_Launcher.hhp,v $$Revision: 1.9 $$Date: 2008/03/23 15:53:31Z $
+@(#)$RCSfile: TMS_Launcher.hhp,v $$Revision: 1.10 $$Date: 2009/04/09 14:58:21Z $
 
 [OPTIONS]
 Compatibility=1.1 or later
@@ -8,7 +8,7 @@ Default topic=introduction.html
 Display compile progress=Yes
 Index file=TMS_Launcher.hhk
 Language=0x409 English (United States)
-Title=TMS Launcher 2.7 HTML help
+Title=TMS Launcher 3.0 HTML help
 
 
 [FILES]
@@ -26,7 +26,7 @@ Settings\format.html
 Settings\general.html
 Settings\urls.html
 Settings\softtest.html
-Settings\autologin_feature.reg
+Settings\other.html
 credits.html
 style.css
 Settings\history.html

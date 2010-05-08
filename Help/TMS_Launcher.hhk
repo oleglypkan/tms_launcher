@@ -34,12 +34,24 @@
 		<param name="Local" value="Features\opentasks.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Hotkey">
+		<param name="Name" value="URLs page of settings window">
+		<param name="Local" value="Settings\urls.html">
+		<param name="Name" value="Other page of settings window">
+		<param name="Local" value="Settings\other.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Links">
 		<param name="Local" value="Features\openlinks.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="New features">
 		<param name="Local" value="whats_new.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Other settings">
+		<param name="Name" value="Other page of settings window">
+		<param name="Local" value="Settings\other.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Settings">
@@ -67,6 +79,11 @@
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="TMS tasks">
 		<param name="Local" value="Features\opentasks.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Transparency">
+		<param name="Name" value="Other page of settings window">
+		<param name="Local" value="Settings\other.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="URLs settings">

@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: whats_new.html,v $$Revision: 1.8 $$Date: 2008/03/23 15:53:37Z $ -->
+<!-- @(#)$RCSfile: whats_new.html,v $$Revision: 1.9 $$Date: 2009/04/09 14:58:27Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
@@ -19,15 +19,29 @@
 <H2 align="center" class="boldfont">What's new in this release?</H2>
 <H4 align="justify" class="font">
 <UL>
+  <LI>Tasks that have digits in client name like MAR2A-00045, DEV1-00001 can be opened now
+  <LI>Added support for MS Windows Vista and Internet Explorer 8
+  <LI>Added new "Related tasks" button to main window
+  <LI>Added "Other" page to Settings window with:
+    <UL>
+      <LI>Ability to customize transparency of main window
+      <LI>Hotkey for fast window activation
+      <LI>Flag to set focus to "Task Name" field when window is activated
+      <LI>Flag to highlight text in "Task Name" field when window is activated
+    </UL>
+  <LI>"Autologin" feature can be automatically enabled in IE after user enters "Login"/"Password" for an URL
+  <LI>Added ability to reassign already used hotkeys in URLs
+  <LI>Added ability to open and copy tasks from History page of Settings window
+  <LI>Small user interface changes
   <LI>Command line syntax has been extended (see <a class="font" href="Features\commandline.html">Command line interface</a> for more details):
      <UL>
-         <LI>Added option that allows to view timesheets for the list of tasks<br>
-             <b>TMS_Launcher.exe -t [-name "<i>NAME</i>"] <i>input_file output_file</i></b>
-         <LI>Added new parameter <b>[-stat "<i>STAT</i>"]</b> to filter child tasks by status<br>
-             <b>TMS_Launcher.exe -c [-name "<i>NAME</i>"] [-prod "<i>PROD</i>"] [-stat "<i>STAT</i>"] <i>input_file output_file</i></b>
-         <LI>Added new parameter <b>[-name "<i>NAME</i>"]</b> to filter parent tasks by names<br>
-             <b>TMS_Launcher.exe -p [-name "<i>NAME</i>"] <i>input_file output_file</i></b>
-         <LI>Now parameters <b>-name</b>, <b>-prod</b>, <b>-stat</b> are regular expressions, not simple masks
+         <LI>Added option that allows to view SPC linked tasks for the list of given ones:<br>
+             <b>TMS_Launcher -spc -name "<i>NAME</i>" -prod "<i>PROD</i>" -stat "<i>STAT</i>" -msp "<i>MSP</i>" <i>input_file output_file</i></b>
+         <LI>Added option that allows to view PRODUCT, STATUS, MS PROJECT for the list of given tasks:<br>
+             <b>TMS_Launcher -inf -name "<i>NAME</i>" -prod "<i>PROD</i>" -stat "<i>STAT</i>" -msp "<i>MSP</i>" input_file output_file</b>
+         <LI>Added option that allows to find tasks that match or do not match the given regular expression<br>
+             <b>TMS_Launcher -exp "<i>EXPRESSION</i>" <i>input_file output_file</i></b>
+         <LI>Negative search logic can be turned on by adding "!" before an expression in all filters
      </UL>
   <LI>Several bugs fixed
 </UL>
