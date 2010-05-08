@@ -1,0 +1,223 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "atlres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_SYSTRAY_ICON        ICON    DISCARDABLE     "res\\TMS_Launcher.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+SETTINGS_DIALOG DIALOG DISCARDABLE  0, 0, 181, 150
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "TMS Launcher Settings"
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "Open tasks in",IDC_STATIC,2,0,177,24,WS_GROUP
+    CONTROL         "&Usual TMS",IDC_USUAL_TMS,"Button",BS_AUTORADIOBUTTON,7,
+                    11,61,8
+    CONTROL         "&Alternative TMS",IDC_ALT_TMS,"Button",
+                    BS_AUTORADIOBUTTON,99,11,64,8
+    GROUPBOX        "Other",IDC_STATIC,2,24,177,36
+    CONTROL         "&Minimize at startup",IDC_MINIMIZE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,34,71,8
+    CONTROL         "&Single click to highlight",IDC_SINGLE_CLICK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,8,46,85,8
+    CONTROL         "&Expand at startup",IDC_EXPANDED,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,99,34,72,8
+    CONTROL         "Start with &Windows",IDC_AUTORUN,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,99,47,74,8
+    GROUPBOX        "After right click in Task Name field",IDC_STATIC,2,63,
+                    177,25,WS_GROUP
+    CONTROL         "&View Task",IDC_TASK_RADIO,"Button",BS_AUTORADIOBUTTON,
+                    8,74,68,8
+    CONTROL         "V&iew Child Task",IDC_CHILD_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,100,74,71,8
+    GROUPBOX        "Hotkeys for",IDC_STATIC,2,89,177,38
+    LTEXT           "View &Task:",IDC_STATIC,8,99,36,8
+    CONTROL         "HotKey1",VIEW_TASK_HOTKEY,"msctls_hotkey32",WS_BORDER | 
+                    WS_TABSTOP,7,108,71,15
+    LTEXT           "View &Child Tasks:",IDC_STATIC,103,99,57,8
+    CONTROL         "HotKey2",VIEW_CHILD_TASKS_HOTKEY,"msctls_hotkey32",
+                    WS_BORDER | WS_TABSTOP,102,108,71,15
+    DEFPUSHBUTTON   "OK",IDOK,32,133,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,100,133,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    SETTINGS_DIALOG, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 118
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+TMS_LAUNCHER_DIALOG DIALOGEX 0, 0, 144, 38
+STYLE DS_3DLOOK | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_TASKNAME,"RichEdit20A",WS_BORDER | WS_TABSTOP | 
+                    0x80,2,3,78,14
+    DEFPUSHBUTTON   "&View Task",VIEW_TASK,83,3,42,14
+    PUSHBUTTON      ">>",IDC_EXPAND,128,3,13,14,BS_CENTER | BS_VCENTER
+    PUSHBUTTON      "View &Child Tasks",VIEW_CHILD_TASKS,2,21,62,14
+    PUSHBUTTON      "&Settings",IDC_SETTINGS,83,21,58,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    TMS_LAUNCHER_DIALOG, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 36
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""atlres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST ""res\\\\TMS_Launcher.exe.manifest""\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,2,0,1
+ PRODUCTVERSION 1,2,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "Developed by Oleg Lypkan\0"
+            VALUE "CompanyName", "Information Systems Development\0"
+            VALUE "FileDescription", "TMS_Launcher Module\0"
+            VALUE "FileVersion", "1, 2, 0, 1\0"
+            VALUE "InternalName", "TMS_Launcher\0"
+            VALUE "LegalCopyright", "Copyright 2005\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "TMS_Launcher.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "TMS_Launcher Module\0"
+            VALUE "ProductVersion", "1, 2, 0, 1\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "res\\TMS_Launcher.exe.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
