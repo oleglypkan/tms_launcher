@@ -1,19 +1,25 @@
-// TMS_Launcher.cpp : main source file for TMS_Launcher.exe
-//
+/*
+    File name: TMS_Launcher.cpp
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 17, 2006
+*/
 
 #include "stdafx.h"
 #include "resource.h"
 #include "maindlg.h"
 #include "settings.h"
+#include "CmdLine.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.16 $$Date: 2005/07/04 17:17:23Z $"; 
+ static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.19 $$Date: 2006/01/17 19:02:46Z $"; 
 #endif
 
 /* 
    The next 3 statements are used to track memory leaks in the program
    They work only in Debug mode
- */
+*/
 #ifdef _DEBUG
     #define _CRTDBG_MAP_ALLOC 
     #include <stdlib.h>
@@ -42,41 +48,46 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     #endif
 
-    // checking for previous instance of the program running
-    HANDLE hMutex = CreateMutex(NULL, TRUE, MutexName);
-    if (GetLastError() == ERROR_ALREADY_EXISTS)
+    HANDLE hMutex;
+
+    if (lstrlen(lpstrCmdLine) == 0)
     {
-        CloseHandle(hMutex);
-        PostMessage(HWND_BROADCAST,WM_TMS_LAUNCHER_ACTIVATE,0,0);
-        return 0;
+        // checking for previous instance of the program running
+        hMutex = CreateMutex(NULL, TRUE, MutexName);
+        if (GetLastError() == ERROR_ALREADY_EXISTS)
+        {
+            CloseHandle(hMutex);
+            PostMessage(HWND_BROADCAST,WM_TMS_LAUNCHER_ACTIVATE,0,0);
+            return 0;
+        }
+
+        szWinName += " ";
+        GetVersionInfo(szWinName,0x0409,0x04b0);
+
+        HINSTANCE RichEditLibrary = LoadLibrary (CRichEditCtrl::GetLibraryName());
+        if (!RichEditLibrary)
+        {
+            MessageBox(NULL,"Cannot load Richedit library",szWinName,MB_OK);
+            return 0;
+        }
+
+        HRESULT hRes = ::CoInitialize(NULL);
+    // If you are running on NT 4.0 or higher you can use the following call instead to 
+    // make the EXE free threaded. This means that calls come in on a random RPC thread.
+    //  HRESULT hRes = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
+        ATLASSERT(SUCCEEDED(hRes));
+
+        // this resolves ATL window thunking problem when Microsoft Layer for Unicode (MSLU) is used
+        ::DefWindowProc(NULL, 0, 0, 0L);
+
+        AtlInitCommonControls(ICC_COOL_CLASSES | ICC_BAR_CLASSES);  // add flags to support other controls
+
+        hRes = _Module.Init(NULL, hInstance);
+        ATLASSERT(SUCCEEDED(hRes));
+    
+        Settings.ImportSettings("Software\\Winchester\\TMS_Launcher");
     }
 
-    szWinName += " ";
-    GetVersionInfo(szWinName,0x0409,0x04b0);
-
-    HINSTANCE RichEditLibrary = LoadLibrary (CRichEditCtrl::GetLibraryName());
-    if (!RichEditLibrary)
-    {
-        MessageBox(NULL,"Cannot load Richedit library",szWinName,MB_OK);
-        return 0;
-    }
-
-    HRESULT hRes = ::CoInitialize(NULL);
-// If you are running on NT 4.0 or higher you can use the following call instead to 
-// make the EXE free threaded. This means that calls come in on a random RPC thread.
-//  HRESULT hRes = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    ATLASSERT(SUCCEEDED(hRes));
-
-    // this resolves ATL window thunking problem when Microsoft Layer for Unicode (MSLU) is used
-    ::DefWindowProc(NULL, 0, 0, 0L);
-
-    AtlInitCommonControls(ICC_COOL_CLASSES | ICC_BAR_CLASSES);  // add flags to support other controls
-
-    hRes = _Module.Init(NULL, hInstance);
-    ATLASSERT(SUCCEEDED(hRes));
-    
-    Settings.ImportSettings("Software\\Winchester\\TMS_Launcher");
-    
     if (Settings.SettingsAvailable())
     {
         Settings.LoadSettings();
@@ -88,12 +99,19 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         Settings.SaveDefectsSettings();
         Settings.SaveLinksSettings();
     }
+
+    if (lstrlen(lpstrCmdLine) != 0)
+    {
+        CmdLine CommandLine;
+        CommandLine.ParseCmdLine(lpstrCmdLine);
+        return 0;
+    }
     
     CMainDlg dlgMain;
 
     HWND hWnd = dlgMain.Create(NULL);
 
-	if (Settings.Minimize)
+    if (Settings.Minimize)
     {
         dlgMain.ShowWindow(SW_HIDE);
     }
@@ -102,11 +120,13 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         dlgMain.ShowWindow(SW_SHOWNORMAL);
     }
 
+    HACCEL hAccelTable;
+    hAccelTable = LoadAccelerators(hInstance,MAKEINTRESOURCE(IDR_ACCELERATORS));
     MSG msg;
 
     while (GetMessage(&msg, NULL, 0, 0 ) > 0)
     {
-        if (!IsDialogMessage(hWnd,&msg))
+        if (!(TranslateAccelerator(hWnd, hAccelTable, &msg)||IsDialogMessage(hWnd,&msg)))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);

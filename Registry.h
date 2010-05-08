@@ -1,10 +1,18 @@
+/*
+    File name: Registry.h
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 17, 2006
+*/
+
 #ifndef REGISTRY_H_INCLUDED
 #define REGISTRY_H_INCLUDED
 
 #include <windows.h>
 
 #ifdef INCLUDE_VERID
- static char Registry_h[]="@(#)$RCSfile: Registry.h,v $$Revision: 1.5 $$Date: 2005/06/17 14:00:03Z $";
+ static char Registry_h[]="@(#)$RCSfile: Registry.h,v $$Revision: 1.6 $$Date: 2006/01/17 15:53:32Z $";
 #endif
 
 class Registry 

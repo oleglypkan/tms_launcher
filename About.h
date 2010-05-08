@@ -1,6 +1,10 @@
-// About.h: interface for the CAbout class.
-//
-//////////////////////////////////////////////////////////////////////
+/*
+    File name: About.h
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 17, 2006
+*/
 
 #if !defined(AFX_ABOUT_H__3703822D_29A4_44ED_A6A8_FC738830A235__INCLUDED_)
 #define AFX_ABOUT_H__3703822D_29A4_44ED_A6A8_FC738830A235__INCLUDED_
@@ -10,7 +14,7 @@
 #endif // _MSC_VER > 1000
 
 #ifdef INCLUDE_VERID
- static char About_h[]="@(#)$RCSfile: About.h,v $$Revision: 1.2 $$Date: 2005/05/25 16:08:50Z $";
+ static char About_h[]="@(#)$RCSfile: About.h,v $$Revision: 1.3 $$Date: 2006/01/17 15:42:56Z $";
 #endif
 
 #include "resource.h"

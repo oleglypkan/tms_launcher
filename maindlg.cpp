@@ -1,11 +1,15 @@
-// maindlg.cpp : implementation of the CMainDlg class
-//
-/////////////////////////////////////////////////////////////////////////////
+/*
+    File name: maindlg.cpp
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 18, 2006
+*/
 
 #include "stdafx.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.28 $$Date: 2005/07/07 11:09:32Z $"; 
+ static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.42 $$Date: 2006/02/10 16:24:21Z $"; 
 #endif
 
 #include "resource.h"
@@ -14,8 +18,9 @@
 #include "settings.h"
 #include "tools.h"
 #include <ctype.h>
-
+#include "request.h"
 #include "Options.h"
+#include "Task.h"
 using Mortimer::COptionSheetDialogImpl;
 using Mortimer::COptionSelectionTreeCtrl;
 
@@ -61,6 +66,21 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
             }
         }
         HotkeyID++;
+        if (Settings.links[i].ViewParentTaskHotKey)
+        {
+            UINT HotKey = Settings.links[i].ViewParentTaskHotKey;
+            if (!RegisterHotKey(m_hWnd,HotkeyID,(!(HotKey&0x500)?
+                           HIBYTE(LOWORD(HotKey)):((HotKey&0x500)<0x500?
+                           HIBYTE(LOWORD(HotKey))^5:HIBYTE(LOWORD(HotKey)))),
+                           LOBYTE(LOWORD(HotKey))))
+            {
+                CString message;
+                message.Format("Hotkey used to View Parent Task in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
+                               Settings.links[i].Caption);
+                MessageBox(message,szWinName,MB_ICONERROR);
+            }
+        }
+        HotkeyID++;
     }
 
     SetWindowText(szWinName);
@@ -69,6 +89,21 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     TaskNameControl.SetTextMode(TM_PLAINTEXT);
     TaskNameControl.SetEventMask(ENM_MOUSEEVENTS|ENM_LINK);
     TaskNameControl.SetAutoURLDetect(true);
+
+    TaskNameCombo.Attach(GetDlgItem(IDC_TASKNAME_COMBO));
+
+    SwitchControls();
+
+    // creation of RichEdit control context menu
+    ContextMenu.CreatePopupMenu();
+    ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_UNDO,"&Undo");
+    ContextMenu.AppendMenu(MF_SEPARATOR,0,"");
+    ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_CUT,"Cu&t");
+    ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_COPY,"&Copy");
+    ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_PASTE,"&Paste");
+    ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_DELETE,"&Delete");
+    ContextMenu.AppendMenu(MF_SEPARATOR,0,"");
+    ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_SELECT,"Select &All");
 
     if ((Settings.xPos < 0) && (Settings.yPos < 0))
     {
@@ -94,9 +129,11 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     SystraySubMenu.CreatePopupMenu();
     SystraySubMenu.AppendMenu(MF_ENABLED,VIEW_TASK_HOTKEY,"&View Task");
     SystraySubMenu.AppendMenu(MF_ENABLED,VIEW_CHILD_TASKS_HOTKEY,"View &Child Tasks");
+    SystraySubMenu.AppendMenu(MF_ENABLED,VIEW_PARENT_TASK_HOTKEY,"View &Parent Task");
     SystrayMenu.CreatePopupMenu();
     SystrayMenu.AppendMenu(MF_ENABLED,VIEW_TASK,"&View Task");
     SystrayMenu.AppendMenu(MF_ENABLED,VIEW_CHILD_TASKS,"View &Child Tasks");
+    SystrayMenu.AppendMenu(MF_ENABLED,VIEW_PARENT_TASK,"View &Parent Task");
     SystrayMenu.AppendMenu(MF_SEPARATOR);
     SystrayMenu.AppendMenu(MF_POPUP,(UINT)(HMENU)SystraySubMenu,"Clip&board");
     SystrayMenu.AppendMenu(MF_SEPARATOR);
@@ -106,6 +143,16 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     CreateSysTrayIcon(m_hWnd,LoadIcon(_Module.GetModuleInstance(),MAKEINTRESOURCE(IDI_SYSTRAY_ICON)),szWinName);
 
     return TRUE;
+}
+
+void CMainDlg::OnContents(UINT wNotifyCode, INT wID, HWND hWndCtl)
+{
+    if (HtmlHelp(NULL,HelpFileName,HH_DISPLAY_TOPIC,NULL)==NULL)
+    {
+        CString ErrorMessage;
+        ErrorMessage.Format("Help file \"%s\" was not found\nor your system does not support HTML help",HelpFileName);
+        MessageBox(ErrorMessage,szWinName,MB_ICONERROR);
+    }
 }
 
 LRESULT CMainDlg::OnMyIconNotify(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -147,10 +194,7 @@ LRESULT CMainDlg::OnLink(LPNMHDR pnmh)
             CRichEditCtrl Temp = msg->nmhdr.hwndFrom;
             Temp.GetTextRange(msg->chrg.cpMin,msg->chrg.cpMax,String.GetBuffer(LinkLength));
             String.ReleaseBuffer();
-            if (!OpenLink(String))
-            {
-                MessageBox("The link is not accessible or incorrect",szWinName,MB_ICONERROR);
-            }
+            OpenLink(szWinName,m_hWnd,"open",String);
         }
     }
     return 0;
@@ -230,6 +274,7 @@ void CMainDlg::OnExpand(UINT wNotifyCode, INT wID, HWND hWndCtl)
         WindowRect.bottom -= ButtonRect.bottom - ButtonRect.top + 6;
         SetDlgItemText(IDC_EXPAND,">>");
         ::EnableWindow(GetDlgItem(VIEW_CHILD_TASKS),FALSE);
+        ::EnableWindow(GetDlgItem(VIEW_PARENT_TASK),FALSE);
         ::EnableWindow(GetDlgItem(IDC_SETTINGS),FALSE);
     }
     else
@@ -237,6 +282,7 @@ void CMainDlg::OnExpand(UINT wNotifyCode, INT wID, HWND hWndCtl)
         WindowRect.bottom += ButtonRect.bottom - ButtonRect.top + 6;
         SetDlgItemText(IDC_EXPAND,"<<");
         ::EnableWindow(GetDlgItem(VIEW_CHILD_TASKS),TRUE);
+        ::EnableWindow(GetDlgItem(VIEW_PARENT_TASK),TRUE);
         ::EnableWindow(GetDlgItem(IDC_SETTINGS),TRUE);
     }
     SetWindowPos(HWND_TOPMOST,WindowRect.left,WindowRect.top,
@@ -244,95 +290,20 @@ void CMainDlg::OnExpand(UINT wNotifyCode, INT wID, HWND hWndCtl)
     Expanded = !Expanded;
 }
 
-bool CMainDlg::IsTaskNameValid(CString &sTaskName, CString &sClientName, CString &sIDName)
-{
-//  Task name format: [%CLIENT%-]%ID%[-%EXT%]
-
-    if (sTaskName.IsEmpty()) return false;
-
-    sTaskName.TrimLeft();
-    sTaskName.TrimRight();
-    if ((sTaskName.GetLength()<Settings.MinTaskName)||
-        (sTaskName.GetLength()>Settings.MaxTaskName)) return false;
-
-    for (int i=1; i<Settings.Separators.GetLength(); i++)
-    {
-        sTaskName.Replace(Settings.Separators[i],Settings.Separators[0]);
-    }
-
-    int pos = sTaskName.Find(Settings.Separators[0],0);
-
-    // parsing task name
-    if (pos > -1)
-    {
-        sClientName = sTaskName.Left(pos);
-        sIDName = sTaskName.Right(sTaskName.GetLength()-pos-1);
-        sIDName.TrimLeft(Settings.Separators[0]);
-        pos = sIDName.Find(Settings.Separators[0],0);
-        if (pos > -1)
-        {
-            int ext_len = sIDName.GetLength()-pos-1;
-            if ((ext_len < Settings.MinExt) || (ext_len > Settings.MaxExt))
-            {
-                return false;
-            }
-            else
-            {
-                sIDName.Delete(pos,ext_len+1);
-            }
-        }
-    }
-    else // there are no separators in the task name
-        if (sTaskName.GetLength()<=Settings.MaxIDName)
-        {
-            sClientName = "";
-            sIDName = sTaskName;
-        }
-        else // wrong task name format
-        {
-            return false;
-        }
-
-    if ((sClientName.GetLength() < Settings.MinClientName) || 
-        (sClientName.GetLength() > Settings.MaxClientName))
-    {
-        return false;
-    }
-    else
-        if (!sClientName.IsEmpty())
-        {
-            // checking for correct Client name
-            for (i=0; i<sClientName.GetLength()-1; i++)
-            {
-                if (!isalpha_cp1251(sClientName[i])) return false;
-            }
-            // the last symbol in Client Name can be either an alpha character or a number (i.e. QARD3)
-            if ((!isalpha_cp1251(sClientName[sClientName.GetLength()-1])) && (!isdigit(sClientName[sClientName.GetLength()-1])))
-            {
-                return false;
-            }
-        }
-
-    if ((sIDName.GetLength() < Settings.MinIDName) || (sIDName.GetLength() > Settings.MaxIDName))
-    {
-        return false;
-    }
-    else
-    {
-        // checking for correct ID
-        for (i=0; i<sIDName.GetLength(); i++)
-        {
-            if (!isdigit(sIDName[i])) return false;
-        }
-    }
-
-    return true;
-}
-
 bool CMainDlg::GetTaskNameFromRichEdit(CString &sTasks)
 {
-    UINT TaskNameLength = TaskNameControl.GetWindowTextLength();
-    ::GetWindowText(TaskNameControl,sTasks.GetBuffer(TaskNameLength+1),TaskNameLength+1);
+    UINT TaskNameLength;
+    switch (Settings.TaskNameControlType)
+    {
+        case 0: // RichEdit control
+            TaskNameLength = TaskNameControl.GetWindowTextLength();
+            ::GetWindowText(TaskNameControl,sTasks.GetBuffer(TaskNameLength+1),TaskNameLength+1);
+            break;
+        case 1: // ComboBox control
+            TaskNameLength = TaskNameCombo.GetWindowTextLength();
+            ::GetWindowText(TaskNameCombo,sTasks.GetBuffer(TaskNameLength+1),TaskNameLength+1);
+            break;
+    }
     sTasks.ReleaseBuffer();
     return (!sTasks.IsEmpty());
 }
@@ -354,27 +325,6 @@ bool CMainDlg::GetTaskNameFromClipboard(CString &sTasks)
     return (!sTasks.IsEmpty());
 }
 
-void CMainDlg::ParseTasks(CString &sTasks, std::vector<CString> &Tasks)
-{
-    Tasks.clear();
-    for (int i=1; i<Settings.TasksSeparators.GetLength(); i++)
-    {
-        sTasks.Replace(Settings.TasksSeparators[i],Settings.TasksSeparators[0]);
-    }
-    int pos = -1;
-    while ((pos = sTasks.Find(Settings.TasksSeparators[0],0)) != -1)
-    {
-        CString temp = sTasks.Left(pos);
-        Tasks.push_back(temp);
-        sTasks.Delete(0,pos);
-        sTasks.TrimLeft(Settings.TasksSeparators[0]);
-    }
-    if (!sTasks.IsEmpty())
-    {
-        Tasks.push_back(sTasks);
-    }
-}
-
 void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
 {
     CString sTasks = "";
@@ -386,8 +336,8 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
     static bool busy = false;
     if (busy) return;
 
-    // called after VIEW_TASK or VIEW_CHILD_TASKS button was pressed
-    if ((wID == VIEW_TASK)||(wID == VIEW_CHILD_TASKS))
+    // called after VIEW_TASK, VIEW_CHILD_TASKS or VIEW_PARENT_TASK button was pressed
+    if ((wID == VIEW_TASK)||(wID == VIEW_CHILD_TASKS)||(wID == VIEW_PARENT_TASK))
     {
         if (!GetTaskNameFromRichEdit(sTasks))
         {
@@ -397,8 +347,8 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
             return;
         }
     }
-    // called after systray menu items VIEW_TASK_HOTKEY or VIEW_CHILD_TASKS_HOTKEY are clicked
-    // or hoykey is pressed
+    // called after systray menu items VIEW_TASK_HOTKEY, VIEW_CHILD_TASKS_HOTKEY or VIEW_PARENT_TASK_HOTKEY 
+    // are clicked or hoykey is pressed
     else
     {
         if (!GetTaskNameFromClipboard(sTasks))
@@ -408,16 +358,28 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
             ShowModal = false;
             return;
         }
-        else TaskNameControl.SetWindowText(sTasks);
+        else
+        {
+            switch (Settings.TaskNameControlType)
+            {
+                case 0: // RichEdit control
+                    TaskNameControl.SetWindowText(sTasks);
+                    break;
+                case 1: // ComboBox control
+                    TaskNameCombo.SetWindowText(sTasks);
+                    break;
+            }
+        }
     }
 
     std::vector<CString> Tasks;
     busy = true;
-    ParseTasks(sTasks, Tasks);
+    TASK task;
+    task.ParseTasks(sTasks, Tasks);
     bool correct = true;
     for (int i=0; i<Tasks.size(); i++)
     {
-        if (!IsTaskNameValid(Tasks[i],sClientName,sIDName))
+        if (!task.IsTaskNameValid(Tasks[i],sClientName,sIDName))
         {
             if (correct) correct = false;
             continue;
@@ -431,17 +393,17 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
             {
                 if (Tasks.size() == 1)
                 {
-                    ::ShellExecute(NULL,"open",Request,NULL,"",SW_SHOWNORMAL);
+                    OpenLink(szWinName,m_hWnd,"open",Request);
                 }
                 else
                 {
                     if (Settings.BrowserPath.IsEmpty())
                     {
-                        ::ShellExecute(NULL,"open",Request,NULL,"",SW_SHOWNORMAL);
+                        OpenLink(szWinName,m_hWnd,"open",Request);
                     }
                     else
                     {
-                        ::ShellExecute(NULL,"open",Settings.BrowserPath,Request,"",SW_SHOWNORMAL);
+                        OpenLink(szWinName,m_hWnd,"open",Settings.BrowserPath,Request);
                     }
                 }
             }
@@ -449,15 +411,34 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
             {
                 if (Settings.BrowserPath.IsEmpty())
                 {
-                    ::ShellExecute(NULL,"open",Request,NULL,"",SW_SHOWNORMAL);
+                    OpenLink(szWinName,m_hWnd,"open",Request);
                 }
                 else
                 {
-                    ::ShellExecute(NULL,"open",Settings.BrowserPath,Request,"",SW_SHOWNORMAL);
+                    OpenLink(szWinName,m_hWnd,"open",Settings.BrowserPath,Request);
                 }
             }
+            int pos = TaskNameCombo.FindStringExact(-1,Tasks[i]);
+            if (pos != CB_ERR)
+            {
+                TaskNameCombo.DeleteString(pos);
+            }
+            else
+            {
+                UINT ItemsNumber = TaskNameCombo.GetCount();
+                if (ItemsNumber == Settings.MaxHistoryItems)
+                {
+                    TaskNameCombo.DeleteString(ItemsNumber - 1);
+                }
+            }
+            TaskNameCombo.InsertString(0,Tasks[i]);
         }
     }
+    if (Settings.TaskNameControlType == 1)
+    {
+        TaskNameCombo.SetWindowText(sTasks);
+    }
+
     if (!correct)
     {
         if (Tasks.size() > 1)
@@ -475,12 +456,44 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
 
 void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID)
 {
+    int i = 0;
+    int index = -1;
+
+    Request = "";
+
     // opening defect
-    for (int i=0; i<Settings.defects.size(); i++)
+    for (i=0; i<Settings.defects.size(); i++)
     {
         if (CompareNoCaseCP1251(sClientName,Settings.defects[i].ClientID)==0)
         {
-            Request = Settings.DefectsLink;
+            switch (wID)
+            {
+                case VIEW_TASK:
+                case VIEW_TASK_HOTKEY:
+                    Request = Settings.defects[i].DefectURL;
+                    break;
+                case VIEW_CHILD_TASKS:
+                case VIEW_CHILD_TASKS_HOTKEY:
+                    Request = Settings.defects[i].ChildDefectsURL;
+                    break;
+                case VIEW_PARENT_TASK:
+                case VIEW_PARENT_TASK_HOTKEY:
+                    Request = Settings.defects[i].ParentDefectURL;
+                    break;
+                default:
+                    switch (wID % 3)
+                    {
+                        case 0: // open task
+                            Request = Settings.defects[i].DefectURL;
+                            break;
+                        case 1: // open child tasks
+                            Request = Settings.defects[i].ChildDefectsURL;
+                            break;
+                        case 2: // open parent task
+                            Request = Settings.defects[i].ParentDefectURL;
+                            break;
+                    }
+            }
             Request.Replace("%PROJECT%",Settings.defects[i].STProject);
             Request.Replace("%ID%",sIDName);
             return;
@@ -489,89 +502,135 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
     // opening TMS task
     if (lstrcmp(sClientName,"")==0)
     {
-        Request = "";
         MessageBox("Task without client name is entered.\nThere is no defect with empty client name defined.\nSo, the task cannot be opened.",szWinName,MB_ICONERROR);
         return;
     }
-    if ((wID == VIEW_TASK)||(wID == VIEW_TASK_HOTKEY)||(wID == VIEW_CHILD_TASKS)||(wID == VIEW_CHILD_TASKS_HOTKEY))
-    {   
-        // use default URL to open task/child tasks
-        for (int i=0; i<Settings.links.size(); i++)
-        {
-            if (Settings.links[i].Default)
-            {
-                // open task
-                if ((wID == VIEW_TASK)||(wID == VIEW_TASK_HOTKEY))
-                {
-                    if (!Settings.links[i].TaskURL.IsEmpty())
-                    {
-                        Request = Settings.links[i].TaskURL;
-                        Request.Replace("%CLIENT%",sClientName);
-                        Request.Replace("%ID%",sIDName);
-                    }
-                    else
-                    {
-                        MessageBox("URL to open Task is not defined.\nPlease correct settings on URLs page",szWinName,MB_ICONERROR);
-                        Request = "";
-                    }
-                    break;
-                }
-                // open child tasks
-                else
-                {
-                    if (!Settings.links[i].ChildTasksURL.IsEmpty())
-                    {
-                        Request = Settings.links[i].ChildTasksURL;
-                        Request.Replace("%CLIENT%",sClientName);
-                        Request.Replace("%ID%",sIDName);
-                    }
-                    else
-                    {
-                        MessageBox("URL to open Child Tasks is not defined.\nPlease correct settings on URLs page",szWinName,MB_ICONERROR);
-                        Request = "";
-                    }
-                    break;
-                }
-            }
-        }
+    CString tempID = "00000";
+    if (lstrlen(sIDName)<5)
+    {
+        tempID += sIDName;
+        tempID.Delete(0,tempID.GetLength()-5);
     }
     else
     {
-        // use hotkey ID's dependent URL (wID == HotKeyID)
-        int index = wID / 2;
-        // open task
-        if (wID % 2 == 0)
+        tempID = sIDName;
+    }
+    
+    switch (wID)
+    {
+        case VIEW_TASK:
+        case VIEW_TASK_HOTKEY:
+        case VIEW_CHILD_TASKS:
+        case VIEW_CHILD_TASKS_HOTKEY:
+        case VIEW_PARENT_TASK:
+        case VIEW_PARENT_TASK_HOTKEY:
+            // use default URL to open task/child/parent task(s)
+            for (i=0; i<Settings.links.size(); i++)
+            {
+                if (Settings.links[i].Default)
+                {
+                    index = i;
+                    break;
+                }
+            }
+            break;
+        default:
+            // use hotkey ID's dependent URL (wID == HotKeyID)
+            index = wID / 3;
+            switch (wID % 3)
+            {
+                case 0: // open task
+                    wID = VIEW_TASK_HOTKEY;
+                    break;
+                case 1: // open child tasks
+                    wID = VIEW_CHILD_TASKS_HOTKEY;
+                    break;
+                case 2: // open parent task
+                    wID = VIEW_PARENT_TASK_HOTKEY;
+                    break;
+            }
+    }
+
+    switch (wID)
+    {
+        case VIEW_PARENT_TASK:
+        case VIEW_PARENT_TASK_HOTKEY:
         {
+            CString HeaderSend, HeaderReceive, Message;
+            REQUEST Req;
+            if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
+            {
+                MessageBox("Both Login and Password must be defined to open parent task",szWinName,MB_ICONERROR);
+                break;
+            }
+            Request.Format("http://%s:%s@scc1/~alttms/viewtask.php?Client=%s&ID=%s",
+                           Settings.links[index].Login,Settings.links[index].Password,
+                           sClientName, tempID);
+            if (!Req.SendRequest(false, Request, HeaderSend, HeaderReceive, Message))
+            {
+                MessageBox("Error while opening parent task",szWinName,MB_ICONERROR);
+                break;
+            }
+            Request = CString(sClientName)+"-"+tempID;
+            TASK task;
+            switch (task.ParseHTMLForParentTask(Request, Message))
+            {
+                case 0:
+                    break;
+                case 1:
+                case 2:
+                    MessageBox(Request,szWinName,MB_ICONERROR);
+                    Request = "";
+                    return;
+            }
+        }
+        case VIEW_TASK:
+        case VIEW_TASK_HOTKEY:
             if (!Settings.links[index].TaskURL.IsEmpty())
             {
-                Request = Settings.links[index].TaskURL;
-                Request.Replace("%CLIENT%",sClientName);
-                Request.Replace("%ID%",sIDName);
+                if (!Request.IsEmpty())
+                {
+                    CString Client, ID;
+                    int pos = Request.Find('-');
+                    Client = Request.Left(pos);
+                    ID = Request.Right(Request.GetLength()-pos-1);
+                    Request = Settings.links[index].TaskURL;
+                    Request.Replace("%CLIENT%",Client);
+                    Request.Replace("%ID%",ID);
+                }
+                else
+                {
+                    Request = Settings.links[index].TaskURL;
+                    Request.Replace("%CLIENT%",sClientName);
+                    Request.Replace("%ID%",tempID);
+                }
             }
             else
             {
-                MessageBox("URL to open Task by the hotkey is not defined.\nPlease correct settings on URLs page",szWinName,MB_ICONERROR);
-                Request = "";
+                MessageBox("URL to open Task is not defined.\nPlease correct settings on URLs page",szWinName,MB_ICONERROR);
             }
-        }
-        // open child tasks
-        else
-        {
+            break;
+        case VIEW_CHILD_TASKS:
+        case VIEW_CHILD_TASKS_HOTKEY:
             if (!Settings.links[index].ChildTasksURL.IsEmpty())
             {
                 Request = Settings.links[index].ChildTasksURL;
                 Request.Replace("%CLIENT%",sClientName);
-                Request.Replace("%ID%",sIDName);
+                Request.Replace("%ID%",tempID);
             }
             else
             {
-                MessageBox("URL to open Child Tasks by the hotkey is not defined.\nPlease correct settings on URLs page",szWinName,MB_ICONERROR);
-                Request = "";
+                MessageBox("URL to open Child Tasks is not defined.\nPlease correct settings on URLs page",szWinName,MB_ICONERROR);
             }
-        }
+            break;
     }
+
     if (!Request.IsEmpty())
     {
+        if (!Settings.links[index].Login.IsEmpty() && !Settings.links[index].Password.IsEmpty())
+        {
+            REQUEST::InsertLoginPassword(Request,Settings.links[index].Login,Settings.links[index].Password);
+        }
         Request.Insert(0,"\"");
         Request += "\"";
     }
@@ -592,7 +651,53 @@ void CMainDlg::OnSettings(UINT wNotifyCode, INT wID, HWND hWndCtl)
     Sheet.SetTitle("TMS Launcher settings");
     SystrayMenu.EnableMenuItem(IDC_SETTINGS,MF_BYCOMMAND|MF_GRAYED);
     Sheet.DoModal();
+
+    SwitchControls();
+
     SystrayMenu.EnableMenuItem(IDC_SETTINGS,MF_BYCOMMAND|MF_ENABLED);
+}
+
+void CMainDlg::SwitchControls()
+{
+    UINT TaskNameLength = 0;
+    CString Task = "";
+    switch(Settings.TaskNameControlType)
+    {
+        case 0: // RichEdit control
+            TaskNameLength = TaskNameCombo.GetWindowTextLength();
+            if (TaskNameLength > 0)
+            {
+                ::GetWindowText(TaskNameCombo,Task.GetBuffer(TaskNameLength+1),TaskNameLength+1);
+                Task.ReleaseBuffer();
+                TaskNameControl.SetWindowText(Task);
+            }
+            else
+            {
+                TaskNameControl.SetWindowText("");
+            }
+            TaskNameControl.EnableWindow(TRUE);
+            TaskNameControl.ShowWindow(SW_SHOW);
+            TaskNameCombo.EnableWindow(FALSE);
+            TaskNameCombo.ShowWindow(SW_HIDE);
+        	break;
+        case 1: // ComboBox control
+            TaskNameLength = TaskNameControl.GetWindowTextLength();
+            if (TaskNameLength > 0)
+            {
+                ::GetWindowText(TaskNameControl,Task.GetBuffer(TaskNameLength+1),TaskNameLength+1);
+                Task.ReleaseBuffer();
+                TaskNameCombo.SetWindowText(Task);
+            }
+            else
+            {
+                TaskNameCombo.SetWindowText("");
+            }
+            TaskNameCombo.EnableWindow(TRUE);
+            TaskNameCombo.ShowWindow(SW_SHOW);
+            TaskNameControl.EnableWindow(FALSE);
+            TaskNameControl.ShowWindow(SW_HIDE);
+        	break;
+    }
 }
 
 LRESULT CMainDlg::OnMsgFilter(LPNMHDR pnmh)
@@ -602,14 +707,112 @@ LRESULT CMainDlg::OnMsgFilter(LPNMHDR pnmh)
     {
         if (msg->msg == WM_LBUTTONUP)
         {
-            if (Settings.SingleClick) TaskNameControl.SetSelAll();
-        }
-        if (msg->msg == WM_RBUTTONDOWN)
-        {
-            OnViewTask(0,Settings.RightClickAction ? VIEW_CHILD_TASKS_HOTKEY:VIEW_TASK_HOTKEY,0);
+            if (Settings.SingleClick)
+            {
+                switch (Settings.TaskNameControlType)
+                {
+                    case 0: // RichEdit control
+                        TaskNameControl.SetSelAll();
+                        break;
+                }
+            }
         }
     }
     return 0;
+}
+
+void CMainDlg::OnContextMenu(HWND hwndFrom, CPoint CursorPos)
+{
+    if (hwndFrom == TaskNameControl)
+    {
+        switch (Settings.RightClickAction)
+        {
+            case 0:
+                OnViewTask(0,VIEW_TASK_HOTKEY,0);
+                break;
+            case 1:
+                OnViewTask(0,VIEW_CHILD_TASKS_HOTKEY,0);
+                break;
+            case 2:
+                OnViewTask(0,VIEW_PARENT_TASK_HOTKEY,0);
+                break;
+            case 3:
+                RECT Rect;
+                CWindow ChildWindow = hwndFrom;
+                ChildWindow.GetWindowRect(&Rect);
+                if ((CursorPos.x == -1)||(CursorPos.y == -1)) // WM_CONTEXTMENU was generated by VK_APPS key
+                {
+                    CursorPos.x = Rect.left;
+                    CursorPos.y = Rect.top;
+                }
+                else // WM_CONTEXTMENU was generated by right mouse button click
+                {
+                    // check if cursor position is outside the window
+                    if ((CursorPos.x < Rect.left)||(CursorPos.x > Rect.right)||
+                        (CursorPos.y < Rect.top)||(CursorPos.y > Rect.bottom))
+                        return; // do not show context menu in this case
+                }
+                CString SelectedText;
+                TaskNameControl.GetSelText(SelectedText);
+                ContextMenu.EnableMenuItem(ID_MENU_UNDO,TaskNameControl.CanUndo()?MF_ENABLED:MF_GRAYED);
+                ContextMenu.EnableMenuItem(ID_MENU_PASTE,TaskNameControl.CanPaste()?MF_ENABLED:MF_GRAYED);
+                ContextMenu.EnableMenuItem(ID_MENU_SELECT,TaskNameControl.GetWindowTextLength()?MF_ENABLED:MF_GRAYED);
+                ContextMenu.EnableMenuItem(ID_MENU_CUT,SelectedText.IsEmpty()?MF_GRAYED:MF_ENABLED);
+                ContextMenu.EnableMenuItem(ID_MENU_COPY,SelectedText.IsEmpty()?MF_GRAYED:MF_ENABLED);
+                ContextMenu.EnableMenuItem(ID_MENU_DELETE,SelectedText.IsEmpty()?MF_GRAYED:MF_ENABLED);
+                TrackPopupMenuEx(ContextMenu,TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_TOPALIGN,CursorPos.x,CursorPos.y,m_hWnd,NULL);
+                break;
+        }
+    }
+    else
+    {
+        if (hwndFrom == TaskNameCombo)
+        {
+            switch (Settings.RightClickAction2)
+            {
+                case 0:
+                    OnViewTask(0,VIEW_TASK_HOTKEY,0);
+                    break;
+                case 1:
+                    OnViewTask(0,VIEW_CHILD_TASKS_HOTKEY,0);
+                    break;
+                case 2:
+                    OnViewTask(0,VIEW_PARENT_TASK_HOTKEY,0);
+                    break;
+            }
+        }
+    }
+}
+
+void CMainDlg::OnContextMenuCommand(UINT code, int idFrom, HWND hwndFrom)
+{
+    switch(idFrom)
+    {
+        case ID_MENU_UNDO:
+            TaskNameControl.Undo();
+            ::SetFocus(TaskNameControl);
+            break;
+        case ID_MENU_CUT:
+            TaskNameControl.Cut();
+            ::SetFocus(TaskNameControl);
+            break;
+        case ID_MENU_COPY:
+            TaskNameControl.Copy();
+            ::SetFocus(TaskNameControl);
+            break;
+        case ID_MENU_PASTE:
+            TaskNameControl.Paste();
+            ::SetFocus(TaskNameControl);
+            break;
+        case ID_MENU_DELETE:
+            TaskNameControl.Clear();
+            ::SetFocus(TaskNameControl);
+            break;
+        case ID_MENU_SELECT:
+            TaskNameControl.SetSelAll();
+            ::SetFocus(TaskNameControl);
+            break;
+    }
 }
 
 bool isalpha_cp1251(char ch)

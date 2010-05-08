@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: TMS_Launcher.hhc,v $$Revision: 1.1 $$Date: 2005/07/07 16:01:51Z $ -->
+<!-- @(#)$RCSfile: TMS_Launcher.hhc,v $$Revision: 1.2 $$Date: 2006/02/09 16:11:22Z $ -->
 
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <HTML>
@@ -13,6 +13,10 @@
     <LI> <OBJECT type="text/sitemap">
         <param name="Name" value="Introduction">
         <param name="Local" value="introduction.html">
+        </OBJECT>
+    <LI> <OBJECT type="text/sitemap">
+        <param name="Name" value="What's new?">
+        <param name="Local" value="whats_new.html">
         </OBJECT>
     <LI> <OBJECT type="text/sitemap">
         <param name="Name" value="Main features">
@@ -30,6 +34,10 @@
         <LI> <OBJECT type="text/sitemap">
             <param name="Name" value="Opening links">
             <param name="Local" value="Features\openlinks.html">
+            </OBJECT>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="Command line interface">
+            <param name="Local" value="Features\commandline.html">
             </OBJECT>
     </UL>
     <LI> <OBJECT type="text/sitemap">

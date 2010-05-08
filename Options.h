@@ -1,5 +1,11 @@
-// Options.h
-//
+/*
+    File name: Options.h
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 17, 2006
+*/
+
 // Several pages should be created as dialogs templates with IDs == IDDs from pages classes.
 // Make them with Style=Child|Control, Border=Thin and a titlebar (to have a caption). 
 // These pages will be included to options sheet.
@@ -43,29 +49,61 @@ class GeneralPage : public Mortimer::COptionPageImpl<GeneralPage,CPropPage>
 {
 public:
     enum { IDD = GENERAL_PAGE };
+    CComboBox TaskNameControlSetup;
+    CComboBox RightClickCombo;
+    int RightClickAction;
+    int RightClickAction2;
+    bool SingleClick;
     CEdit PathToBrowser;
 
     BEGIN_MSG_MAP(GeneralPage)
         MSG_WM_INITDIALOG(OnInitDialog)
         COMMAND_ID_HANDLER_EX(IDC_BROWSE,OnBrowse)
+        COMMAND_ID_HANDLER_EX(IDC_SINGLE_CLICK,OnCheckBoxClick)
+        COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelChanged)
+
     END_MSG_MAP()
 
     // called once when options dialog is opened
     LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
     {
-        switch (Settings.RightClickAction)
+        RightClickAction = Settings.RightClickAction;
+        RightClickAction2 = Settings.RightClickAction2;
+
+        TaskNameControlSetup.Attach(GetDlgItem(IDC_TASK_NAME_CONTROL));
+        TaskNameControlSetup.AddString("RichEdit");
+        TaskNameControlSetup.AddString("ComboBox");
+        TaskNameControlSetup.SetCurSel(Settings.TaskNameControlType);
+
+        RightClickCombo.Attach(GetDlgItem(IDC_RIGHT_CLICK));
+        RightClickCombo.AddString("View Task");
+        RightClickCombo.AddString("View Child Task");
+        RightClickCombo.AddString("View Parent Task");
+
+        switch (Settings.TaskNameControlType)
         {
             case 0:
-                SendDlgItemMessage(IDC_TASK_RADIO,BM_SETCHECK,BST_CHECKED,0);
+                RightClickCombo.AddString("Open context menu");
+                RightClickCombo.SetCurSel(RightClickAction);
                 break;
             case 1:
-                SendDlgItemMessage(IDC_CHILD_RADIO,BM_SETCHECK,BST_CHECKED,0);
+                RightClickCombo.SetCurSel(RightClickAction2);
                 break;
         }
+
         if (Settings.Expand) SendDlgItemMessage(IDC_EXPANDED,BM_SETCHECK,BST_CHECKED,0);
         if (Settings.AutoRun) SendDlgItemMessage(IDC_AUTORUN,BM_SETCHECK,BST_CHECKED,0);
         if (Settings.Minimize) SendDlgItemMessage(IDC_MINIMIZE,BM_SETCHECK,BST_CHECKED,0);
-        if (Settings.SingleClick) SendDlgItemMessage(IDC_SINGLE_CLICK,BM_SETCHECK,BST_CHECKED,0);
+
+        SingleClick = Settings.SingleClick;
+        if (Settings.TaskNameControlType == 1) // ComboBox control
+        {
+            ::EnableWindow(GetDlgItem(IDC_SINGLE_CLICK),FALSE);
+        }
+        else
+        {
+            if (Settings.SingleClick) SendDlgItemMessage(IDC_SINGLE_CLICK,BM_SETCHECK,BST_CHECKED,0);
+        }
         if (Settings.DefaultBrowser) SendDlgItemMessage(IDC_DEFAULT_BROWSER,BM_SETCHECK,BST_CHECKED,0);
         PathToBrowser.Attach(GetDlgItem(IDC_BROWSER_PATH));
         PathToBrowser.LimitText(_MAX_PATH);
@@ -87,6 +125,49 @@ public:
         }
     }
 
+    void OnCheckBoxClick(UINT code, int idFrom, HWND hwndFrom)
+    {
+        if (idFrom == IDC_SINGLE_CLICK)
+        {
+            SingleClick = (SendDlgItemMessage(IDC_SINGLE_CLICK,BM_GETCHECK,0,0) == BST_CHECKED);
+        }
+    }
+
+    void OnSelChanged(UINT code, int ControlID, HWND ControlHandle)
+    {
+        switch (ControlID)
+        {
+            case IDC_TASK_NAME_CONTROL:
+                switch (TaskNameControlSetup.GetCurSel())
+                {
+                    case 0: // RichEdit control
+                        ::EnableWindow(GetDlgItem(IDC_SINGLE_CLICK),TRUE);
+                        SendDlgItemMessage(IDC_SINGLE_CLICK,BM_SETCHECK,SingleClick?BST_CHECKED:BST_UNCHECKED,0);
+                        RightClickCombo.AddString("Open context menu");
+                        RightClickCombo.SetCurSel(RightClickAction);
+                        break;
+                    case 1: // ComboBox control
+                        SendDlgItemMessage(IDC_SINGLE_CLICK,BM_SETCHECK,BST_UNCHECKED,0);
+                        ::EnableWindow(GetDlgItem(IDC_SINGLE_CLICK),FALSE);
+                        RightClickCombo.DeleteString(3);
+                        RightClickCombo.SetCurSel(RightClickAction2);
+                        break;
+                }
+                break;
+            case IDC_RIGHT_CLICK:
+                switch (TaskNameControlSetup.GetCurSel())
+                {
+                    case 0: // RichEdit control
+                        RightClickAction = RightClickCombo.GetCurSel();
+                        break;
+                    case 1: // ComboBox control
+                        RightClickAction2 = RightClickCombo.GetCurSel();
+                        break;
+                }
+                break;
+        }
+    }
+
     // called every time when the page is deactivated
     bool OnKillActive(COptionItem *pItem)
     {
@@ -99,13 +180,11 @@ public:
         Settings.AutoRun=(SendDlgItemMessage(IDC_AUTORUN,BM_GETCHECK,0,0)==BST_CHECKED);
         Settings.Expand=(SendDlgItemMessage(IDC_EXPANDED,BM_GETCHECK,0,0)==BST_CHECKED);
         Settings.Minimize=(SendDlgItemMessage(IDC_MINIMIZE,BM_GETCHECK,0,0)==BST_CHECKED);
-        Settings.SingleClick=(SendDlgItemMessage(IDC_SINGLE_CLICK,BM_GETCHECK,0,0)==BST_CHECKED);
         Settings.DefaultBrowser=(SendDlgItemMessage(IDC_DEFAULT_BROWSER,BM_GETCHECK,0,0)==BST_CHECKED);
-        if (SendDlgItemMessage(IDC_TASK_RADIO,BM_GETCHECK,0,0)==BST_CHECKED)
-            Settings.RightClickAction = 0;
-        else
-            Settings.RightClickAction = 1;
-
+        Settings.TaskNameControlType = TaskNameControlSetup.GetCurSel();
+        Settings.RightClickAction = RightClickAction;
+        Settings.RightClickAction2 = RightClickAction2;        
+        Settings.SingleClick = SingleClick;
         PathToBrowser.GetWindowText(Settings.BrowserPath.GetBuffer(_MAX_PATH+1),_MAX_PATH+1);
         Settings.BrowserPath.ReleaseBuffer();
         Settings.BrowserPath.TrimLeft();
@@ -178,6 +257,12 @@ public:
         sTasksSeparators.LimitText(255);
         sTasksSeparators.SetWindowText(Settings.TasksSeparators);
 
+        // set minimum and maximum positions of spin button
+        SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETRANGE,0,
+                    (LPARAM)MAKELONG((short)Settings.MaxPossibleHistory,(short)1));
+        // set current position of spin button to Maximum log file size
+        SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETPOS,0,
+                    (LPARAM) MAKELONG ((short)Settings.MaxHistoryItems, 0));
         return 0;
     }
 
@@ -195,7 +280,7 @@ public:
         int i=0;
         while (i<temp.GetLength())
         {
-            if (!isdigit(temp[i]))
+            if (!isdigit((unsigned int)temp[i]))
             {
                 temp.Delete(i);
                 EditControl.SetWindowText(temp);
@@ -235,6 +320,7 @@ public:
         Settings.RemoveDuplicateSeparators(temp);
         Settings.TasksSeparators = temp;
 
+        Settings.MaxHistoryItems = GetDlgItemInt(IDC_MAX_HISTORY);
         Settings.SaveFormatSettings();
     }
 
@@ -331,506 +417,436 @@ public:
 };
 
 //////////////////////////// Links options page ///////////////////////
+class URLsPage;
+
+class URLEditPage : public CDialogImpl<URLEditPage>
+{
+public:
+    enum { IDD = URL_EDIT_PAGE };
+    int Action; // 0 - new URL, 1 - edit URL, 2 - copy URL
+    link URL;
+    int MaxStringLength;
+    std::vector<link> *Links;
+
+    CEdit CaptionEdit;
+    CEdit TaskURL;
+    CEdit ChildTasksURL;
+    CEdit Login;
+    CEdit Password;
+    CWindow TaskHotkey;
+    CWindow ChildTasksHotkey;
+    CWindow ParentTaskHotkey;
+
+    URLEditPage(int action, link url, std::vector<link> *links):URL(url)
+    {
+        Action = action;
+        Links = links;
+        MaxStringLength = 255;
+    }
+
+    BEGIN_MSG_MAP(URLEditPage)
+        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
+        COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)
+    END_MSG_MAP()
+
+    LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+    {
+        CenterWindow();
+        CaptionEdit.Attach(GetDlgItem(IDC_URL_EDIT));
+        CaptionEdit.LimitText(MaxStringLength);
+        TaskURL.Attach(GetDlgItem(IDC_TASK_URL));
+        TaskURL.LimitText(LINK_MAX);
+        ChildTasksURL.Attach(GetDlgItem(IDC_CHILD_TASKS_URL));
+        ChildTasksURL.LimitText(LINK_MAX);
+        Login.Attach(GetDlgItem(IDC_LOGIN));
+        Login.LimitText(MaxStringLength);
+        Password.Attach(GetDlgItem(IDC_PASSWORD));
+        Password.LimitText(MaxStringLength);
+        TaskHotkey.Attach(GetDlgItem(VIEW_TASK_HOTKEY));
+        ChildTasksHotkey.Attach(GetDlgItem(VIEW_CHILD_TASKS_HOTKEY));
+        ParentTaskHotkey.Attach(GetDlgItem(VIEW_PARENT_TASK_HOTKEY));
+        
+        CaptionEdit.SetWindowText(URL.Caption);
+        TaskURL.SetWindowText(URL.TaskURL);
+        ChildTasksURL.SetWindowText(URL.ChildTasksURL);
+        Login.SetWindowText(URL.Login);
+        Password.SetWindowText(URL.Password);
+        TaskHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewTaskHotKey,0);
+        ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewChildTasksHotKey,0);
+        ParentTaskHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewParentTaskHotKey,0);
+
+        switch(Action)
+        {
+            case 0: // new
+                SetWindowText("New URL record");
+                break;
+            case 1: // edit
+                SetWindowText("Edit URL record");
+                break;
+            case 2: // copy
+                SetWindowText("New URL record");
+                URL.Caption = "";
+                URL.Default = false; // do not copy Default flag
+                break;
+        }
+        return 0;
+    }
+
+    LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+    {
+        if (wID == IDOK)
+        {
+            // checking for unique and non-empty URLCaption
+            CString strURLCaption;
+            CaptionEdit.GetWindowText(strURLCaption.GetBuffer(MaxStringLength),MaxStringLength+1);
+            strURLCaption.ReleaseBuffer();
+        
+            if (strURLCaption.IsEmpty())
+            {
+                MessageBox("\"URL caption\" field must not be empty.\nPlease enter a value in the field",szWinName,MB_ICONERROR);
+                return 0;
+            }
+            if (GetPosByCaption(strURLCaption) != -1) // new caption is not unique
+            {
+                if (CompareNoCaseCP1251(URL.Caption,strURLCaption) != 0)
+                {
+                    MessageBox("The value entered in \"URL caption\" field is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            // checking for non-empty links
+            CString strTaskURL, strChildTasksURL;
+            TaskURL.GetWindowText(strTaskURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            strTaskURL.ReleaseBuffer();
+            if (strTaskURL.IsEmpty())
+            {
+                MessageBox("URL to view Task cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
+                return 0;
+            }
+            ChildTasksURL.GetWindowText(strChildTasksURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            strChildTasksURL.ReleaseBuffer();
+            if (strChildTasksURL.IsEmpty())
+            {
+                MessageBox("URL to view Child Tasks cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
+                return 0;
+            }
+            // reading login and password
+            CString strLogin, strPassword;
+            Login.GetWindowText(strLogin.GetBuffer(MaxStringLength),MaxStringLength+1);
+            strLogin.ReleaseBuffer();
+            Password.GetWindowText(strPassword.GetBuffer(MaxStringLength),MaxStringLength+1);
+            strPassword.ReleaseBuffer();
+            // checking hotkeys
+            UINT Hotkey1 = (UINT)TaskHotkey.SendMessage(HKM_GETHOTKEY,0,0);
+            UINT Hotkey2 = (UINT)ChildTasksHotkey.SendMessage(HKM_GETHOTKEY,0,0);
+            UINT Hotkey3 = (UINT)ParentTaskHotkey.SendMessage(HKM_GETHOTKEY,0,0);
+
+            if ( ((Hotkey1)&&(Hotkey1 == Hotkey2)) || ((Hotkey1)&&(Hotkey1 == Hotkey3)) || ((Hotkey2)&&(Hotkey2 == Hotkey3)))
+            {
+                MessageBox("At least two entered hotkeys are the same.\nPlease use different ones.",szWinName,MB_ICONERROR);
+                return 0;
+            }
+            for (int i=0; i<(*Links).size(); i++)
+            {
+                if (CompareNoCaseCP1251(URL.Caption,(*Links)[i].Caption)==0)
+                {
+                    continue;
+                }
+                if ((Hotkey1)&&((Hotkey1 == (*Links)[i].ViewTaskHotKey)||
+                   (Hotkey1 == (*Links)[i].ViewChildTasksHotKey)||
+                   (Hotkey1 == (*Links)[i].ViewParentTaskHotKey)))
+                {
+                    CString message;
+                    message.Format("Hotkey entered in \"HotKey to View Task\" field\nis already used in \"%s\" URL.\nPlease enter another one",(*Links)[i].Caption);
+                    MessageBox(message,szWinName,MB_ICONERROR);
+                    return 0;
+                }
+                if ((Hotkey2)&&((Hotkey2 == (*Links)[i].ViewTaskHotKey)||
+                   (Hotkey2 == (*Links)[i].ViewChildTasksHotKey)||
+                   (Hotkey2 == (*Links)[i].ViewParentTaskHotKey)))
+                {
+                    CString message;
+                    message.Format("Hotkey entered in \"HotKey to View Child Tasks\" field\nis already used in \"%s\" URL.\nPlease enter another one",(*Links)[i].Caption);
+                    MessageBox(message,szWinName,MB_ICONERROR);
+                    return 0;
+                }
+                if ((Hotkey3)&&((Hotkey3 == (*Links)[i].ViewTaskHotKey)||
+                   (Hotkey3 == (*Links)[i].ViewChildTasksHotKey)||
+                   (Hotkey3 == (*Links)[i].ViewParentTaskHotKey)))
+                {
+                    CString message;
+                    message.Format("Hotkey entered in \"HotKey to View Parent Task\" field\nis already used in \"%s\" URL.\nPlease enter another one",(*Links)[i].Caption);
+                    MessageBox(message,szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            UINT HotKeyID = 0;
+            if (Hotkey1)
+            {
+                if (!RegisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID,(!(Hotkey1&0x500)?
+                               HIBYTE(LOWORD(Hotkey1)):((Hotkey1&0x500)<0x500?
+                               HIBYTE(LOWORD(Hotkey1))^5:HIBYTE(LOWORD(Hotkey1)))),
+                               LOBYTE(LOWORD(Hotkey1))))
+                {
+                    MessageBox("Hotkey entered in \"HotKey to View Task\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+                UnregisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID);
+            }
+            HotKeyID++;
+            if (Hotkey2)
+            {
+                if (!RegisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID,(!(Hotkey2&0x500)?
+                                HIBYTE(LOWORD(Hotkey2)):((Hotkey2&0x500)<0x500?
+                                HIBYTE(LOWORD(Hotkey2))^5:HIBYTE(LOWORD(Hotkey2)))),
+                                LOBYTE(LOWORD(Hotkey2))))
+                {
+                    MessageBox("Hotkey entered in \"To View Child Tasks\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+                UnregisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID);
+            }
+            HotKeyID++;
+            if (Hotkey3)
+            {
+                if (!RegisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID,(!(Hotkey3&0x500)?
+                               HIBYTE(LOWORD(Hotkey3)):((Hotkey3&0x500)<0x500?
+                               HIBYTE(LOWORD(Hotkey3))^5:HIBYTE(LOWORD(Hotkey3)))),
+                               LOBYTE(LOWORD(Hotkey3))))
+                {
+                    MessageBox("Hotkey entered in \"To View Parent Task\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+                UnregisterHotKey(::GetParent(::GetParent(GetParent())),HotKeyID);
+            }
+
+            URL.Caption = strURLCaption;
+            URL.TaskURL = strTaskURL;
+            URL.ChildTasksURL = strChildTasksURL;
+            URL.Login = strLogin;
+            URL.Password = strPassword;
+            URL.ViewTaskHotKey = Hotkey1;
+            URL.ViewChildTasksHotKey = Hotkey2;
+            URL.ViewParentTaskHotKey = Hotkey3;
+        }
+        EndDialog(wID);
+        return 0;
+    }
+    
+    int GetPosByCaption(const char *caption)
+    {
+        for (int i=0; i<(*Links).size(); i++)
+        {
+            if (CompareNoCaseCP1251((*Links)[i].Caption,caption)==0)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+};
+
 class URLsPage : public Mortimer::COptionPageImpl<URLsPage,CPropPage>
 {
 public:
     enum { IDD = URLS_PAGE };
-    CComboBox CaptionsDropList;
-    CComboBox CaptionsDropDown;
-    CEdit CaptionEdit;
-    CEdit TaskURL;
-    CEdit ChildTasksURL;
-    CWindow TaskHotkey;
-    CWindow ChildTasksHotkey;
-    CButton Default;
+    CListBox URLsList;
+    CComboBox DefaultURL;
     CButton NewButton;
     CButton EditButton;
-    CButton SaveButton;
+    CButton CopyButton;
     CButton DeleteButton;
-    int MaxStringLength;
-    int edit_pos;
     std::vector<link> temp_links;
 
     BEGIN_MSG_MAP(URLsPage)
         MSG_WM_INITDIALOG(OnInitDialog)
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelChanged)
         COMMAND_ID_HANDLER_EX(IDC_LINK_NEW,OnNewLink)
-        COMMAND_ID_HANDLER_EX(IDC_LINK_EDIT,OnEditLink)
-        COMMAND_ID_HANDLER_EX(IDC_LINK_SAVE,OnSaveLink)
+        COMMAND_ID_HANDLER_EX(IDC_LINK_COPY,OnNewLink)
+        COMMAND_ID_HANDLER_EX(IDC_LINK_EDIT,OnNewLink)
         COMMAND_ID_HANDLER_EX(IDC_LINK_DELETE,OnDeleteLink)
         REFLECT_NOTIFICATIONS()
     END_MSG_MAP()
 
     void sort_links()
     {
-	    for (int i=0; i<temp_links.size()-1; i++)
-	    {
-		    bool exchange = false;
-		    for (int j=1; j<temp_links.size()-i; j++)
-		    {
-			    if (CompareNoCaseCP1251(temp_links[j-1].Caption,temp_links[j].Caption)>0)
-			    {
-				    link temp = temp_links[j-1];
-				    temp_links[j-1] = temp_links[j];
-				    temp_links[j] = temp;
+        for (int i=0; i<temp_links.size()-1; i++)
+        {
+            bool exchange = false;
+            for (int j=1; j<temp_links.size()-i; j++)
+            {
+                if (CompareNoCaseCP1251(temp_links[j-1].Caption,temp_links[j].Caption)>0)
+                {
+                    link temp = temp_links[j-1];
+                    temp_links[j-1] = temp_links[j];
+                    temp_links[j] = temp;
                     exchange = true;
-			    }
-		    }
-		    if (!exchange) break;
-	    }
+                }
+            }
+            if (!exchange) break;
+        }
+    }
+
+    int GetPosByCaption(const char *caption)
+    {
+        for (int i=0; i<temp_links.size(); i++)
+        {
+            if (CompareNoCaseCP1251(temp_links[i].Caption,caption)==0)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     // called once when options dialog is opened
     LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
     {
-        MaxStringLength = 255;
-        edit_pos = CB_ERR;
         NewButton.Attach(GetDlgItem(IDC_LINK_NEW));
         EditButton.Attach(GetDlgItem(IDC_LINK_EDIT));
-        SaveButton.Attach(GetDlgItem(IDC_LINK_SAVE));
+        CopyButton.Attach(GetDlgItem(IDC_LINK_COPY));
         DeleteButton.Attach(GetDlgItem(IDC_LINK_DELETE));
 
-        CaptionsDropList.Attach(GetDlgItem(IDC_URL_CAPTION));
-        CaptionsDropList.LimitText(MaxStringLength);
-        
-        CaptionsDropDown.Attach(GetDlgItem(IDC_URL_CAPTION2));
-        CaptionsDropDown.LimitText(MaxStringLength);
-        CaptionsDropDown.EnableWindow(FALSE);
-        CaptionsDropDown.ShowWindow(SW_HIDE);
+        URLsList.Attach(GetDlgItem(IDC_URLS_LIST));
+        DefaultURL.Attach(GetDlgItem(IDC_URL_DEFAULT));
 
-        CaptionEdit.Attach(GetDlgItem(IDC_URL_EDIT));
-        CaptionEdit.LimitText(MaxStringLength);
-        CaptionEdit.EnableWindow(FALSE);
-        CaptionEdit.ShowWindow(SW_HIDE);
-
-        TaskURL.Attach(GetDlgItem(IDC_TASK_URL));
-        TaskURL.LimitText(MaxStringLength);
-        ChildTasksURL.Attach(GetDlgItem(IDC_CHILD_TASKS_URL));
-        ChildTasksURL.LimitText(MaxStringLength);
-        Default.Attach(GetDlgItem(IDC_URL_DEFAULT));
-        TaskHotkey.Attach(GetDlgItem(VIEW_TASK_HOTKEY));
-        ChildTasksHotkey.Attach(GetDlgItem(VIEW_CHILD_TASKS_HOTKEY));
         UINT HotkeyID = 0;
+        int Default = 0;
         for (int i=0; i<Settings.links.size(); i++)
         {
             UnregisterHotKey(::GetParent(GetParent()),HotkeyID);
             HotkeyID++;
             UnregisterHotKey(::GetParent(GetParent()),HotkeyID);
             HotkeyID++;
+            UnregisterHotKey(::GetParent(GetParent()),HotkeyID);
+            HotkeyID++;
             temp_links.push_back(Settings.links[i]);
-            CaptionsDropList.AddString(Settings.links[i].Caption);
+            if (Settings.links[i].Default)
+            {
+                Default = i;
+            }
+            URLsList.AddString(Settings.links[i].Caption);
+            DefaultURL.AddString(Settings.links[i].Caption);
         }
-        CaptionsDropList.SetCurSel(0);
-        if (temp_links[0].Default)
-        {
-            Default.SetCheck(BST_CHECKED);
-        }
-        else
-        {
-            Default.SetCheck(BST_UNCHECKED);
-        }
-        Default.EnableWindow(FALSE);
-        TaskURL.SetWindowText(temp_links[0].TaskURL);
-        TaskURL.SetReadOnly(TRUE);
-        ChildTasksURL.SetWindowText(temp_links[0].ChildTasksURL);
-        ChildTasksURL.SetReadOnly(TRUE);
-        TaskHotkey.SendMessage(HKM_SETHOTKEY,temp_links[0].ViewTaskHotKey,0);
-        TaskHotkey.EnableWindow(FALSE);
-        ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,temp_links[0].ViewChildTasksHotKey,0);
-        ChildTasksHotkey.EnableWindow(FALSE);
-        SaveButton.EnableWindow(FALSE);
-        
+        URLsList.SetCurSel(0);
+        DefaultURL.SetCurSel(Default);
         return 0;
     }
 
     // called after selection in any ComboBox has been changed
     void OnSelChanged(UINT code, int ControlID, HWND ControlHandle)
     {
+        if (ControlID != IDC_URL_DEFAULT) return;
+
         CComboBox ComboBox = ControlHandle;
         int position = ComboBox.GetCurSel();
-        if (position != CB_ERR)
+        if (position == CB_ERR)
         {
-            if (temp_links[position].Default)
+            return;
+        }
+        for (int i=0; i<temp_links.size(); i++)
+        {
+            if (i == position)
             {
-                Default.SetCheck(BST_CHECKED);
+                temp_links[i].Default = true;
             }
             else
             {
-                Default.SetCheck(BST_UNCHECKED);
+                temp_links[i].Default = false;
             }
-            TaskURL.SetWindowText(temp_links[position].TaskURL);
-            ChildTasksURL.SetWindowText(temp_links[position].ChildTasksURL);
-            TaskHotkey.SendMessage(HKM_SETHOTKEY,temp_links[position].ViewTaskHotKey,0);
-            ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,temp_links[position].ViewChildTasksHotKey,0);
         }
     }
 
     void OnNewLink(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
-        for (int i=0; i<CaptionsDropList.GetCount(); i++)
+        int position, realpos;
+        URLEditPage URLEditDlg(0,link("","","",0,0,0,false,"",""),&temp_links);
+
+        if ((wID == IDC_LINK_COPY) || (wID == IDC_LINK_EDIT))
         {
-            CString temp;
-            CaptionsDropList.GetLBText(i,temp);
-            CaptionsDropDown.AddString(temp);
+            position = URLsList.GetCurSel();
+            if (position == CB_ERR)
+            {
+                return;
+            }
+            CString SelectedItem;
+            URLsList.GetText(position,SelectedItem);
+            realpos = GetPosByCaption(SelectedItem);
+            URLEditDlg.URL = temp_links[realpos];
+            if (wID == IDC_LINK_COPY)
+            {
+                URLEditDlg.Action = 2;
+            }
+            else // wID == IDC_LINK_EDIT
+            {
+                URLEditDlg.Action = 1;
+            }
         }
-        CaptionsDropList.ResetContent();
-        CaptionsDropList.ShowWindow(SW_HIDE);
-        CaptionsDropList.EnableWindow(FALSE);
 
-        CaptionsDropDown.EnableWindow(TRUE);
-        CaptionsDropDown.SetWindowText("");
-        CaptionsDropDown.ShowWindow(SW_SHOW);
-        
-        NewButton.EnableWindow(FALSE);
-        EditButton.EnableWindow(FALSE);
-        DeleteButton.EnableWindow(FALSE);
-        SaveButton.EnableWindow(TRUE);
-        CaptionsDropList.SetWindowText("");
-        Default.SetCheck(BST_UNCHECKED);
-        Default.EnableWindow(TRUE);
-        TaskURL.SetWindowText("");
-        TaskURL.SetReadOnly(FALSE);
-        ChildTasksURL.SetWindowText("");
-        ChildTasksURL.SetReadOnly(FALSE);
-        TaskHotkey.SendMessage(HKM_SETHOTKEY,0,0);
-        TaskHotkey.EnableWindow(TRUE);
-        ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,0,0);
-        ChildTasksHotkey.EnableWindow(TRUE);
-        ::SetFocus(CaptionsDropDown);
-    }
-
-    void OnEditLink(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        edit_pos = CaptionsDropList.GetCurSel();
-        if (edit_pos != CB_ERR)
+        if (URLEditDlg.DoModal() == IDOK)
         {
-            CString temp;
-            CaptionsDropList.GetLBText(edit_pos,temp);
-            CaptionsDropList.ShowWindow(SW_HIDE);
-            CaptionsDropList.EnableWindow(FALSE);
+            if ((wID == IDC_LINK_NEW) || (wID == IDC_LINK_COPY))
+            {
+                URLsList.AddString(URLEditDlg.URL.Caption);
+                DefaultURL.AddString(URLEditDlg.URL.Caption);
+                temp_links.push_back(URLEditDlg.URL);
+            }
+            else // wID == IDC_LINK_EDIT
+            {
+                URLsList.DeleteString(position);
+                URLsList.AddString(URLEditDlg.URL.Caption);
+                int newpos = URLsList.FindStringExact(-1,URLEditDlg.URL.Caption);
+                URLsList.SetCurSel(newpos);
 
-            CaptionEdit.SetWindowText(temp);
-            CaptionEdit.EnableWindow(TRUE);
-            CaptionEdit.ShowWindow(SW_SHOW);
-            
-            Default.EnableWindow(TRUE);
-            TaskURL.SetReadOnly(FALSE);
-            ChildTasksURL.SetReadOnly(FALSE);
-            TaskHotkey.EnableWindow(TRUE);
-            ChildTasksHotkey.EnableWindow(TRUE);
-            NewButton.EnableWindow(FALSE);
-            EditButton.EnableWindow(FALSE);
-            DeleteButton.EnableWindow(FALSE);
-            SaveButton.EnableWindow(TRUE);
-            ::SetFocus(CaptionEdit);
+                DefaultURL.DeleteString(position);
+                DefaultURL.AddString(URLEditDlg.URL.Caption);
+                if (temp_links[realpos].Default)
+                {
+                    DefaultURL.SetCurSel(newpos);
+                }
+                temp_links[realpos] = URLEditDlg.URL;
+            }
         }
     }
 
     void OnDeleteLink(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
-        int position = CaptionsDropList.GetCurSel();
-        if (position == CB_ERR)
-        {
-            return;
-        }
-        
-        if (CaptionsDropList.GetCount()==1)
+        if (URLsList.GetCount()==1)
         {
             MessageBox("At least one record should stay in the list.\nIt cannot be deleted",szWinName,MB_ICONERROR);
             return;
         }
+        if (MessageBox("Are you sure you want to delete selected record?",szWinName,MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES)
+        {
+            return;
+        }
+        CString SelectedItem;
+        int position = URLsList.GetCurSel();
+        if (position == CB_ERR)
+        {
+            return;
+        }
+        else
+        {
+            URLsList.GetText(position,SelectedItem);
+        }
         
-        bool wasDefault = temp_links[position].Default;
-        CaptionsDropList.DeleteString(position);
-        temp_links.erase(temp_links.begin()+position);
+        int realpos = GetPosByCaption(SelectedItem);
+        if (realpos == -1) return;
+        URLsList.DeleteString(position);
+        DefaultURL.DeleteString(position);
+        bool wasDefault = temp_links[realpos].Default;
+        temp_links.erase(temp_links.begin()+realpos);
 
         if (wasDefault)
         {
-            temp_links[0].Default = true;
-            MessageBox("You are about to delete the default record.\nThe first record will be marked as default",szWinName,MB_ICONINFORMATION);
+            URLsList.GetText(0,SelectedItem);
+            temp_links[GetPosByCaption(SelectedItem)].Default = true;
+            MessageBox("You have just deleted the default record.\nThe first record will be marked as default",szWinName,MB_ICONINFORMATION);
+            DefaultURL.SetCurSel(0);
         }
-        CaptionsDropList.SetCurSel(0);
-        if (temp_links[0].Default)
-        {
-            Default.SetCheck(BST_CHECKED);
-        }
-        else
-        {
-            Default.SetCheck(BST_UNCHECKED);
-        }
-        TaskURL.SetWindowText(temp_links[0].TaskURL);
-        ChildTasksURL.SetWindowText(temp_links[0].ChildTasksURL);
-        TaskHotkey.SendMessage(HKM_SETHOTKEY,temp_links[0].ViewTaskHotKey,0);
-        ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,temp_links[0].ViewChildTasksHotKey,0);
-
-        EditButton.EnableWindow(TRUE);
-        DeleteButton.EnableWindow(TRUE);
-
-        Default.EnableWindow(FALSE);
-        TaskURL.SetReadOnly(TRUE);
-        ChildTasksURL.SetReadOnly(TRUE);
-        TaskHotkey.EnableWindow(FALSE);
-        ChildTasksHotkey.EnableWindow(FALSE);
-
-        SaveButton.EnableWindow(FALSE);
-    }
-
-    void OnSaveLink(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        // checking for unique and non-empty URLCaption
-        bool bDefault = (Default.GetCheck() == BST_CHECKED);
-        CString strURLCaption;
-        CComboBox ComboBox;
-        if (edit_pos == CB_ERR)
-        {
-            // trying to save new record
-            ComboBox = CaptionsDropDown;
-            ComboBox.GetWindowText(strURLCaption.GetBuffer(MaxStringLength),MaxStringLength+1);
-        }
-        else
-        {
-            //trying to save edited record
-            ComboBox = CaptionsDropList;
-            CaptionEdit.GetWindowText(strURLCaption.GetBuffer(MaxStringLength),MaxStringLength+1);
-        }
-        strURLCaption.ReleaseBuffer();
-        
-        if (strURLCaption.IsEmpty())
-        {
-            MessageBox("\"Open tasks in\" field must not be empty.",szWinName,MB_ICONERROR);
-            return;
-        }
-        bool unique = true;
-        int non_unique_pos = ComboBox.FindStringExact(-1,strURLCaption);
-        if ((CB_ERR != non_unique_pos) && (non_unique_pos != edit_pos))
-        {
-            unique = false;
-        }
-        if (!unique)
-        {
-            MessageBox("The value entered in \"Open tasks in\" field is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
-            return;
-        }
-        // checking for non-empty links
-        CString strTaskURL, strChildTasksURL;
-        TaskURL.GetWindowText(strTaskURL.GetBuffer(MaxStringLength),MaxStringLength+1);
-        strTaskURL.ReleaseBuffer();
-        if (strTaskURL.IsEmpty())
-        {
-            MessageBox("URL to view Task cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
-            return;
-        }
-        ChildTasksURL.GetWindowText(strChildTasksURL.GetBuffer(MaxStringLength),MaxStringLength+1);
-        strChildTasksURL.ReleaseBuffer();
-        if (strChildTasksURL.IsEmpty())
-        {
-            MessageBox("URL to view Child Tasks cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
-            return;
-        }
-
-        // checking hotkeys
-        UINT Hotkey1 = (UINT)TaskHotkey.SendMessage(HKM_GETHOTKEY,0,0);
-        UINT Hotkey2 = (UINT)ChildTasksHotkey.SendMessage(HKM_GETHOTKEY,0,0);
-        if (Hotkey1 && Hotkey1 == Hotkey2)
-        {
-            MessageBox("Entered hotkeys are the same.\nPlease use different ones.",szWinName,MB_ICONERROR);
-            return;
-        }
-        for (int i=0; i<temp_links.size(); i++)
-        {
-            if (i == edit_pos)
-            {
-                continue;
-            }
-            if ((Hotkey1)&&((Hotkey1 == temp_links[i].ViewTaskHotKey)||
-               (Hotkey1 == temp_links[i].ViewChildTasksHotKey)))
-            {
-                MessageBox("Hotkey entered in \"HotKey to View Task\" field is not unique.\nPlease enter another one",szWinName,MB_ICONERROR);
-                return;
-            }
-            if ((Hotkey2)&&((Hotkey2 == temp_links[i].ViewTaskHotKey)||
-               (Hotkey2 == temp_links[i].ViewChildTasksHotKey)))
-            {
-                MessageBox("Hotkey entered in \"HotKey to View Child Tasks\" field is not unique.\nPlease enter another one",szWinName,MB_ICONERROR);
-                return;
-            }
-        }
-        UINT HotKeyID;
-        if (edit_pos == CB_ERR)
-        {
-            HotKeyID = (temp_links.size())*2;
-        }
-        else
-        {
-            HotKeyID = edit_pos*2;
-        }
-        if (Hotkey1)
-        {
-            if (!RegisterHotKey(::GetParent(GetParent()),HotKeyID,(!(Hotkey1&0x500)?
-                           HIBYTE(LOWORD(Hotkey1)):((Hotkey1&0x500)<0x500?
-                           HIBYTE(LOWORD(Hotkey1))^5:HIBYTE(LOWORD(Hotkey1)))),
-                           LOBYTE(LOWORD(Hotkey1))))
-            {
-                MessageBox("Hotkey entered in \"HotKey to View Task\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
-                return;
-            }
-            UnregisterHotKey(::GetParent(GetParent()),HotKeyID);
-        }
-        HotKeyID++;
-        if (Hotkey2)
-        {
-            if (!RegisterHotKey(::GetParent(GetParent()),HotKeyID,(!(Hotkey2&0x500)?
-                            HIBYTE(LOWORD(Hotkey2)):((Hotkey2&0x500)<0x500?
-                            HIBYTE(LOWORD(Hotkey2))^5:HIBYTE(LOWORD(Hotkey2)))),
-                            LOBYTE(LOWORD(Hotkey2))))
-            {
-                MessageBox("Hotkey entered in \"HotKey to View Child Tasks\" field is already registered by another program.\nPlease enter another hotkey",szWinName,MB_ICONERROR);
-                return;
-            }
-            UnregisterHotKey(::GetParent(GetParent()),HotKeyID);
-        }
-        
-        // saving new record
-        int RecordPosition;
-        if (edit_pos == CB_ERR)
-        {
-            temp_links.push_back(link(strURLCaption,strTaskURL,strChildTasksURL,Hotkey1,Hotkey2,bDefault));
-            ComboBox.AddString(strURLCaption);
-
-            for (int i=0; i<ComboBox.GetCount(); i++)
-            {
-                CString temp;
-                ComboBox.GetLBText(i,temp);
-                CaptionsDropList.AddString(temp);
-            }
-
-            CaptionsDropList.SetCurSel(CaptionsDropList.GetCount()-1);
-            RecordPosition = CaptionsDropList.GetCount()-1;
-           
-            CaptionsDropDown.ShowWindow(SW_HIDE);
-            CaptionsDropDown.ResetContent();
-            CaptionsDropDown.EnableWindow(FALSE);
-        }
-        else // saving edited record
-        {
-            temp_links[edit_pos].Caption = strURLCaption;
-            temp_links[edit_pos].TaskURL = strTaskURL;
-            temp_links[edit_pos].ChildTasksURL = strChildTasksURL;
-            temp_links[edit_pos].ViewTaskHotKey = Hotkey1;
-            temp_links[edit_pos].ViewChildTasksHotKey = Hotkey2;
-            temp_links[edit_pos].Default = bDefault;
-            RecordPosition = edit_pos;
-
-            ComboBox.InsertString(edit_pos,strURLCaption);
-            ComboBox.DeleteString(edit_pos+1);
-            ComboBox.SetCurSel(edit_pos);
-
-            CaptionEdit.ShowWindow(SW_HIDE);
-            CaptionEdit.EnableWindow(FALSE);
-            CaptionEdit.SetWindowText("");
-        }
-        CaptionsDropList.EnableWindow(TRUE);
-        CaptionsDropList.ShowWindow(SW_SHOW);
-
-        // unset default flag of previously default link
-        bool IsDefault = bDefault;
-        for (i=0; i<temp_links.size(); i++)
-        {
-            if (bDefault)
-            {
-                if (i != RecordPosition)
-                {
-                    temp_links[i].Default = false;
-                }
-            }
-            else
-            {
-                if (temp_links[i].Default)
-                {
-                    IsDefault = true;
-                    break;
-                }
-            }
-        }
-        if (!IsDefault)
-        {
-            MessageBox("None of records is marked as default.\nLast saved record will be marked as default",szWinName,MB_ICONINFORMATION);
-            temp_links[RecordPosition].Default = true;
-            Default.SetCheck(BST_CHECKED);
-        }
-        Default.EnableWindow(FALSE);
-        TaskURL.SetReadOnly(TRUE);
-        ChildTasksURL.SetReadOnly(TRUE);
-        TaskHotkey.EnableWindow(FALSE);
-        ChildTasksHotkey.EnableWindow(FALSE);
-
-        EditButton.EnableWindow(TRUE);
-        DeleteButton.EnableWindow(TRUE);
-
-        SaveButton.EnableWindow(FALSE);
-        NewButton.EnableWindow(TRUE);
-
-        edit_pos = CB_ERR;
-        ::SetFocus(NewButton);
-    }
-
-    void StopSavingURL()
-    {
-        // stop before saving new record
-        int position;
-        if (edit_pos == CB_ERR)
-        {
-            position = 0;
-            for (int i=0; i<CaptionsDropDown.GetCount(); i++)
-            {
-                CString temp;
-                CaptionsDropDown.GetLBText(i,temp);
-                CaptionsDropList.AddString(temp);
-            }
-
-            CaptionsDropList.SetCurSel(0);
-           
-            CaptionsDropDown.ShowWindow(SW_HIDE);
-            CaptionsDropDown.ResetContent();
-            CaptionsDropDown.EnableWindow(FALSE);
-        }
-        else // stop before saving edited record
-        {
-            position = edit_pos;
-            CaptionEdit.ShowWindow(SW_HIDE);
-            CaptionEdit.EnableWindow(FALSE);
-            CaptionEdit.SetWindowText("");
-        }
-        if (temp_links[position].Default)
-        {
-            Default.SetCheck(BST_CHECKED);
-        }
-        else
-        {
-            Default.SetCheck(BST_UNCHECKED);
-        }
-        TaskURL.SetWindowText(temp_links[position].TaskURL);
-        ChildTasksURL.SetWindowText(temp_links[position].ChildTasksURL);
-        TaskHotkey.SendMessage(HKM_SETHOTKEY,temp_links[position].ViewTaskHotKey,0);
-        ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,temp_links[position].ViewChildTasksHotKey,0);
-
-        CaptionsDropList.EnableWindow(TRUE);
-        CaptionsDropList.ShowWindow(SW_SHOW);
-
-        Default.EnableWindow(FALSE);
-        TaskURL.SetReadOnly(TRUE);
-        ChildTasksURL.SetReadOnly(TRUE);
-        TaskHotkey.EnableWindow(FALSE);
-        ChildTasksHotkey.EnableWindow(FALSE);
-
-        EditButton.EnableWindow(TRUE);
-        DeleteButton.EnableWindow(TRUE);
-
-        SaveButton.EnableWindow(FALSE);
-        NewButton.EnableWindow(TRUE);
-
-        edit_pos = CB_ERR;
-        ::SetFocus(NewButton);
+        URLsList.SetCurSel(0);
     }
 
     // called every time when the page is activated
@@ -842,26 +858,15 @@ public:
     // called every time when the page is deactivated
     bool OnKillActive(COptionItem *pItem)
     {
-        if (SaveButton.IsWindowEnabled())
-        {
-            if (MessageBox("You have not saved the record.\nContinue without saving?",szWinName,MB_ICONWARNING|MB_YESNO|MB_DEFBUTTON2)==IDYES)
-            {
-                StopSavingURL();
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
         return true;
     }
 
     void OnOK()
     {
-        CaptionsDropList.ResetContent();
-        Settings.links.clear();
         sort_links();
+        URLsList.ResetContent();
+        DefaultURL.ResetContent();
+        Settings.links.clear();
         UINT HotkeyID = 0;
         for (int i=0; i<temp_links.size(); i++)
         {
@@ -896,7 +901,24 @@ public:
                 }
             }
             HotkeyID++;
+            HotKey = Settings.links[i].ViewParentTaskHotKey;
+            if (HotKey)
+            {
+                if (!RegisterHotKey(::GetParent(GetParent()),HotkeyID,(!(HotKey&0x500)?
+                               HIBYTE(LOWORD(HotKey)):((HotKey&0x500)<0x500?
+                               HIBYTE(LOWORD(HotKey))^5:HIBYTE(LOWORD(HotKey)))),
+                               LOBYTE(LOWORD(HotKey))))
+                {
+                    CString message;
+                    message.Format("Hotkey used to View Parent Task in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
+                                   Settings.links[i].Caption);
+                    MessageBox(message,szWinName,MB_ICONERROR);
+                }
+            }
+            HotkeyID++;
         }
+
+        temp_links.clear();
 
         Settings.SaveLinksSettings();
     }
@@ -936,335 +958,343 @@ public:
                 }
             }
             HotkeyID++;
+            HotKey = Settings.links[i].ViewParentTaskHotKey;
+            if (HotKey)
+            {
+                if (!RegisterHotKey(::GetParent(GetParent()),HotkeyID,(!(HotKey&0x500)?
+                               HIBYTE(LOWORD(HotKey)):((HotKey&0x500)<0x500?
+                               HIBYTE(LOWORD(HotKey))^5:HIBYTE(LOWORD(HotKey)))),
+                               LOBYTE(LOWORD(HotKey))))
+                {
+                    CString message;
+                    message.Format("Hotkey used to View Parent Task in \"%s\" is already registered and will not work as expected.\nPlease enter another hotkey in TMS Launcher Settings window",
+                                   Settings.links[i].Caption);
+                    MessageBox(message,szWinName,MB_ICONERROR);
+                }
+            }
+            HotkeyID++;
         }
     };
 };
 
-//////////////////////////// Colors options page ///////////////////////
+//////////////////////////// Defects options page ///////////////////////
+class DefectsPage;
+
+class DefectEditPage : public CDialogImpl<DefectEditPage>
+{
+public:
+    enum { IDD = DEFECT_EDIT_PAGE };
+    int Action; // 0 - new defect, 1 - edit defect, 2 - copy defect
+    defect DEFECT;
+    int MaxStringLength;
+    std::vector<defect> *Defects;
+
+    CEdit DefectEdit;
+    CEdit ProjectEdit;
+    CEdit Link;
+    CEdit ChildLink;
+    CEdit ParentLink;
+
+    DefectEditPage(int action, defect def, std::vector<defect> *defects):DEFECT(def)
+    {
+        Action = action;
+        Defects = defects;
+        MaxStringLength = 255;
+    }
+
+    BEGIN_MSG_MAP(DefectEditPage)
+        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
+        COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)
+    END_MSG_MAP()
+
+    LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+    {
+        CenterWindow();
+        DefectEdit.Attach(GetDlgItem(IDC_CLIENT_EDIT));
+        DefectEdit.LimitText(MaxStringLength);
+        ProjectEdit.Attach(GetDlgItem(IDC_DEFECT_PROJECT));
+        ProjectEdit.LimitText(MaxStringLength);
+     
+        Link.Attach(GetDlgItem(IDC_DEFECTS_LINK));
+        Link.LimitText(LINK_MAX);
+        ChildLink.Attach(GetDlgItem(IDC_DEFECTS_LINK2));
+        ChildLink.LimitText(LINK_MAX);
+        ParentLink.Attach(GetDlgItem(IDC_DEFECTS_LINK3));
+        ParentLink.LimitText(LINK_MAX);
+
+        DefectEdit.SetWindowText(DEFECT.ClientID);
+        ProjectEdit.SetWindowText(DEFECT.STProject);
+        Link.SetWindowText(DEFECT.DefectURL);
+        ChildLink.SetWindowText(DEFECT.ChildDefectsURL);
+        ParentLink.SetWindowText(DEFECT.ParentDefectURL);
+
+        switch(Action)
+        {
+            case 0: // new
+                SetWindowText("New defect record");
+                DEFECT.ClientID = ";";
+                break;
+            case 1: // edit
+                SetWindowText("Edit defect record");
+                break;
+            case 2: // copy
+                SetWindowText("New defect record");
+                DEFECT.ClientID = ";";
+                break;
+        }
+        return 0;
+    }
+
+    int GetPosByCaption(const char *caption)
+    {
+        for (int i=0; i<(*Defects).size(); i++)
+        {
+            if (CompareNoCaseCP1251((*Defects)[i].ClientID,caption)==0)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+    {
+        if (wID == IDOK)
+        {
+            // checking for duplicates and non-empty Project
+            CString strDefect, strProject;
+            DefectEdit.GetWindowText(strDefect.GetBuffer(MaxStringLength),MaxStringLength+1);
+            strDefect.ReleaseBuffer();
+            ProjectEdit.GetWindowText(strProject.GetBuffer(MaxStringLength),MaxStringLength+1);
+            strProject.ReleaseBuffer();
+        
+            if (GetPosByCaption(strDefect) != -1) // ClientID is not unique
+            {
+                if (CompareNoCaseCP1251(DEFECT.ClientID,strDefect) != 0)
+                {
+                    MessageBox("Entered client name is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (strDefect.Find(';') != -1)
+            {
+                MessageBox("Symbol \';\' cannot be used as a part of Client name",szWinName,MB_ICONERROR);
+                return 0;
+            }
+            if (strProject.IsEmpty())
+            {
+                MessageBox("Project field must not be empty.",szWinName,MB_ICONERROR);
+                return 0;
+            }
+
+            CString DefectURL, ChildDefectsURL, ParentDefectURL;
+            Link.GetWindowText(DefectURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            DefectURL.ReleaseBuffer();
+            ChildLink.GetWindowText(ChildDefectsURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            ChildDefectsURL.ReleaseBuffer();
+            ParentLink.GetWindowText(ParentDefectURL.GetBuffer(LINK_MAX),LINK_MAX+1);
+            ParentDefectURL.ReleaseBuffer();
+            bool Default = false;
+            if (DefectURL.IsEmpty())
+            {
+                DefectURL = Settings.DefectsLink;
+                Default = true;
+            }
+            else
+            {
+                if (DefectURL.Find(';') != -1)
+                {
+                    MessageBox("Symbol \';\' cannot be used as a part of an URL",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (ChildDefectsURL.IsEmpty())
+            {
+                ChildDefectsURL = Settings.ChildDefectsLink;
+                Default = true;
+            }
+            else
+            {
+                if (ChildDefectsURL.Find(';') != -1)
+                {
+                    MessageBox("Symbol \';\' cannot be used as a part of an URL",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (ParentDefectURL.IsEmpty())
+            {
+                ParentDefectURL = Settings.ParentDefectLink;
+                Default = true;
+            }
+            else
+            {
+                if (ParentDefectURL.Find(';') != -1)
+                {
+                    MessageBox("Symbol \';\' cannot be used as a part of an URL",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (Default)
+            {
+                MessageBox("Some URLs were not entered. Default values will be used",szWinName,MB_ICONINFORMATION);
+            }
+
+            DEFECT.ClientID = strDefect;
+            DEFECT.STProject = strProject;
+            DEFECT.DefectURL = DefectURL;
+            DEFECT.ChildDefectsURL = ChildDefectsURL;
+            DEFECT.ParentDefectURL = ParentDefectURL;
+        }
+        EndDialog(wID);
+        return 0;
+    }
+};
+
 class DefectsPage : public Mortimer::COptionPageImpl<DefectsPage,CPropPage>
 {
 public:
     enum { IDD = DEFECTS_PAGE };
 
-    CComboBox DefectsDropList; // linked to combobox with CBS_DROPDOWNLIST style
-    CComboBox DefectsDropDown; // linked to combobox with CBS_DROPDOWN style
-    CEdit DefectEdit;          // linked to editbox
-    CEdit Project;
-    CEdit Link;
+    CListBox DefectsList;
     CButton NewButton;
     CButton EditButton;
-    CButton SaveButton;
+    CButton CopyButton;
     CButton DeleteButton;
-    int MaxStringLength;
-    int edit_pos;
     std::vector<defect> projects;
     
     BEGIN_MSG_MAP(DefectsPage)
         MSG_WM_INITDIALOG(OnInitDialog)
-        COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, OnSelChanged)
         COMMAND_ID_HANDLER_EX(IDC_DEFECT_NEW,OnNewDefect)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_EDIT,OnEditDefect)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_SAVE,OnSaveDefect)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_EDIT,OnNewDefect)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_COPY,OnNewDefect)
         COMMAND_ID_HANDLER_EX(IDC_DEFECT_DELETE,OnDeleteDefect)
         REFLECT_NOTIFICATIONS()
     END_MSG_MAP()
 
     void sort_defects()
     {
-	    for (int i=0; i<projects.size()-1; i++)
-	    {
-		    bool exchange = false;
-		    for (int j=1; j<projects.size()-i; j++)
-		    {
-			    if (CompareNoCaseCP1251(projects[j-1].ClientID,projects[j].ClientID)>0)
-			    {
-				    defect temp = projects[j-1];
-				    projects[j-1] = projects[j];
-				    projects[j] = temp;
+        for (int i=0; i<projects.size()-1; i++)
+        {
+            bool exchange = false;
+            for (int j=1; j<projects.size()-i; j++)
+            {
+                if (CompareNoCaseCP1251(projects[j-1].ClientID,projects[j].ClientID)>0)
+                {
+                    defect temp = projects[j-1];
+                    projects[j-1] = projects[j];
+                    projects[j] = temp;
                     exchange = true;
-			    }
-		    }
-		    if (!exchange) break;
-	    }
+                }
+            }
+            if (!exchange) break;
+        }
+    }
+
+    int GetPosByCaption(const char *caption)
+    {
+        for (int i=0; i<projects.size(); i++)
+        {
+            if (CompareNoCaseCP1251(projects[i].ClientID,caption)==0)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     // called once when options dialog is opened
     LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
     {
-        MaxStringLength = 255;
-        edit_pos = CB_ERR;
         NewButton.Attach(GetDlgItem(IDC_DEFECT_NEW));
         EditButton.Attach(GetDlgItem(IDC_DEFECT_EDIT));
-        SaveButton.Attach(GetDlgItem(IDC_DEFECT_SAVE));
+        CopyButton.Attach(GetDlgItem(IDC_DEFECT_COPY));
         DeleteButton.Attach(GetDlgItem(IDC_DEFECT_DELETE));
 
-        DefectsDropList.Attach(GetDlgItem(IDC_CLIENT_ID));
-        DefectsDropList.LimitText(Settings.MaxClientName);
-        
-        DefectsDropDown.Attach(GetDlgItem(IDC_CLIENT_ID2));
-        DefectsDropDown.LimitText(Settings.MaxClientName);
-        DefectsDropDown.EnableWindow(FALSE);
-        DefectsDropDown.ShowWindow(SW_HIDE);
-
-        DefectEdit.Attach(GetDlgItem(IDC_CLIENT_EDIT));
-        DefectEdit.LimitText(Settings.MaxClientName);
-        DefectEdit.EnableWindow(FALSE);
-        DefectEdit.ShowWindow(SW_HIDE);
-
-        Project.Attach(GetDlgItem(IDC_DEFECT_PROJECT));
-        Project.LimitText(MaxStringLength);
-        Link.Attach(GetDlgItem(IDC_DEFECTS_LINK));
-        Link.LimitText(LINK_MAX);
-        Link.SetWindowText(Settings.DefectsLink);
+        DefectsList.Attach(GetDlgItem(IDC_DEFECTS_LIST));
 
         for (int i=0; i<Settings.defects.size(); i++)
         {
-            DefectsDropList.AddString(Settings.defects[i].ClientID);
-            projects.push_back(defect(Settings.defects[i].ClientID,Settings.defects[i].STProject));
-        }
-        if (Settings.defects.size()>0)
-        {
-            DefectsDropList.SetCurSel(0);
-            Project.SetWindowText(projects[0].STProject);
-        }
-        else
-        {
-            EditButton.EnableWindow(FALSE);
-            DeleteButton.EnableWindow(FALSE);
+            DefectsList.AddString(Settings.defects[i].ClientID);
+            projects.push_back(Settings.defects[i]);
         }
 
-        Project.SetReadOnly(TRUE);
-        SaveButton.EnableWindow(FALSE);
-
+        DefectsList.SetCurSel(0);
         return 0;
-    }
-
-    // called after selection in any ComboBox has been changed
-    void OnSelChanged(UINT code, int ControlID, HWND ControlHandle)
-    {
-        CComboBox ComboBox = ControlHandle;
-        int position = ComboBox.GetCurSel();
-        if (position != CB_ERR)
-        {
-            Project.SetWindowText(projects[position].STProject);
-        }
     }
 
     void OnNewDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
-        for (int i=0; i<DefectsDropList.GetCount(); i++)
-        {
-            CString temp;
-            DefectsDropList.GetLBText(i,temp);
-            DefectsDropDown.AddString(temp);
-        }
-        DefectsDropList.ResetContent();
-        DefectsDropList.ShowWindow(SW_HIDE);
-        DefectsDropList.EnableWindow(FALSE);
+        int position, realpos;
+        DefectEditPage DefectEditDlg(0,defect("","","","",""),&projects);
 
-        DefectsDropDown.EnableWindow(TRUE);
-        DefectsDropDown.ShowWindow(SW_SHOW);
-        DefectsDropDown.SetWindowText("");
-        
-        Project.SetWindowText("");
-        Project.SetReadOnly(FALSE);
-        NewButton.EnableWindow(FALSE);
-        EditButton.EnableWindow(FALSE);
-        DeleteButton.EnableWindow(FALSE);
-        SaveButton.EnableWindow(TRUE);
-        ::SetFocus(DefectsDropDown);
-    }
-
-    void OnSaveDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        // checking for duplicates and non-empty Project
-        CComboBox ComboBox;
-        CString strDefect, strProject;
-        if (edit_pos == CB_ERR)
+        if ((wID == IDC_DEFECT_COPY) || (wID == IDC_DEFECT_EDIT))
         {
-            // trying to save new record
-            ComboBox = DefectsDropDown;
-            ComboBox.GetWindowText(strDefect.GetBuffer(MaxStringLength),MaxStringLength+1);
-        }
-        else
-        {
-            //trying to save edited record
-            ComboBox = DefectsDropList;
-            DefectEdit.GetWindowText(strDefect.GetBuffer(MaxStringLength),MaxStringLength+1);
-        }
-        strDefect.ReleaseBuffer();
-        Project.GetWindowText(strProject.GetBuffer(MaxStringLength),MaxStringLength+1);
-        strProject.ReleaseBuffer();
-        
-        int non_unique_pos = CB_ERR;
-        for (int i=0; i<ComboBox.GetCount(); i++)
-        {
-            CString temp;
-            ComboBox.GetLBText(i,temp);
-            if (CompareNoCaseCP1251(strDefect,temp)==0)
+            position = DefectsList.GetCurSel();
+            if (position == CB_ERR)
             {
-                non_unique_pos = i;
-                break;
+                return;
+            }
+            CString SelectedItem;
+            DefectsList.GetText(position,SelectedItem);
+            realpos = GetPosByCaption(SelectedItem);
+            DefectEditDlg.DEFECT = projects[realpos];
+            if (wID == IDC_DEFECT_COPY)
+            {
+                DefectEditDlg.Action = 2;
+            }
+            else // wID == IDC_DEFECT_EDIT
+            {
+                DefectEditDlg.Action = 1;
             }
         }
-        bool unique = true;
-        if ((CB_ERR != non_unique_pos) && (non_unique_pos != edit_pos))
+
+        if (DefectEditDlg.DoModal() == IDOK)
         {
-            unique = false;
-        }
-        if (!unique)
-        {
-            MessageBox("Entered client name is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
-            return;
-        }
-        if (strDefect.Find(';') != -1)
-        {
-            MessageBox("Symbol \';\' cannot be used as a part of Client name",szWinName,MB_ICONERROR);
-            return;
-        }
-        if (strProject.IsEmpty())
-        {
-            MessageBox("Project field must not be empty.",szWinName,MB_ICONERROR);
-            return;
-        }
-        // saving new record
-        if (edit_pos == CB_ERR)
-        {
-            projects.push_back(defect(strDefect,strProject));
-            ComboBox.AddString(strDefect);
-            for (int i=0; i<ComboBox.GetCount(); i++)
+            if ((wID == IDC_DEFECT_NEW) || (wID == IDC_DEFECT_COPY))
             {
-                CString temp;
-                ComboBox.GetLBText(i,temp);
-                DefectsDropList.AddString(temp);
+                DefectsList.AddString(DefectEditDlg.DEFECT.ClientID);
+                projects.push_back(DefectEditDlg.DEFECT);
             }
-            DefectsDropList.SetCurSel(DefectsDropList.GetCount()-1);
-            
-            DefectsDropDown.ShowWindow(SW_HIDE);
-            DefectsDropDown.ResetContent();
-            DefectsDropDown.EnableWindow(FALSE);
-        }
-        else // saving edited record
-        {
-            projects[edit_pos].ClientID = strDefect;
-            projects[edit_pos].STProject = strProject;
+            else // wID == IDC_DEFECT_EDIT
+            {
+                DefectsList.DeleteString(position);
+                DefectsList.AddString(DefectEditDlg.DEFECT.ClientID);
+                int newpos = DefectsList.FindStringExact(-1,DefectEditDlg.DEFECT.ClientID);
+                if ((newpos == -1) && (DefectEditDlg.DEFECT.ClientID.IsEmpty()))
+                {
+                    newpos = 0;
+                }
+                DefectsList.SetCurSel(newpos);
 
-            ComboBox.InsertString(edit_pos,strDefect);
-            ComboBox.DeleteString(edit_pos+1);
-            ComboBox.SetCurSel(edit_pos);
-            
-            DefectEdit.ShowWindow(SW_HIDE);
-            DefectEdit.EnableWindow(FALSE);
-            DefectEdit.SetWindowText("");
-        }
-        DefectsDropList.EnableWindow(TRUE);
-        DefectsDropList.ShowWindow(SW_SHOW);
-
-        Project.SetReadOnly(TRUE);
-        EditButton.EnableWindow(TRUE);
-        DeleteButton.EnableWindow(TRUE);
-
-        SaveButton.EnableWindow(FALSE);
-        NewButton.EnableWindow(TRUE);
-        
-        edit_pos = CB_ERR;
-        ::SetFocus(NewButton);
-    }
-
-    void OnEditDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        edit_pos = DefectsDropList.GetCurSel();
-        if (edit_pos != CB_ERR)
-        {
-            CString temp;
-            DefectsDropList.GetLBText(edit_pos,temp);
-            DefectsDropList.ShowWindow(SW_HIDE);
-            DefectsDropList.EnableWindow(FALSE);
-
-            DefectEdit.SetWindowText(temp);
-            DefectEdit.EnableWindow(TRUE);
-            DefectEdit.ShowWindow(SW_SHOW);
-
-            Project.SetReadOnly(FALSE);
-            NewButton.EnableWindow(FALSE);
-            EditButton.EnableWindow(FALSE);
-            DeleteButton.EnableWindow(FALSE);
-            SaveButton.EnableWindow(TRUE);
-            ::SetFocus(DefectEdit);
+                projects[realpos] = DefectEditDlg.DEFECT;
+            }
         }
     }
 
     void OnDeleteDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
-        int position = DefectsDropList.GetCurSel();
-        if (position != CB_ERR)
+        int position = DefectsList.GetCurSel();
+        CString SelectedItem;
+        if (position == CB_ERR)
         {
-            DefectsDropList.DeleteString(position);
-            projects.erase(projects.begin()+position);
-        }
-        if (DefectsDropList.GetCount()>0)
-        {
-            DefectsDropList.SetCurSel(0);
-            Project.SetWindowText(projects[0].STProject);
-            EditButton.EnableWindow(TRUE);
-            DeleteButton.EnableWindow(TRUE);
+            return;
         }
         else
         {
-            DefectsDropList.ResetContent();
-            Project.SetWindowText("");
-            EditButton.EnableWindow(FALSE);
-            DeleteButton.EnableWindow(FALSE);
+            DefectsList.GetText(position,SelectedItem);
         }
-        Project.SetReadOnly(TRUE);
-        SaveButton.EnableWindow(FALSE);
-    }
-
-    void StopSavingDefect()
-    {
-        // stop before saving new record
-        if (edit_pos == CB_ERR)
+        if (MessageBox("Are you sure you want to delete selected record?",szWinName,MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES)
         {
-            for (int i=0; i<DefectsDropDown.GetCount(); i++)
-            {
-                CString temp;
-                DefectsDropDown.GetLBText(i,temp);
-                DefectsDropList.AddString(temp);
-            }
-            if (DefectsDropList.GetCount()>0)
-            {
-                DefectsDropList.SetCurSel(0);
-                Project.SetWindowText(projects[0].STProject);
-            }
-            else
-            {
-                DefectsDropList.ResetContent();
-                Project.SetWindowText("");
-            }
-            
-            DefectsDropDown.ShowWindow(SW_HIDE);
-            DefectsDropDown.ResetContent();
-            DefectsDropDown.EnableWindow(FALSE);
+            return;
         }
-        else // stop before saving edited record
+        int realpos = GetPosByCaption(SelectedItem);
+        if (realpos != -1)
         {
-            DefectEdit.ShowWindow(SW_HIDE);
-            DefectEdit.EnableWindow(FALSE);
-            DefectEdit.SetWindowText("");
-            Project.SetWindowText(projects[edit_pos].STProject);
+            DefectsList.DeleteString(position);
+            projects.erase(projects.begin()+realpos);
         }
-        DefectsDropList.EnableWindow(TRUE);
-        DefectsDropList.ShowWindow(SW_SHOW);
-
-        Project.SetReadOnly(TRUE);
-        EditButton.EnableWindow(TRUE);
-        DeleteButton.EnableWindow(TRUE);
-
-        SaveButton.EnableWindow(FALSE);
-        NewButton.EnableWindow(TRUE);
-        
-        edit_pos = CB_ERR;
-        ::SetFocus(NewButton);
+        DefectsList.SetCurSel(0);
     }
 
     bool OnSetActive(COptionItem *pItem)
@@ -1274,41 +1304,20 @@ public:
     
     bool OnKillActive(COptionItem *pItem)
     {
-        if (SaveButton.IsWindowEnabled())
-        {
-            if (MessageBox("You have not saved the record.\nContinue without saving?",szWinName,MB_ICONWARNING|MB_YESNO|MB_DEFBUTTON2)==IDYES)
-            {
-                StopSavingDefect();
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
         return true;
     }
 
     void OnOK()
     {
-        // reading defects settings
-        DefectsDropList.ResetContent();
-        Settings.defects.clear();
+        // saving defects settings
         sort_defects();
+        DefectsList.ResetContent();
+        Settings.defects.clear();
         for (int i=0; i<projects.size(); i++)
         {
             Settings.defects.push_back(projects[i]);
         }
         projects.clear();
-
-        CString temp;
-        Link.GetWindowText(temp.GetBuffer(LINK_MAX),LINK_MAX+1);
-        temp.ReleaseBuffer();
-        if (!temp.IsEmpty()) Settings.DefectsLink = temp;
-        else
-        {
-            MessageBox("\"Link to open defects\" field cannot be empty.\nPrevious value will be used",szWinName,MB_ICONERROR);
-        }
         Settings.SaveDefectsSettings();
     }
 

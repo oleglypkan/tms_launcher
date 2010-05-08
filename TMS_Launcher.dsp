@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib version.lib shlwapi.lib htmlhelp.lib /nologo /subsystem:windows /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib version.lib shlwapi.lib htmlhelp.lib ws2_32.lib /nologo /subsystem:windows /machine:I386 /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "TMS_Launcher - Win32 Debug"
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib version.lib shlwapi.lib htmlhelp.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib version.lib shlwapi.lib htmlhelp.lib ws2_32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 
 !ENDIF 
 
@@ -97,11 +97,19 @@ SOURCE=.\About.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\CmdLine.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\maindlg.cpp
 # End Source File
 # Begin Source File
 
 SOURCE=.\Registry.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Request.cpp
 # End Source File
 # Begin Source File
 
@@ -115,6 +123,10 @@ SOURCE=.\stdafx.cpp
 # Begin Source File
 
 SOURCE=.\Systray.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Task.cpp
 # End Source File
 # Begin Source File
 
@@ -134,6 +146,10 @@ SOURCE=.\About.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\CmdLine.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\htmlhelp.h
 # End Source File
 # Begin Source File
@@ -150,6 +166,10 @@ SOURCE=.\Registry.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Request.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\resource.h
 # End Source File
 # Begin Source File
@@ -163,6 +183,10 @@ SOURCE=.\stdafx.h
 # Begin Source File
 
 SOURCE=.\Systray.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Task.h
 # End Source File
 # Begin Source File
 

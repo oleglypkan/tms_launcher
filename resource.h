@@ -13,6 +13,9 @@
 #define IDD_MYOPTIONSHEET               209
 #define TASKS_PAGE                      210
 #define IDB_BITMAP1                     211
+#define IDR_ACCELERATORS                212
+#define URL_EDIT_PAGE                   213
+#define DEFECT_EDIT_PAGE                214
 #define IDC_TASKNAME                    1000
 #define VIEW_TASK                       1001
 #define IDC_EXPAND                      1002
@@ -26,8 +29,6 @@
 #define IDC_AUTORUN                     1010
 #define IDC_USUAL_TMS                   1011
 #define IDC_ALT_TMS                     1012
-#define IDC_TASK_RADIO                  1014
-#define IDC_CHILD_RADIO                 1015
 #define IDC_MINIMIZE                    1016
 #define IDC_SINGLE_CLICK                1017
 #define IDC_ABOUT                       1018
@@ -37,7 +38,7 @@
 #define IDC_DEFECT_NEW                  1025
 #define IDC_DEFECT_EDIT                 1026
 #define IDC_DEFECT_DELETE               1027
-#define IDC_DEFECT_SAVE                 1028
+#define IDC_DEFECT_COPY                 1028
 #define IDC_DEFECT_PROJECT              1029
 #define IDC_MIN_CLIENT                  1030
 #define IDC_CLIENT_ID2                  1030
@@ -49,7 +50,9 @@
 #define IDC_MAX_EXT                     1035
 #define IDC_DEFECTS_LINK                1035
 #define IDC_BROWSE                      1036
+#define IDC_DEFECTS_LINK2               1036
 #define IDC_LINK_NEW                    1037
+#define IDC_DEFECTS_LINK3               1037
 #define IDC_LINK_EDIT                   1038
 #define IDC_LINK_SAVE                   1039
 #define IDC_LINK_DELETE                 1040
@@ -65,14 +68,31 @@
 #define IDC_DEFAULT_BROWSER             1052
 #define IDC_CONTENTS                    1053
 #define IDC_HELP_BUTTON                 1054
+#define IDC_URLS_LIST                   1055
+#define IDC_LINK_COPY                   1056
+#define VIEW_PARENT_TASK_HOTKEY         1057
+#define IDC_DEFECTS_LIST                1058
+#define IDC_LOGIN                       1060
+#define IDC_PASSWORD                    1061
+#define IDC_TASKNAME_COMBO              1063
+#define IDC_RIGHT_CLICK                 1064
+#define IDC_TASK_NAME_CONTROL           1065
+#define IDC_MAX_HISTORY                 1066
+#define IDC_MAX_SPIN                    1068
+#define ID_MENU_UNDO                    32774
+#define ID_MENU_CUT                     32775
+#define ID_MENU_COPY                    32776
+#define ID_MENU_PASTE                   32777
+#define ID_MENU_DELETE                  32778
+#define ID_MENU_SELECT                  32779
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        212
-#define _APS_NEXT_COMMAND_VALUE         32774
-#define _APS_NEXT_CONTROL_VALUE         1055
+#define _APS_NEXT_RESOURCE_VALUE        215
+#define _APS_NEXT_COMMAND_VALUE         32780
+#define _APS_NEXT_CONTROL_VALUE         1069
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -1,9 +1,17 @@
+/*
+    File name: settings.cpp
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 17, 2006
+*/
+
 #include "stdafx.h"
 #include "settings.h"
 #include "About.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.17 $$Date: 2005/07/08 10:02:33Z $"; 
+ static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.23 $$Date: 2006/02/08 13:37:49Z $"; 
 #endif
 
 extern CString szWinName;
@@ -21,6 +29,9 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     Minimize = false;
     SingleClick = false;
     RightClickAction = 0;
+    RightClickAction2 = 0;
+    MaxHistoryItems = 25;
+    MaxPossibleHistory = 32000;
     xPos = -1; // for centered window
     yPos = -1; // for centered window
     RegistryKey = RegKey;
@@ -39,26 +50,29 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     MaxIDName = 6;
     MinExt = 0;
     MaxExt = 1;
+    TaskNameControlType = 1; // ComboBox control
     MinTaskName = MinClientName+MinIDName;
     MaxTaskName = MaxClientName+MaxIDName+MaxExt+2; // 2 - separators
     DefectsLink = "http://qa.isd.dp.ua/softtest/defect/%PROJECT%/%ID%/";
-    defects.push_back(defect("","ST_LABGUI_SYNCH"));
-    defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH"));
-    defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH"));
-    defects.push_back(defect("LAB","ST_LABGUI_SYNCH"));
-    defects.push_back(defect("LABA","ST_LABASCII_SYNCH"));
-    defects.push_back(defect("LABASC","ST_LABASCII_SYNCH"));
-    defects.push_back(defect("LABQC","ST_LABQCASCII_SYNCH"));
-    defects.push_back(defect("LABQCASC","ST_LABQCASCII_SYNCH"));
-    defects.push_back(defect("MIC","ST_MICGUI_SYNCH"));
-    defects.push_back(defect("MICA","ST_MICASCII_SYNCH"));
-    defects.push_back(defect("MICASC","ST_MICASCII_SYNCH"));
-    defects.push_back(defect("MICQC","ST_MICQCASCII_SYNCH"));
-    defects.push_back(defect("MICQCASC","ST_MICQCASCII_SYNCH"));
-    defects.push_back(defect("SEC","ST_SECURITY"));
-    defects.push_back(defect("STO","ST_SOFTSTORE"));
-    defects.push_back(defect("STORE","ST_SOFTSTORE"));
-    defects.push_back(defect("SUP","ST_ISD_SUPPORT"));
+    ChildDefectsLink = "http://qa.isd.dp.ua/softtest/child_defects/%PROJECT%/%ID%/";
+    ParentDefectLink = "http://qa.isd.dp.ua/softtest/parent_defect/%PROJECT%/%ID%/";
+    defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("LAB","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("LABA","ST_LABASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("LABASC","ST_LABASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("LABQC","ST_LABQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("LABQCASC","ST_LABQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("MIC","ST_MICGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("MICA","ST_MICASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("MICASC","ST_MICASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("MICQC","ST_MICQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("MICQCASC","ST_MICQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("SEC","ST_SECURITY",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("STO","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("STORE","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink));
+    defects.push_back(defect("SUP","ST_ISD_SUPPORT",DefectsLink, ChildDefectsLink, ParentDefectLink));
 }
 
 void CSettings::LoadSettings()
@@ -81,8 +95,18 @@ void CSettings::LoadSettings()
 
     DWordSize=sizeof(DWORD); // will be changed by ReadValue()
     Reg.ReadValue(RegistryKey,"RightClickAction",REG_DWORD,(LPBYTE)&RightClickAction,DWordSize);
-    if ((RightClickAction < 0)||(RightClickAction > 1))
+    if ((RightClickAction < 0)||(RightClickAction > 3))
         RightClickAction = 0;
+
+    DWordSize=sizeof(DWORD); // will be changed by ReadValue()
+    Reg.ReadValue(RegistryKey,"RightClickAction2",REG_DWORD,(LPBYTE)&RightClickAction2,DWordSize);
+    if ((RightClickAction2 < 0)||(RightClickAction2 > 2))
+        RightClickAction2 = 0;
+
+    DWordSize=sizeof(DWORD); // will be changed by ReadValue()
+    Reg.ReadValue(RegistryKey,"TaskNameControlType",REG_DWORD,(LPBYTE)&TaskNameControlType,DWordSize);
+    if ((TaskNameControlType < 0)||(TaskNameControlType > 1))
+        TaskNameControlType = 1;
 
     DWordSize=sizeof(DWORD);
     Reg.ReadValue(RegistryKey,"xPos",REG_DWORD,(LPBYTE)&xPos,DWordSize);
@@ -127,18 +151,34 @@ void CSettings::LoadSettings()
     {
         SubKeyName.ReleaseBuffer();
         // reading values of the subkey
-        const DWORD ValueLength = 255;
+        const DWORD ValueLength = 16000;
         UINT ViewTaskHotKey;
         UINT ViewChildTasksHotKey;
+        UINT ViewParentTaskHotKey;
+
         CString TaskURL;
         CString ChildTasksURL;
+        CString Login;
+        CString Password;
         DWORD Default;
         DWordSize=sizeof(DWORD);
-        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ViewTaskHotkey",
-                      REG_DWORD,(LPBYTE)&ViewTaskHotKey,DWordSize);
+        if (!Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ViewTaskHotkey",
+                           REG_DWORD,(LPBYTE)&ViewTaskHotKey,DWordSize))
+        {
+            ViewTaskHotKey = 0;
+        }
         DWordSize=sizeof(DWORD);
-        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ViewChildTasksHotkey",
-                      REG_DWORD,(LPBYTE)&ViewChildTasksHotKey,DWordSize);
+        if (!Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ViewChildTasksHotkey",
+                           REG_DWORD,(LPBYTE)&ViewChildTasksHotKey,DWordSize))
+        {
+            ViewChildTasksHotKey = 0;
+        }
+        DWordSize=sizeof(DWORD);
+        if (!Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ViewParentTaskHotkey",
+                           REG_DWORD,(LPBYTE)&ViewParentTaskHotKey,DWordSize))
+        {
+            ViewParentTaskHotKey = 0;
+        }
         
         Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"TaskURL",
                       REG_SZ,(LPBYTE)TaskURL.GetBuffer(ValueLength),ValueLength);
@@ -147,6 +187,21 @@ void CSettings::LoadSettings()
                       REG_SZ,(LPBYTE)ChildTasksURL.GetBuffer(ValueLength),ValueLength);
         ChildTasksURL.ReleaseBuffer();
                
+        bool res = Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"Login",
+                                 REG_SZ,(LPBYTE)Login.GetBuffer(ValueLength),ValueLength);
+        Login.ReleaseBuffer();
+        if (!res)
+        {
+            Login = "";
+        }
+        res = Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"Password",
+                            REG_SZ,(LPBYTE)Password.GetBuffer(ValueLength),ValueLength);
+        Password.ReleaseBuffer();
+        if (!res)
+        {
+            Password = "";
+        }
+
         DWordSize=sizeof(DWORD);
         Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"Default",
                       REG_DWORD,(LPBYTE)&Default,DWordSize);
@@ -157,16 +212,17 @@ void CSettings::LoadSettings()
         }
 
         links.push_back(link(SubKeyName,TaskURL,ChildTasksURL,ViewTaskHotKey,
-                             ViewChildTasksHotKey,(Default == 1)));
+                             ViewChildTasksHotKey,ViewParentTaskHotKey,(Default == 1),
+                             Login, Password));
 
         SubKeyIndex++;
     }
     if (links.empty())
     {
         links.push_back(link("Alternative TMS","http://scc1/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,false));
+                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"",""));
         links.push_back(link("Usual TMS","http://www.softcomputer.com/tms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,true));
+                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,true,"",""));
     }
     else
     {
@@ -178,24 +234,19 @@ void CSettings::LoadSettings()
 
 //  reading defects settings
     // reading defects link
-    CString temp;
-    Reg.ReadValue(RegistryKey+"\\"+LinksSubKey,"DefectsLink",REG_SZ,(LPBYTE)temp.GetBuffer(LINK_MAX+1),LINK_MAX+1);
-    temp.ReleaseBuffer();
-    if (!temp.IsEmpty() &&  (temp.GetLength() <= LINK_MAX)) DefectsLink = temp;
-
     if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
     {
         defects.clear();
         DWordSize=sizeof(DWORD);
-        DWORD MaxValueNameLength = 260;
-        DWORD MaxValueLength = 255;
+        DWORD MaxValueNameLength = 255;
+        DWORD MaxValueLength = 16000;
         int defects_number = 0;
         defects_number = Reg.GetNumberOfValues(RegistryKey+"\\"+DefectsSubKey,&MaxValueNameLength,&MaxValueLength);
         MaxValueNameLength++;
         MaxValueLength++;
     
         DWORD type;
-        CString value_name, value; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH";
+        CString value_name, value; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3";
     
         for (int i=0; i<defects_number; i++)
         {
@@ -207,15 +258,74 @@ void CSettings::LoadSettings()
             {
                 Reg.ReadValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(LPBYTE)value.GetBuffer(ValueLength),ValueLength);
                 value.ReleaseBuffer();
+                CString Client, Project, URL, ChildURL, ParentURL;
+                // parse string
                 int separator = value.Find(';');
                 if (separator != -1)
                 {
-                    defects.push_back(defect(value.Left(separator),value.Right(value.GetLength()-separator-1)));
+                    Client = value.Left(separator);
+                    value.Delete(0,separator+1);
                 }
+                else
+                {
+                    continue;
+                }
+                separator = value.Find(';');
+                if (separator != -1)
+                {
+                    Project = value.Left(separator);
+                    value.Delete(0,separator+1);
+                }
+                else
+                {
+                    Project = value;
+                    defects.push_back(defect(Client,Project,DefectsLink,ChildDefectsLink,ParentDefectLink));
+                    continue;
+                }
+                separator = value.Find(';');
+                if (separator != -1)
+                {
+                    URL = value.Left(separator);
+                    value.Delete(0,separator+1);
+                }
+                else
+                {
+                    URL = value;
+                    defects.push_back(defect(Client,Project,URL,ChildDefectsLink,ParentDefectLink));
+                    continue;
+                }
+                separator = value.Find(';');
+                if (separator != -1)
+                {
+                    ChildURL = value.Left(separator);
+                    value.Delete(0,separator+1);
+                }
+                else
+                {
+                    ChildURL = value;
+                    defects.push_back(defect(Client,Project,URL,ChildURL,ParentDefectLink));
+                    continue;
+                }
+                separator = value.Find(';');
+                if (separator != -1)
+                {
+                    ParentURL = value.Left(separator);
+                    value.Delete(0,separator+1);
+                }
+                else
+                {
+                    ParentURL = value;
+                }
+                defects.push_back(defect(Client,Project,URL,ChildURL,ParentURL));
             }
         }
     }
     // reading format settings
+    DWordSize=sizeof(DWORD); // will be changed by ReadValue()
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxHistoryItems",REG_DWORD,(LPBYTE)&MaxHistoryItems,DWordSize);
+    if ((MaxHistoryItems < 1)||(MaxHistoryItems > MaxPossibleHistory))
+        MaxHistoryItems = 25;
+
     DWordSize=sizeof(DWORD);
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxClient",REG_DWORD,(LPBYTE)&MaxClientName,DWordSize);
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxID",REG_DWORD,(LPBYTE)&MaxIDName,DWordSize);
@@ -233,7 +343,7 @@ void CSettings::LoadSettings()
     TASKS_SEPARATORS.ReleaseBuffer();
     RemoveUnacceptableSeparators(TASKS_SEPARATORS);
     RemoveDuplicateSeparators(TASKS_SEPARATORS);
-    if (!SEPARATORS.FindOneOf(TASKS_SEPARATORS))
+    if (SEPARATORS.FindOneOf(TASKS_SEPARATORS) == -1)
     {
         if (!SEPARATORS.IsEmpty()) Separators = SEPARATORS;
         if (!TASKS_SEPARATORS.IsEmpty()) TasksSeparators = TASKS_SEPARATORS;
@@ -258,6 +368,10 @@ void CSettings::SaveGeneralSettings(bool AfterImporting)
     Reg.AddValue(RegistryKey,"Single click",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
 
     Reg.AddValue(RegistryKey,"RightClickAction",REG_DWORD,(const BYTE*)&RightClickAction,sizeof(DWORD));
+
+    Reg.AddValue(RegistryKey,"RightClickAction2",REG_DWORD,(const BYTE*)&RightClickAction2,sizeof(DWORD));
+
+    Reg.AddValue(RegistryKey,"TaskNameControlType",REG_DWORD,(const BYTE*)&TaskNameControlType,sizeof(DWORD));
 
     if (AutoRun)
     {
@@ -302,9 +416,9 @@ void CSettings::SaveLinksSettings()
     if (links.empty())
     {
         links.push_back(link("Alternative TMS","http://scc1/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,false));
+                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"",""));
         links.push_back(link("Usual TMS","http://www.softcomputer.com/tms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,true));
+                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,true,"",""));
     }
     for (i=0; i<links.size(); i++)
     {
@@ -312,8 +426,11 @@ void CSettings::SaveLinksSettings()
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ChildTasksURL",REG_SZ,(const BYTE*)LPCTSTR(links[i].ChildTasksURL),links[i].ChildTasksURL.GetLength()+1);
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewTaskHotkey",REG_DWORD,(const BYTE*)&links[i].ViewTaskHotKey,sizeof(DWORD));
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewChildTasksHotkey",REG_DWORD,(const BYTE*)&links[i].ViewChildTasksHotKey,sizeof(DWORD));
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewParentTaskHotkey",REG_DWORD,(const BYTE*)&links[i].ViewParentTaskHotKey,sizeof(DWORD));
         DWORD def = links[i].Default ? 1:0;
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Default",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Login",REG_SZ,(const BYTE*)LPCTSTR(links[i].Login),links[i].Login.GetLength()+1);
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Password",REG_SZ,(const BYTE*)LPCTSTR(links[i].Password),links[i].Password.GetLength()+1);
     }
 }
 
@@ -324,20 +441,20 @@ void CSettings::SaveFormatSettings()
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxExt",REG_DWORD,(const BYTE*)&MaxExt,sizeof(DWORD));
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(const BYTE*)LPCTSTR(Separators),Separators.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"TasksSeparators",REG_SZ,(const BYTE*)LPCTSTR(TasksSeparators),TasksSeparators.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxHistoryItems",REG_DWORD,(const BYTE*)&MaxHistoryItems,sizeof(DWORD));
 }
 
 void CSettings::SaveDefectsSettings()
 {
     Reg.DeleteKey(RegistryKey,DefectsSubKey);
     int defects_number = defects.size();
-    CString value_name, value; // value_name == "Item0"; value == "LAB;ST_LABGUI_SYNCH";
+    CString value_name, value; // value_name == "Item0"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3";
     for (int i=0; i<defects_number; i++)
     {
         value_name.Format("Item%d",i);
-        value.Format("%s;%s",defects[i].ClientID,defects[i].STProject);
+        value.Format("%s;%s;%s;%s;%s",defects[i].ClientID,defects[i].STProject,defects[i].DefectURL,defects[i].ChildDefectsURL,defects[i].ParentDefectURL);
         Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
     }
-    Reg.AddValue(RegistryKey+"\\"+LinksSubKey,"DefectsLink",REG_SZ,(const BYTE*)LPCTSTR(DefectsLink),DefectsLink.GetLength()+1);
 }
 
 bool CSettings::SettingsAvailable()
@@ -417,7 +534,7 @@ void CSettings::ImportSettings(LPCTSTR lpSubKey)
 
             DWordSize=sizeof(DWORD); // will be changed by ReadValue()
             Reg.ReadValue(lpSubKey,"RightClickAction",REG_DWORD,(LPBYTE)&RightClickAction,DWordSize);
-            if ((RightClickAction < 0)||(RightClickAction > 1))
+            if ((RightClickAction < 0)||(RightClickAction > 3))
                 RightClickAction = 0;
 
             DWordSize=sizeof(DWORD);

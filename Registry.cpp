@@ -1,8 +1,16 @@
+/*
+    File name: Registry.cpp
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 17, 2006
+*/
+
 #include "stdafx.h"
 #include "registry.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: Registry.cpp,v $$Revision: 1.5 $$Date: 2005/06/17 14:00:21Z $"; 
+ static char verid[]="@(#)$RCSfile: Registry.cpp,v $$Revision: 1.6 $$Date: 2006/01/17 15:53:15Z $"; 
 #endif
 
 void Registry::AddValue(LPCTSTR lpSubKey,LPCTSTR lpValueName,DWORD dwType,const BYTE *lpData,DWORD dwSizeOfData)

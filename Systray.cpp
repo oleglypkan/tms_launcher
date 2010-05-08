@@ -1,8 +1,16 @@
+/*
+    File name: Systray.cpp
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 17, 2006
+*/
+
 #include "stdafx.h"
 #include "systray.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: Systray.cpp,v $$Revision: 1.2 $$Date: 2005/05/25 16:18:00Z $"; 
+ static char verid[]="@(#)$RCSfile: Systray.cpp,v $$Revision: 1.3 $$Date: 2006/01/17 15:56:41Z $"; 
 #endif
 
 const UINT WM_TASKBARCREATED = ::RegisterWindowMessage("TaskbarCreated");

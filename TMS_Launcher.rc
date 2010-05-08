@@ -48,12 +48,12 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,9,22,85,8
     CONTROL         "Start with &Windows",IDC_AUTORUN,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,100,22,74,8
-    GROUPBOX        "After right click in ""Task Name"" field",IDC_STATIC,3,
-                    36,177,23,WS_GROUP
-    CONTROL         "&View Task",IDC_TASK_RADIO,"Button",BS_AUTORADIOBUTTON,
-                    9,47,50,8
-    CONTROL         "V&iew Child Task",IDC_CHILD_RADIO,"Button",
-                    BS_AUTORADIOBUTTON,101,47,71,8
+    LTEXT           """&Task Name"" field control:",IDC_STATIC,4,36,86,8
+    COMBOBOX        IDC_TASK_NAME_CONTROL,3,47,90,12,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "&Right-click action:",IDC_STATIC,98,36,59,9
+    COMBOBOX        IDC_RIGHT_CLICK,97,47,83,12,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "",IDC_STATIC,3,59,177,45
     CONTROL         "&Use system default browser to open single task",
                     IDC_DEFAULT_BROWSER,"Button",BS_AUTOCHECKBOX | 
@@ -73,38 +73,37 @@ BEGIN
     ICON            IDI_SYSTRAY_ICON,IDC_STATIC,7,7,20,20,SS_CENTERIMAGE
     CTEXT           "TMS Launcher version",IDC_ABOUT_VERSION,35,7,103,8,
                     SS_CENTERIMAGE
-    CTEXT           "Copyright © 2005 by Oleg Lypkan",IDC_STATIC,36,19,118,8,
+    CTEXT           "Copyright © 2006 by Oleg Lypkan",IDC_STATIC,36,19,118,8,
                     SS_CENTERIMAGE
     CTEXT           "Information Systems Development",IDC_STATIC,34,29,121,8
 END
 
-URLS_PAGE DIALOG DISCARDABLE  55, 15, 183, 106
-STYLE DS_CONTROL | WS_CHILD | WS_CAPTION
-CAPTION "Dialog"
+URL_EDIT_PAGE DIALOG DISCARDABLE  0, 0, 174, 174
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Adding/editing an URL record"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "&Open tasks in",IDC_STATIC,3,0,177,104,WS_GROUP
-    COMBOBOX        IDC_URL_CAPTION,8,10,104,73,CBS_DROPDOWNLIST | 
-                    CBS_AUTOHSCROLL | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
-                    WS_TABSTOP
-    COMBOBOX        IDC_URL_CAPTION2,8,10,104,73,CBS_DROPDOWN | 
-                    CBS_AUTOHSCROLL | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
-                    WS_TABSTOP
-    EDITTEXT        IDC_URL_EDIT,8,10,104,13,ES_AUTOHSCROLL
-    CONTROL         "&Use by default",IDC_URL_DEFAULT,"Button",
-                    BS_AUTORADIOBUTTON,115,12,60,8
-    EDITTEXT        IDC_TASK_URL,8,26,166,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_CHILD_TASKS_URL,8,42,166,12,ES_AUTOHSCROLL
-    LTEXT           "HotKey to View &Task:",IDC_STATIC,9,57,70,8
+    LTEXT           "&URL caption:",IDC_STATIC,4,2,42,8
+    EDITTEXT        IDC_URL_EDIT,4,12,166,13,ES_AUTOHSCROLL
+    LTEXT           "&Open Task using:",IDC_STATIC,5,28,60,8
+    EDITTEXT        IDC_TASK_URL,4,38,166,12,ES_AUTOHSCROLL
+    LTEXT           "Open C&hild Tasks using:",IDC_STATIC,4,53,81,8
+    EDITTEXT        IDC_CHILD_TASKS_URL,4,63,166,12,ES_AUTOHSCROLL
+    LTEXT           "&Login:",IDC_STATIC,5,78,37,8
+    EDITTEXT        IDC_LOGIN,4,88,70,12,ES_AUTOHSCROLL
+    LTEXT           "P&assword:",IDC_STATIC,78,78,37,8
+    EDITTEXT        IDC_PASSWORD,77,88,93,12,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "HotKey to View &Task:",IDC_STATIC,4,107,69,8
     CONTROL         "HotKey1",VIEW_TASK_HOTKEY,"msctls_hotkey32",WS_BORDER | 
-                    WS_TABSTOP,8,67,71,13
-    LTEXT           "To View &Child Tasks:",IDC_STATIC,103,57,68,8
+                    WS_TABSTOP,77,105,93,13
+    LTEXT           "To View &Child Tasks:",IDC_STATIC,4,122,67,8
     CONTROL         "HotKey2",VIEW_CHILD_TASKS_HOTKEY,"msctls_hotkey32",
-                    WS_BORDER | WS_TABSTOP,103,67,71,13
-    PUSHBUTTON      "&New",IDC_LINK_NEW,8,86,37,14
-    PUSHBUTTON      "&Edit",IDC_LINK_EDIT,49,86,39,14
-    PUSHBUTTON      "&Save",IDC_LINK_SAVE,93,86,39,14
-    PUSHBUTTON      "&Delete",IDC_LINK_DELETE,137,86,38,14
+                    WS_BORDER | WS_TABSTOP,77,121,93,13
+    LTEXT           "To View &Parent Task:",IDC_STATIC,4,138,70,8
+    CONTROL         "HotKey3",VIEW_PARENT_TASK_HOTKEY,"msctls_hotkey32",
+                    WS_BORDER | WS_TABSTOP,77,137,94,13
+    PUSHBUTTON      "OK",IDOK,45,158,35,13
+    PUSHBUTTON      "Cancel",IDCANCEL,94,158,36,13
 END
 
 DEFECTS_PAGE DIALOG DISCARDABLE  55, 15, 183, 106
@@ -112,21 +111,14 @@ STYLE DS_CONTROL | WS_CHILD | WS_CAPTION
 CAPTION "Dialog"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Tasks that treated as defects",IDC_STATIC,3,0,177,76
-    LTEXT           "&Client:",IDC_STATIC,12,16,20,8
-    COMBOBOX        IDC_CLIENT_ID,44,14,130,65,CBS_DROPDOWNLIST | 
-                    CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_CLIENT_ID2,44,14,130,65,CBS_DROPDOWN | 
-                    CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    EDITTEXT        IDC_CLIENT_EDIT,44,14,130,13,ES_AUTOHSCROLL
-    LTEXT           "&Project:",IDC_STATIC,12,37,25,8
-    EDITTEXT        IDC_DEFECT_PROJECT,44,35,130,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "&New",IDC_DEFECT_NEW,8,56,37,14
-    PUSHBUTTON      "&Edit",IDC_DEFECT_EDIT,49,56,39,14
-    PUSHBUTTON      "&Save",IDC_DEFECT_SAVE,93,56,39,14
-    PUSHBUTTON      "&Delete",IDC_DEFECT_DELETE,137,56,38,14
-    LTEXT           "&URL to open defects:",IDC_STATIC,4,81,69,8
-    EDITTEXT        IDC_DEFECTS_LINK,4,91,175,12,ES_AUTOHSCROLL
+    GROUPBOX        "Tasks that are treated as defects",IDC_STATIC,3,0,177,
+                    104
+    PUSHBUTTON      "&New",IDC_DEFECT_NEW,137,9,38,13
+    PUSHBUTTON      "&Edit",IDC_DEFECT_EDIT,137,25,38,13
+    PUSHBUTTON      "&Copy",IDC_DEFECT_COPY,137,41,38,13
+    PUSHBUTTON      "&Delete",IDC_DEFECT_DELETE,137,57,38,13
+    LISTBOX         IDC_DEFECTS_LIST,8,9,125,90,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_MYOPTIONSHEET DIALOG DISCARDABLE  0, 0, 239, 141
@@ -162,10 +154,72 @@ BEGIN
                     ES_NUMBER
     LTEXT           "<=   %EXT%    <=",IDC_STATIC,63,55,56,8
     EDITTEXT        IDC_MAX_EXT,124,53,30,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "&Separators:",IDC_STATIC,31,71,35,8
-    EDITTEXT        IDC_SEPARATORS,69,69,85,12,ES_AUTOHSCROLL
-    LTEXT           "&Tasks separators:",IDC_STATIC,31,88,56,8
-    EDITTEXT        IDC_TASKS_SEPARATORS,90,86,64,12,ES_AUTOHSCROLL
+    LTEXT           "&Separators:",IDC_STATIC,8,74,35,8
+    EDITTEXT        IDC_SEPARATORS,8,84,62,12,ES_AUTOHSCROLL
+    LTEXT           "&Tasks separators:",IDC_STATIC,73,74,56,8
+    EDITTEXT        IDC_TASKS_SEPARATORS,74,84,57,12,ES_AUTOHSCROLL
+    LTEXT           "&History items:",IDC_STATIC,135,74,41,8
+    EDITTEXT        IDC_MAX_HISTORY,135,84,40,12,ES_AUTOHSCROLL | 
+                    ES_READONLY | ES_NUMBER
+    CONTROL         "Spin1",IDC_MAX_SPIN,"msctls_updown32",UDS_WRAP | 
+                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | 
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS,168,85,9,13
+END
+
+URLS_PAGE DIALOG DISCARDABLE  55, 15, 183, 106
+STYLE DS_CONTROL | WS_CHILD | WS_CAPTION
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    GROUPBOX        "&Available URLs",IDC_STATIC,3,0,177,75
+    LISTBOX         IDC_URLS_LIST,8,9,125,60,LBS_SORT | LBS_NOINTEGRALHEIGHT | 
+                    WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&New",IDC_LINK_NEW,137,9,38,13
+    PUSHBUTTON      "&Edit",IDC_LINK_EDIT,137,25,38,13
+    PUSHBUTTON      "&Copy",IDC_LINK_COPY,137,41,38,13
+    PUSHBUTTON      "&Delete",IDC_LINK_DELETE,137,57,38,13
+    GROUPBOX        "&By default open tasks in:",IDC_STATIC,3,77,177,27,
+                    WS_GROUP
+    COMBOBOX        IDC_URL_DEFAULT,8,87,168,73,CBS_DROPDOWNLIST | 
+                    CBS_AUTOHSCROLL | CBS_SORT | CBS_NOINTEGRALHEIGHT | 
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+DEFECT_EDIT_PAGE DIALOG DISCARDABLE  0, 0, 174, 137
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Defect"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "&Client:",IDC_STATIC,5,7,20,8
+    EDITTEXT        IDC_CLIENT_EDIT,36,5,133,13,ES_AUTOHSCROLL
+    LTEXT           "&Project:",IDC_STATIC,5,24,25,8
+    EDITTEXT        IDC_DEFECT_PROJECT,36,22,133,12,ES_AUTOHSCROLL
+    LTEXT           "&URL to open defects:",IDC_STATIC,5,40,69,8
+    EDITTEXT        IDC_DEFECTS_LINK,4,50,165,12,ES_AUTOHSCROLL
+    LTEXT           "URL to &open child defects:",IDC_STATIC,5,66,88,8
+    EDITTEXT        IDC_DEFECTS_LINK2,4,75,165,12,ES_AUTOHSCROLL
+    LTEXT           "URL to open parent &defect:",IDC_STATIC,5,91,90,8
+    EDITTEXT        IDC_DEFECTS_LINK3,4,101,165,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "OK",IDOK,45,120,35,13
+    PUSHBUTTON      "Cancel",IDCANCEL,94,120,36,13
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP1             BITMAP  DISCARDABLE     "res\\icons.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCELERATORS ACCELERATORS DISCARDABLE 
+BEGIN
+    VK_F1,          IDC_CONTENTS,           VIRTKEY, NOINVERT
 END
 
 
@@ -177,35 +231,14 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
-    GENERAL_PAGE, DIALOG
+    URL_EDIT_PAGE, DIALOG
     BEGIN
-        RIGHTMARGIN, 182
-    END
-
-    IDD_ABOUTBOX, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 166
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 55
-    END
-
-    IDD_MYOPTIONSHEET, DIALOG
-    BEGIN
-        RIGHTMARGIN, 234
-        TOPMARGIN, 1
-        BOTTOMMARGIN, 140
+        RIGHTMARGIN, 173
+        BOTTOMMARGIN, 154
     END
 END
 #endif    // APSTUDIO_INVOKED
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-IDB_BITMAP1             BITMAP  DISCARDABLE     "res\\icons.bmp"
 #endif    // Russian resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -231,10 +264,13 @@ FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     CONTROL         "",IDC_TASKNAME,"RichEdit20A",WS_BORDER | WS_TABSTOP | 
                     0x80,2,3,78,14
+    COMBOBOX        IDC_TASKNAME_COMBO,2,3,78,77,CBS_DROPDOWN | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
     DEFPUSHBUTTON   "&View Task",VIEW_TASK,83,3,42,14
     PUSHBUTTON      ">>",IDC_EXPAND,128,3,13,14,BS_CENTER | BS_VCENTER
-    PUSHBUTTON      "View &Child Tasks",VIEW_CHILD_TASKS,2,21,62,14
-    PUSHBUTTON      "&Settings",IDC_SETTINGS,83,21,58,14
+    PUSHBUTTON      "&Child Tasks",VIEW_CHILD_TASKS,2,21,44,14
+    PUSHBUTTON      "&Parent Task",VIEW_PARENT_TASK,49,21,44,14
+    PUSHBUTTON      "&Settings",IDC_SETTINGS,97,21,44,14
 END
 
 
@@ -274,7 +310,7 @@ END
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST ""res\\\\TMS_Launcher.exe.manifest""\r\n"
-    "1 SCCSID { ""@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.19 $$Date: 2005/07/07 11:19:08Z $\\0"" }\0"
+    "1 SCCSID { ""@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.26 $$Date: 2006/02/08 13:38:04Z $\\0"" }\0"
 END
 
 #endif    // APSTUDIO_INVOKED
@@ -287,8 +323,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,0,0,0
- PRODUCTVERSION 2,0,0,0
+ FILEVERSION 2,1,0,0
+ PRODUCTVERSION 2,1,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -306,14 +342,14 @@ BEGIN
             VALUE "Comments", "Developed by Oleg Lypkan\0"
             VALUE "CompanyName", "Information Systems Development\0"
             VALUE "FileDescription", "TMS_Launcher Module\0"
-            VALUE "FileVersion", "2, 0, 0, 0\0"
+            VALUE "FileVersion", "2, 1, 0, 0\0"
             VALUE "InternalName", "TMS_Launcher\0"
             VALUE "LegalCopyright", "Copyright 2005\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "TMS_Launcher.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "TMS_Launcher Module\0"
-            VALUE "ProductVersion", "2, 0, 0, 0\0"
+            VALUE "ProductVersion", "2, 1, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -336,7 +372,7 @@ END
 // Generated from the TEXTINCLUDE 3 resource.
 //
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "res\\TMS_Launcher.exe.manifest"
-1 SCCSID { "@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.19 $$Date: 2005/07/07 11:19:08Z $\0" }
+1 SCCSID { "@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.26 $$Date: 2006/02/08 13:38:04Z $\0" }
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 

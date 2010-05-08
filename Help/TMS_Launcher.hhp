@@ -1,4 +1,4 @@
-@(#)$RCSfile: TMS_Launcher.hhp,v $$Revision: 1.1 $$Date: 2005/07/07 16:01:52Z $
+@(#)$RCSfile: TMS_Launcher.hhp,v $$Revision: 1.3 $$Date: 2006/02/10 11:24:14Z $
 
 [OPTIONS]
 Compatibility=1.1 or later
@@ -6,22 +6,27 @@ Compiled file=TMS_Launcher.chm
 Contents file=TMS_Launcher.hhc
 Default topic=introduction.html
 Display compile progress=Yes
+Index file=TMS_Launcher.hhk
 Language=0x409 English (United States)
 Title=TMS Launcher HTML help
 
 
 [FILES]
 introduction.html
+whats_new.html
 mainfeatures.html
 Features\opendefects.html
 Features\openlinks.html
 Features\opentasks.html
+Features\commandline.html
 settings.html
 Settings\defects.html
 Settings\format.html
 Settings\general.html
 Settings\urls.html
 Settings\autologin_feature.reg
+credits.html
+style.css
 
 [INFOTYPES]
 

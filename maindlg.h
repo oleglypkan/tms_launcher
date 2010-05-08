@@ -1,6 +1,10 @@
-// maindlg.h : interface of the CMainDlg class
-//
-/////////////////////////////////////////////////////////////////////////////
+/*
+    File name: maindlg.h
+    Purpose:   This module is a part of TMS Launcher source code
+    Author:    Oleg Lypkan
+    Copyright: Information Systems Development
+    Date of last modification: January 17, 2006
+*/
 
 #if !defined(AFX_MAINDLG_H__A8A891A0_D906_4BC5_BAF8_C17E58A38338__INCLUDED_)
 #define AFX_MAINDLG_H__A8A891A0_D906_4BC5_BAF8_C17E58A38338__INCLUDED_
@@ -10,7 +14,7 @@
 #endif // _MSC_VER >= 1000
 
 #ifdef INCLUDE_VERID
- static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.9 $$Date: 2005/07/04 10:08:57Z $";
+ static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.16 $$Date: 2006/02/08 13:37:23Z $";
 #endif
 
 #include "Systray.h"
@@ -30,14 +34,24 @@ public:
         MESSAGE_HANDLER_EX(WM_HOTKEY,OnHotKey)
         MESSAGE_HANDLER_EX(WM_ENDSESSION,OnEndSession)
         MESSAGE_HANDLER_EX(WM_DISPLAYCHANGE,OnDisplayChange)
+        MSG_WM_CONTEXTMENU(OnContextMenu);
         NOTIFY_CODE_HANDLER_EX(EN_MSGFILTER,OnMsgFilter)
         NOTIFY_CODE_HANDLER_EX(EN_LINK,OnLink)
         COMMAND_ID_HANDLER_EX(VIEW_TASK,OnViewTask)
         COMMAND_ID_HANDLER_EX(VIEW_CHILD_TASKS,OnViewTask)
+        COMMAND_ID_HANDLER_EX(VIEW_PARENT_TASK,OnViewTask)
         COMMAND_ID_HANDLER_EX(VIEW_TASK_HOTKEY,OnViewTask)
         COMMAND_ID_HANDLER_EX(VIEW_CHILD_TASKS_HOTKEY,OnViewTask)
+        COMMAND_ID_HANDLER_EX(VIEW_PARENT_TASK_HOTKEY,OnViewTask)
         COMMAND_ID_HANDLER_EX(IDC_SETTINGS,OnSettings)
         COMMAND_ID_HANDLER_EX(IDC_EXPAND,OnExpand)
+        COMMAND_ID_HANDLER_EX(IDC_CONTENTS,OnContents)
+        COMMAND_ID_HANDLER_EX(ID_MENU_UNDO,OnContextMenuCommand)
+        COMMAND_ID_HANDLER_EX(ID_MENU_CUT,OnContextMenuCommand)
+        COMMAND_ID_HANDLER_EX(ID_MENU_COPY,OnContextMenuCommand)
+        COMMAND_ID_HANDLER_EX(ID_MENU_PASTE,OnContextMenuCommand)
+        COMMAND_ID_HANDLER_EX(ID_MENU_DELETE,OnContextMenuCommand)
+        COMMAND_ID_HANDLER_EX(ID_MENU_SELECT,OnContextMenuCommand)
         COMMAND_ID_HANDLER_EX(IDCANCEL,OnHide)
         COMMAND_ID_HANDLER_EX(IDC_CLOSE,OnClose)
         COMMAND_ID_HANDLER_EX(WM_ENDSESSION,OnClose)
@@ -52,19 +66,23 @@ public:
     LRESULT OnDisplayChange(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
     LRESULT OnMsgFilter(LPNMHDR pnmh);
     LRESULT OnLink(LPNMHDR pnmh);
+    void OnContextMenu(HWND hwndFrom, CPoint CursorPos);
+    void OnContextMenuCommand(UINT code, int idFrom, HWND hwndFrom);
     void OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnSettings(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnExpand(UINT wNotifyCode, INT wID, HWND hWndCtl);
+    void OnContents(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnHide(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnClose(UINT wNotifyCode, INT wID, HWND hWndCtl);
+    CRichEditCtrl TaskNameControl;
+    CComboBox TaskNameCombo;
 protected:
     CMenu SystrayMenu;
     CMenu SystraySubMenu;
-    CRichEditCtrl TaskNameControl;
+    CMenu ContextMenu;
     bool Expanded;
     bool ShowModal;
-    void ParseTasks(CString &sTasks, std::vector<CString> &Tasks);
-    bool IsTaskNameValid(CString &sTaskName, CString &sClientName, CString &sIDName);
+    void SwitchControls();
     bool GetTaskNameFromRichEdit(CString &sTasks);
     bool GetTaskNameFromClipboard(CString &sTasks);
     void CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID);

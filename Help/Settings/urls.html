@@ -1,47 +1,60 @@
-<!-- @(#)$RCSfile: urls.html,v $$Revision: 1.1 $$Date: 2005/07/07 16:01:49Z $ -->
+<!-- @(#)$RCSfile: urls.html,v $$Revision: 1.4 $$Date: 2006/02/10 11:20:11Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
   <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+  <link rel="STYLESHEET" href="..\style.css" type="text/css">
 </HEAD>
 
- <STYLE type="text/css">
-  BODY { background: white; color: black}
-  A:link { color: green }
-  A:visited { color: green }
-  A:active { color: green }
- </STYLE>
-
 <BODY>
-<table width="100%" border=0>
+<table border="0">
 <tr>
-   <td align=center><IMG SRC="Pictures\logo.gif"></td>
-    <td><FONT SIZE="+2"><B>TMS Launcher 2.0</B></FONT></td>
+   <td><IMG SRC="Pictures\logo.gif"></td>
+   <td class="caption"> Launcher 2.1</td>
 </tr>
 </table>
 
-<hr noshade>
+<hr size="1" noshade>
 
-<P>
-<H2 Align=Center>URLs page of settings window</H2>
-</P>
+<H2 align="center" class="boldfont">URLs page of settings window</H2>
 <IMG SRC="Pictures\urls.jpg">
-<P>
-The only section of this page allows to define a set of records with URLs and corresponding hotkeys that can be used to open TMS tasks.<br>
-Each record contains a caption, two fields for URLs and two hotkeys. One of records is default record and its values are used by default, for example, when you click on "View Task" button in the main window.<br>URL entered to the first of URL fields is used to open tasks. URL entered to the second field is used to open child tasks of a given task. Two hotkeys are used to open tasks and child tasks correspondingly.<br>
+<P align="justify" class="font">
+<B>Available URLs</B> section shows the list of URLs that can be used to open 
+tasks. It allows to create, modify and remove URLs from the list.
+<br><br>For each URL it is possible to define:
+<UL class="font">
+<LI>URL caption
+<LI>Link to open task
+<LI>Link to open child tasks
+<LI>Login, Password
+<LI>3 hotkeys to be used to open tasks, child and parent tasks correspondingly
+</UL>
+</P>
+<P align="justify" class="font">
 <b>NOTE</b>: when you use a hotkey a task name is read from Windows Clipboard, not from "Task Name" field.<br>
 </P>
-<P>
-<b>
+<P align="justify" class="font">
+<B>By default open tasks in</B> section allows to choose which URL 
+will be used to open task(s) when user uses buttons on main window and 
+systray menu commands.
+</P>
+<table border="0" bgcolor="#DDDDDD">
+<tr><td>
+<P align="justify" class="font">
 There is a useful feature that allows to enter login and password that will be passed to the browser when you open a site if required.<br>
 To use this feature you can enter your login and password to an URL in the following form:
 </P>
-<P align="center">
+<P align="center" class="font">
 http://<font color="blue">login:password@</font>url
-</b>
 </P>
-<P>
+<P align="justify" class="font">
+If login and password are entered in URL in the format above they will be used 
+instead of login and password entered in "Login" and "Password" fields.
+</P>
+<P align="justify" class="font">
 Note that Microsoft Internet Explorer does not allow to use this feature by default. It is necessary to change some settings in Window Registry to allow IE to use this feature. Necessary reg file can be found <a href="autologin_feature.reg">HERE</a>.
 </P>
+</td></tr>
+</table>
 </BODY>
 </HTML>

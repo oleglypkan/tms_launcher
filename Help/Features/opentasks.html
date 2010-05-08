@@ -1,48 +1,75 @@
-<!-- @(#)$RCSfile: opentasks.html,v $$Revision: 1.2 $$Date: 2005/07/07 18:23:03Z $ -->
+<!-- @(#)$RCSfile: opentasks.html,v $$Revision: 1.5 $$Date: 2006/02/10 11:18:47Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
   <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+  <link rel="STYLESHEET" href="..\style.css" type="text/css">
 </HEAD>
 
- <STYLE type="text/css">
-  BODY { background: white; color: black}
-  A:link { color: green }
-  A:visited { color: green }
-  A:active { color: green }
- </STYLE>
-
 <BODY>
-<table width="100%" border=0>
+<table border="0">
 <tr>
-   <td align=center><IMG SRC="Pictures\logo.gif"></td>
-    <td><FONT SIZE="+2"><B>TMS Launcher 2.0</B></FONT></td>
+   <td><IMG SRC="Pictures\logo.gif"></td>
+   <td class="caption"> Launcher 2.1</td>
 </tr>
 </table>
 
-<hr noshade>
+<hr size="1" noshade>
 
-<P>
-<H2 Align=Center>Opening TMS tasks</H2>
-</P>
-<IMG SRC="Pictures\main_window.jpg">
-<P>
+<H2 align="center" class="boldfont">Opening TMS tasks</H2>
+<TABLE width="100%" border="0">
+<TR>
+<TD><IMG SRC="Pictures\main_window.jpg"></TD>
+<TD><IMG SRC="Pictures\main_window2.jpg"></TD>
+</TR>
+<TR>
+<TD class="smallfont">Main window with RichEdit control as "Task Name" field</TD>
+<TD class="smallfont">Main window with ComboBox control as "Task Name" field</TD>
+</TR>
+</TABLE>
+<P class="font">
 TMS Launcher allows to open TMS tasks in several ways:
-<UL>
-<b>
+<UL class="font">
 <LI>by entering task name in main window and clicking the button
 <LI>by clicking the right mouse button in the field of main window
 <LI>by selecting systray menu item
 <LI>by pressing predefined hotkey
-</b>
 </UL>
-The program is able to open specified task or its child tasks.<br>
+</P>
+<P align="justify" class="font">
+The program is able to open specified task, its parent or child task(s).<br>
 It is possible to open single task as well as multiple tasks at one time. In case of multiple tasks opening they should be separated by characters specified in <a href="..\Settings\format.html">Format page</a> of settings window.<br>
 The program can use task name entered in its main window or read it from Windows Clipboard (in case of using right mouse button click and hotkey).<br>
 There is a possiblity to define several sets of URLs that are used to open tasks, assign system wide hotkeys to open tasks by specific URLs.<br>
 It is possible to define the tasks format that can be used to validate tasks names for correctness.<br>
 It is also possible to select specific WEB browser to be used to open tasks or use system default browser.<br>
 All the settings are accessible from <A HREF="settings.html">TMS Launcher settings</A> window.
+</P>
+<P align="justify" class="font">
+There is ability to choose "Task Name" field control: RichEdit or ComboBox.<BR>
+In case of using ComboBox control it is possible to view history of previously 
+opened tasks and open them. Maximum number of history items can be defined
+in <a href="..\Settings\format.html">Format page</a> of settings window.
+</P>
+<P align="justify" class="font">
+There is a difference in right-click action in RichEdit and ComboBox controls.<BR>
+You can choose one of the following actions to be performed
+after you right-click in RichEdit control:<BR>
+<UL class="font">
+  <LI>View Task
+  <LI>View Child Task
+  <LI>View Parent Task
+  <LI>Open context menu
+</UL>
+</P>
+<P align="justify" class="font">
+Right-click in edit box of combo box control always opens context menu. 
+However, right-click on button with down arrow will cause one of the following actions:
+<UL class="font">
+  <LI>View Task
+  <LI>View Child Task
+  <LI>View Parent Task
+</UL>
 </P>
 </BODY>
 </HTML>

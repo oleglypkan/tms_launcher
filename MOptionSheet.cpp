@@ -262,7 +262,11 @@ void COptionSheet::SetActiveItem(COptionItem *pItem)
         return;
 
     // Tell current page it gonna die
-    if (m_pActiveItem && m_pActiveItem->GetPage()) m_pActiveItem->GetPage()->OnKillActive(m_pActiveItem);
+    // Changed by Oleg Lypkan in order not to call OnKillActive() twice
+    // The first time it is called in OnSelChanging() and then in OnSelectionChanged() (SetActiveItem())
+    // It is unnecessary to call it in SetActiveItem() because it is already called in OnSelChanging() before
+    // if (m_pActiveItem && m_pActiveItem->GetPage()) m_pActiveItem->GetPage()->OnKillActive(m_pActiveItem);
+    // end of change
 
     // Show/Hide only if the new page is not the same as the current one
     if (!m_pActiveItem || !pItem || (m_pActiveItem->GetPage() != pItem->GetPage()))

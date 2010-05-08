@@ -1,0 +1,12 @@
+/*
+   "@(#)$RCSfile: style.css,v $$Revision: 1.1 $$Date: 2006/02/10 11:26:20Z $";
+*/
+
+BODY { background: white; color: black}
+A:link { color: #0066FF }
+A:visited { color: #996600 }
+A:hover { color: #CC9900 }
+.font { font: normal 10pt Verdana }
+.boldfont { font: bold 10pt Verdana }
+.smallfont { font: normal 8pt Verdana }
+.caption { font: bold 12pt Verdana }
