@@ -13,7 +13,7 @@
 using namespace boost;
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.13 $$Date: 2007/12/17 17:10:13Z $"; 
+ static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.15 $$Date: 2008/03/23 17:13:23Z $"; 
 #endif
  
 extern CSettings Settings;
@@ -121,7 +121,7 @@ void TASK::SimpleParseTasks(const char *strTasks, std::vector<CString> &Tasks)
     }
 }
 
-// separate items between tasks separators symbols, items are checked for correct task name,
+// separates items between tasks separators symbols, items are checked for correct task name,
 // and saved with separated Client, Separator and ID parts.
 // Also defects are additionaly saved to separate array and sorted
 // PROJECT is saved instead of Client for defects
@@ -145,22 +145,25 @@ bool TASK::ComplexParseTasks(const char *strTasks, std::vector<TASKNAME> &Tasks,
             pos = sTasks.GetLength();
         }
 
-        items++;
         CString temp = sTasks.Left(pos);
         temp.TrimLeft(Settings.Separators);
         temp.TrimRight(Settings.Separators);
-        if (IsTaskNameValid(temp,Client,Sep,ID))
+        if (!temp.IsEmpty())
         {
-            Tasks.push_back(TASKNAME(Client,Sep,ID));
-            if (Settings.IsDefect(Client, &Project, NULL))
+            items++;
+            if (IsTaskNameValid(temp,Client,Sep,ID))
             {
-                Project.MakeUpper();
-                Defects.push_back(TASKNAME(Project,Sep,ID));
+                Tasks.push_back(TASKNAME(Client,Sep,ID));
+                if (Settings.IsDefect(Client, &Project, NULL))
+                {
+                    Project.MakeUpper();
+                    Defects.push_back(TASKNAME(Project,Sep,ID));
+                }
             }
-        }
-        else
-        {
-            AllTasksValid = false;
+            else
+            {
+                AllTasksValid = false;
+            }
         }
         sTasks.Delete(0,pos);
         sTasks.TrimLeft(Settings.TasksSeparators);
@@ -293,11 +296,19 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
         Child.TaskName = Child.TaskName.Right(Child.TaskName.GetLength()-Child.TaskName.ReverseFind('>')-1);
         if (ParentTask.CompareNoCase(Child.TaskName) != 0)
         {
-            // searching for "Product" of the task
-            for (int i = 0; i <= 2; i++)
+            // searching for "Status" of the task
+            for (int i = 0; i < 2; i++)
             {
                 pos = HTML.Find("<td",pos+1);
             }
+            if (pos != -1)
+            {
+                Child.Status = HTML.Left(HTML.Find("</td>",pos+1));
+                Child.Status = Child.Status.Right(Child.Status.GetLength()-Child.Status.ReverseFind('>')-1);
+                Child.Status.TrimRight(' ');
+            }
+            // searching for "Product" of the task
+            pos = HTML.Find("<td",pos+1);
             if (pos != -1)
             {
                 Child.Product = HTML.Left(HTML.Find("</td>",pos+1));
@@ -324,7 +335,14 @@ void TASK::ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskAc
 
     if (QB) // QB or QR actions
     {
-        expr.SetExpression(Settings.QbRegEx,true);
+        try
+        {
+            expr.SetExpression(Settings.QbRegEx,true);
+        }
+        catch (bad_expression)
+        {
+            return;
+        }
         expr.Grep(RawActions,HTML,match_any);
         for (long i = 0; i < RawActions.size(); i++)
         {
@@ -336,7 +354,14 @@ void TASK::ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskAc
     }
     else // QC actions
     {
-        expr.SetExpression(Settings.QcRegEx,true);
+        try
+        {
+            expr.SetExpression(Settings.QcRegEx,true);
+        }
+        catch (bad_expression)
+        {
+            return;
+        }
         expr.Grep(RawActions,HTML,match_any);
         for (long i = 0; i < RawActions.size(); i++)
         {
@@ -362,7 +387,15 @@ void TASK::ParseHTMLForAA_ID(const CString &HTML, CString &AA_ID)
     AA_IDs.clear();
    
     RegEx expr;
-    expr.SetExpression(Settings.AA_ID_RegEx,true);
+    try
+    {
+        expr.SetExpression(Settings.AA_ID_RegEx,true);
+    }
+    catch (bad_expression)
+    {
+        AA_ID = "";
+        return;
+    }
     expr.Grep(AA_IDs,HTML,match_stop);
 
     if (AA_IDs[0].empty())
@@ -373,6 +406,64 @@ void TASK::ParseHTMLForAA_ID(const CString &HTML, CString &AA_ID)
     {
         AA_ID = AA_IDs[0].c_str();
         AA_ID.Replace("AA_ID=","");
+    }
+}
+
+void TASK::ParseHTMLForTimesheets(const CString &HTML, std::vector<CString> &Timesheets, const CString &mask, bool &filtered)
+{
+    Timesheets.clear();
+    filtered = false;
+    
+    std::vector<std::string> v;
+    v.clear();
+    
+    RegEx expr;
+    try
+    {
+        expr.SetExpression(Settings.TimesheetsRegEx,true);
+    }
+    catch (bad_expression)
+    {
+        return;
+    }
+    expr.Grep(v,HTML,match_any);
+
+    for (int i = 0; i < v.size(); i++)
+    {
+        std::vector<std::string> v2;
+        v2.clear();
+        std::vector<CString> Result;
+        Result.clear();
+        CString part = "";
+
+        expr.SetExpression(">[^<]+<",true);
+        expr.Grep(v2,v[i].c_str(),match_any);
+
+        for (int j = 0; j < v2.size(); j++)
+        {
+            part = v2[j].c_str();
+            part.Remove('>');
+            part.Remove('<');
+            if (part.Find("&nbsp") != -1)
+            {
+                part = "";
+            }
+            Result.push_back(part);
+        }
+        if (Result.size() > 3)
+        {
+            part.Format("%-16s%-18s%-12s%s",Result[0],Result[1],Result[2],Result[3]);
+            if (!mask.IsEmpty())
+            {
+                expr.SetExpression(mask,true);
+                if (!expr.Search(Result[1],match_any))
+                {
+                    filtered = true;
+                    continue;
+                }
+            }
+            Timesheets.push_back(part);
+        }
     }
 }
 
@@ -412,7 +503,16 @@ void TASK::ParseActionForRequirements(const CString &Action, CString &Output)
 {
     Output = "-------";
     
-    RegEx expr(Settings.RtmRegEx,true);
+    RegEx expr;
+    try
+    {
+        expr.SetExpression(Settings.RtmRegEx,true);
+    }
+    catch (bad_expression)
+    {
+        return;
+    }
+    
     if (expr.Match(Action,match_any))
     {
         Output = expr[2].c_str();

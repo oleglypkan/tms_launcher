@@ -9,7 +9,7 @@
 #include "stdafx.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.53 $$Date: 2007/12/17 17:08:51Z $"; 
+ static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.55 $$Date: 2008/03/23 15:52:49Z $"; 
 #endif
 
 #include <fstream.h>
@@ -213,12 +213,11 @@ LRESULT CMainDlg::OnMyIconNotify(UINT uMsg, WPARAM wParam, LPARAM lParam)
         case WM_LBUTTONDOWN:
             if (IsWindowVisible())
             {
-                ShowWindow(SW_HIDE);
+                OnHide(0,0,0);
             }
             else
             {
-                ShowWindow(SW_SHOWNORMAL);
-                SetForegroundWindow(m_hWnd);
+                OnTMSLauncherActivate(0,0,0);
             }
             break;
         case WM_RBUTTONDOWN:
@@ -539,16 +538,26 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
         TaskNameCombo.SetWindowText(sTasks);
     }
 
-    if (!correct)
+    switch(items)
     {
-        if (items > 1)
-        {
-            MessageBox("Some tasks were not opened because of incorrect format",szWinName,MB_ICONWARNING);
-        }
-        else
-        {
-            MessageBox(ErrorString,szWinName,MB_ICONERROR);
-        }
+        case 0:
+            if (!sTasks.IsEmpty())
+            {
+                MessageBox(ErrorString,szWinName,MB_ICONERROR);
+            }
+    	    break;
+        case 1:
+            if (!correct)
+            {
+                MessageBox(ErrorString,szWinName,MB_ICONERROR);
+            }
+    	    break;
+        default:
+            if (!correct)
+            {
+                MessageBox("Some tasks were not opened because of incorrect format",szWinName,MB_ICONWARNING);
+            }
+    	    break;
     }
 
     busy = false;

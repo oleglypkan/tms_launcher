@@ -1,4 +1,4 @@
-@(#)$RCSfile: TMS_Launcher.hhp,v $$Revision: 1.8 $$Date: 2007/12/17 17:11:11Z $
+@(#)$RCSfile: TMS_Launcher.hhp,v $$Revision: 1.9 $$Date: 2008/03/23 15:53:31Z $
 
 [OPTIONS]
 Compatibility=1.1 or later
@@ -8,7 +8,7 @@ Default topic=introduction.html
 Display compile progress=Yes
 Index file=TMS_Launcher.hhk
 Language=0x409 English (United States)
-Title=TMS Launcher 2.6 HTML help
+Title=TMS Launcher 2.7 HTML help
 
 
 [FILES]

@@ -11,7 +11,7 @@
 #include "About.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.37 $$Date: 2007/12/17 17:09:46Z $"; 
+ static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.38 $$Date: 2008/03/19 20:37:18Z $"; 
 #endif
 
 extern CString szWinName;
@@ -70,6 +70,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     QbRegEx = "\"[^\"]*Q[BR]</td><td";
     QcRegEx = "\"[^\"]*QC</td><td.*(<hr|</table>)";
     AA_ID_RegEx = "AA_ID=([0-9]+)";
+    TimesheetsRegEx = "<td.*</td></";
     TasksSeparators = ";,\n\r";
     Separators = " _-*+|:~#@$%^\t";
     MinClientName = 0;
@@ -458,6 +459,8 @@ void CSettings::LoadSettings()
     QbRegEx.ReleaseBuffer();
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"AA_ID regex",REG_SZ,(LPBYTE)AA_ID_RegEx.GetBuffer(512),512);
     AA_ID_RegEx.ReleaseBuffer();
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"Timesheets regex",REG_SZ,(LPBYTE)TimesheetsRegEx.GetBuffer(512),512);
+    TimesheetsRegEx.ReleaseBuffer();
 
     // reading history settings
     DWordSize=sizeof(DWORD); // will be changed by ReadValue()
@@ -613,6 +616,7 @@ void CSettings::SaveFormatSettings()
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"QC regex",REG_SZ,(const BYTE*)LPCTSTR(QcRegEx),QcRegEx.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"QB regex",REG_SZ,(const BYTE*)LPCTSTR(QbRegEx),QbRegEx.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"AA_ID regex",REG_SZ,(const BYTE*)LPCTSTR(AA_ID_RegEx),AA_ID_RegEx.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"Timesheets regex",REG_SZ,(const BYTE*)LPCTSTR(TimesheetsRegEx),TimesheetsRegEx.GetLength()+1);
 }
 
 void CSettings::SaveSoftTestSettings()

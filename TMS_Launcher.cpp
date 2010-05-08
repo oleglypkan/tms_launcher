@@ -13,7 +13,7 @@
 #include "CmdLine.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.23 $$Date: 2007/12/17 17:10:35Z $"; 
+ static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.24 $$Date: 2008/03/19 20:36:32Z $"; 
 #endif
 
 /* 
@@ -89,13 +89,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         Settings.ImportSettings("Software\\Winchester\\TMS_Launcher");
     }
 
-    // setting correct current directory in case if the program was started from a shortcut or a registry key
-    char CurrentDirName[MAX_PATH+1], *FilePart;
-    GetModuleFileName(NULL,CurrentDirName,MAX_PATH);
-    GetFullPathName(CurrentDirName,MAX_PATH,CurrentDirName,&FilePart);
-    FilePart[0]='\0';
-    SetCurrentDirectory(CurrentDirName);
-
     if (Settings.SettingsAvailable())
     {
         Settings.AddingNewURLs(); // Adding new URLs
@@ -118,17 +111,27 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         return 0;
     }
     
+    // setting correct current directory in case if the program was started from a shortcut or a registry key
+    char CurrentDirName[MAX_PATH+1], *FilePart;
+    GetModuleFileName(NULL,CurrentDirName,MAX_PATH);
+    GetFullPathName(CurrentDirName,MAX_PATH,CurrentDirName,&FilePart);
+    FilePart[0]='\0';
+    SetCurrentDirectory(CurrentDirName);
+
+    HWND ActiveWindow = GetForegroundWindow();
+
     CMainDlg dlgMain;
 
     HWND hWnd = dlgMain.Create(NULL);
 
     if (Settings.Minimize)
     {
-        dlgMain.ShowWindow(SW_HIDE);
+        dlgMain.OnHide(0,0,0);
+        if (ActiveWindow != NULL) SetForegroundWindow(ActiveWindow);
     }
     else
     {
-        dlgMain.ShowWindow(SW_SHOWNORMAL);
+        dlgMain.OnTMSLauncherActivate(0,0,0);
     }
 
     HACCEL hAccelTable;

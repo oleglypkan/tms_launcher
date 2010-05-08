@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: whats_new.html,v $$Revision: 1.7 $$Date: 2007/12/17 17:11:20Z $ -->
+<!-- @(#)$RCSfile: whats_new.html,v $$Revision: 1.8 $$Date: 2008/03/23 15:53:37Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
@@ -19,9 +19,17 @@
 <H2 align="center" class="boldfont">What's new in this release?</H2>
 <H4 align="justify" class="font">
 <UL>
-  <LI>New predefined URL "SPC linked tasks" has been added to URLs page to open tasks in SPC system
-  <LI>New parameter %AA_ID% is now handled in URLs to open tasks in SPC system
-  <LI>Fixed bug when help file cannot be opened sometimes if it is called by &lt;F1&gt; from the program
+  <LI>Command line syntax has been extended (see <a class="font" href="Features\commandline.html">Command line interface</a> for more details):
+     <UL>
+         <LI>Added option that allows to view timesheets for the list of tasks<br>
+             <b>TMS_Launcher.exe -t [-name "<i>NAME</i>"] <i>input_file output_file</i></b>
+         <LI>Added new parameter <b>[-stat "<i>STAT</i>"]</b> to filter child tasks by status<br>
+             <b>TMS_Launcher.exe -c [-name "<i>NAME</i>"] [-prod "<i>PROD</i>"] [-stat "<i>STAT</i>"] <i>input_file output_file</i></b>
+         <LI>Added new parameter <b>[-name "<i>NAME</i>"]</b> to filter parent tasks by names<br>
+             <b>TMS_Launcher.exe -p [-name "<i>NAME</i>"] <i>input_file output_file</i></b>
+         <LI>Now parameters <b>-name</b>, <b>-prod</b>, <b>-stat</b> are regular expressions, not simple masks
+     </UL>
+  <LI>Several bugs fixed
 </UL>
 </H4>
 </BODY>

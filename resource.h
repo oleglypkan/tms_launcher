@@ -91,6 +91,8 @@
 #define IDC_BUTTON_DELETE               1076
 #define IDC_BUTTON_CLEAR                1077
 #define IDC_FILL_ID                     1078
+#define IDC_COMPANY                     1079
+#define IDC_COPYRIGHT                   1080
 #define ID_MENU_UNDO                    32774
 #define ID_MENU_CUT                     32775
 #define ID_MENU_COPY                    32776
@@ -112,7 +114,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        218
 #define _APS_NEXT_COMMAND_VALUE         32788
-#define _APS_NEXT_CONTROL_VALUE         1079
+#define _APS_NEXT_CONTROL_VALUE         1081
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

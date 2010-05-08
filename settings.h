@@ -10,7 +10,7 @@
 #define SETTINGS_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.28 $$Date: 2007/12/17 17:09:58Z $";
+ static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.29 $$Date: 2008/03/19 20:37:09Z $";
 #endif
 
 #include "resource.h"
@@ -134,6 +134,7 @@ public:
     CString QcRegEx;             // regular expression that describes QC actions of tasks
     CString QbRegEx;             // regular expression that describes QB/QR actions of tasks
     CString AA_ID_RegEx;         // regular expression that describes AA_ID parameter in URL
+    CString TimesheetsRegEx;     // regular expression that describes timesheeted hours in task
     const CString& GetSoftTestCommandLine(const char *Project);
     CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
               const char* DefectsSubKeyName, const char* TasksSubKeyName, const char* LinksSubKeyName,

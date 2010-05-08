@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: commandline.html,v $$Revision: 1.8 $$Date: 2007/01/23 10:18:15Z $ -->
+<!-- @(#)$RCSfile: commandline.html,v $$Revision: 1.10 $$Date: 2008/03/23 16:34:32Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
@@ -23,23 +23,28 @@ the syntax was extended and in current version is the following:
 </P>
 <table align="center" border="0">
 <tr>
-  <td bgcolor="#DDDDDD" class="font"><b>TMS_Launcher.exe -p <i>input_file output_file</i></b></td>
+  <td bgcolor="#DDDDDD" class="font"><b>TMS_Launcher.exe -p [-name "<i>NAME</i>"] <i>input_file output_file</i></b></td>
 </tr>
 </table>
-<font class="font"><b><i>input_file</i></b> - file that contains the list of tasks/defects<br><b><i>output_file</i></b> - file that will contain the list of parent tasks/defects for the given ones.</font>
+<font class="font">
+  <b><i>NAME</i></b> - task name mask. It is regular expression task name should match to be displayed. <b>-name</b> is optional parameter<br>
+  <b><i>input_file</i></b> - file that contains the list of tasks/defects<br>
+  <b><i>output_file</i></b> - file that will contain the list of parent tasks/defects for the given ones
+</font>
 
 <table align="center" border="0">
 <tr><td height="10"></td></tr>
 <tr>
-  <td bgcolor="#DDDDDD" class="font"><b>TMS_Launcher.exe -c [-name "<i>NAME</i>"] [-prod "<i>PROD</i>"] <i>input_file output_file</i></b></td>
+  <td bgcolor="#DDDDDD" class="font"><b>TMS_Launcher.exe -c [-name "<i>NAME</i>"] [-prod "<i>PROD</i>"] [-stat "<i>STAT</i>"] <i>input_file output_file</i></b></td>
 </tr>
 </table>
 <font class="font">
-  <b><i>NAME</i></b> - task name mask. Only if a task name contains substring "NAME" the task will be displayed.
-  <br><b><i>PROD</i></b> - product version mask. Only if a task product version contains substring "PROD" the task will be displayed.
+  <b><i>NAME</i></b> - task name mask. It is regular expression task name should match to be displayed
+  <br><b><i>PROD</i></b> - product version mask. It is regular expression product version should match to be displayed
+  <br><b><i>STAT</i></b> - task status mask. It is regular expression task status should match to be displayed
   <br><b><i>input_file</i></b> - file that contains the list of tasks/defects
-  <br><b><i>output_file</i></b> - file that will contain the list of child tasks/defects for the given ones.
-  <br>Parameters <b><i>NAME</i></b> and <b><i>PROD</i></b> are not required. If they are not specified all child tasks for the given parent will be displayed.
+  <br><b><i>output_file</i></b> - file that will contain the list of child tasks/defects for the given ones
+  <br>Parameters <b>-name</b>, <b>-prod</b> and <b>-stat</b> are optional. If they are not specified all child tasks for the given parent will be displayed
 </font>
 
 <table align="center" border="0">
@@ -50,7 +55,7 @@ the syntax was extended and in current version is the following:
 </table>
 <font class="font">
 <b><i>input_file</i></b> - file that contains the list of tasks<br>
-<b><i>output_file</i></b> - file that will contain information about QB and QR actions (Action #, Date, Time, Person, Assigned To) for the given tasks.
+<b><i>output_file</i></b> - file that will contain information about QB and QR actions (Action #, Date, Time, Person, Assigned To) for the given tasks
 </font>
 
 <table align="center" border="0">
@@ -61,7 +66,19 @@ the syntax was extended and in current version is the following:
 </table>
 <font class="font">
 <b><i>input_file</i></b> - file that contains the list of tasks<br>
-<b><i>output_file</i></b> - file that will contain information about QC actions (Action #, Date, Time, Person, Requirements #'s) for the given tasks.
+<b><i>output_file</i></b> - file that will contain information about QC actions (Action #, Date, Time, Person, Requirements #'s) for the given tasks
+</font>
+
+<table align="center" border="0">
+<tr><td height="10"></td></tr>
+<tr>
+  <td bgcolor="#DDDDDD" class="font"><b>TMS_Launcher.exe -t [-name "<i>NAME</i>"] <i>input_file output_file</i></b></td>
+</tr>
+</table>
+<font class="font">
+  <b><i>NAME</i></b> - SCC EMPLOYEE ID mask. It is regular expression SCC EMPLOYEE ID should match to be displayed. <b>-name</b> is optional parameter<br>
+  <b><i>input_file</i></b> - file that contains the list of tasks<br>
+  <b><i>output_file</i></b> - file that will contain the list of timesheets for the given tasks
 </font>
 
 <p class="font">In order command line features work, it is necessary to specify Login and Password for URL
