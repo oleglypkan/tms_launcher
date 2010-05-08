@@ -55,10 +55,10 @@ protected:
     CRichEditCtrl TaskNameControl;
     bool Expanded;
     bool ShowModal;
-    bool IsTaskNameValid(CString &sTaskName);
-    bool GetTaskNameFromRichEdit(CString &sTaskName);
-    bool GetTaskNameFromClipboard(CString &sTaskName);
-    void CreateRequest(const char *Text, CString &Request, bool ViewChildTasks, bool AltTMS);
+    bool IsTaskNameValid(CString &sTaskName, CString &sClientName, CString &sIDName);
+    bool GetTaskNameFromRichEdit(CString &sTaskName, CString &sClientName, CString &sIDName);
+    bool GetTaskNameFromClipboard(CString &sTaskName, CString &sClientName, CString &sIDName);
+    void CreateRequest(const CString sClientName, const char *sIDName, CString &Request, bool ViewChildTasks, bool AltTMS);
 };
 
 

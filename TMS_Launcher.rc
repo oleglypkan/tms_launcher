@@ -79,7 +79,7 @@ FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,62,35,50,14
     ICON            IDI_SYSTRAY_ICON,IDC_STATIC,7,7,20,20,SS_CENTERIMAGE
-    CTEXT           "TMS Launcher version 1.3",IDC_ABOUT_VERSION,35,7,118,8,
+    CTEXT           "TMS Launcher version 1.4",IDC_ABOUT_VERSION,35,7,118,8,
                     SS_CENTERIMAGE
     CTEXT           "Copyright © 2005 by Oleg Lypkan, ISD",IDC_STATIC,36,19,
                     129,8,SS_CENTERIMAGE
@@ -190,8 +190,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,3,0,1
- PRODUCTVERSION 1,3,0,1
+ FILEVERSION 1,4,0,1
+ PRODUCTVERSION 1,4,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -209,14 +209,14 @@ BEGIN
             VALUE "Comments", "Developed by Oleg Lypkan\0"
             VALUE "CompanyName", "Information Systems Development\0"
             VALUE "FileDescription", "TMS_Launcher Module\0"
-            VALUE "FileVersion", "1, 3, 0, 1\0"
+            VALUE "FileVersion", "1, 4, 0, 1\0"
             VALUE "InternalName", "TMS_Launcher\0"
             VALUE "LegalCopyright", "Copyright 2005\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "TMS_Launcher.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "TMS_Launcher Module\0"
-            VALUE "ProductVersion", "1, 3, 0, 1\0"
+            VALUE "ProductVersion", "1, 4, 0, 1\0"
             VALUE "SpecialBuild", "\0"
         END
     END

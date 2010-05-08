@@ -194,14 +194,14 @@ void CMainDlg::OnExpand(UINT wNotifyCode, INT wID, HWND hWndCtl)
     Expanded = !Expanded;
 }
 
-bool CMainDlg::IsTaskNameValid(CString &sTaskName)
+bool CMainDlg::IsTaskNameValid(CString &sTaskName, CString &sClientName, CString &sIDName)
 {
-    const UINT MinTaskName = 7;
-    const UINT MaxTaskName = 11;
-    const UINT MinClientName = 3;
-    const UINT MaxClientName = 5;
-    const UINT MinIDName = 3;
-    const UINT MaxIDName = 5;
+    const UINT MinClientName = 0;
+    const UINT MaxClientName = 8;
+    const UINT MinIDName = 1;
+    const UINT MaxIDName = 6;
+    const UINT MinTaskName = MinClientName+MinIDName;
+    const UINT MaxTaskName = MaxClientName+MaxIDName+1;
 
     if (sTaskName.IsEmpty()) return false;
 
@@ -210,32 +210,43 @@ bool CMainDlg::IsTaskNameValid(CString &sTaskName)
     if ((sTaskName.GetLength()<MinTaskName)||(sTaskName.GetLength()>MaxTaskName)) return false;
     
     int Separator = sTaskName.FindOneOf(SEPARATORS);
-    if ((Separator == -1)||(Separator < MinClientName)||(Separator > MaxClientName)||
-        (sTaskName.GetLength()-Separator-1 < MinIDName)||(sTaskName.GetLength()-Separator-1 > MaxIDName)) return false;
-    sTaskName.SetAt(Separator,'-');
+    if (Separator > -1)
+    {
+        if ((Separator < MinClientName)||(Separator > MaxClientName)||
+            (sTaskName.GetLength()-Separator-1 < MinIDName)||(sTaskName.GetLength()-Separator-1 > MaxIDName)) return false;
+        sTaskName.SetAt(Separator,'-');
+    }
     for (int i=0; i<Separator-1; i++)
     {
         if (!isalpha(sTaskName[i])) return false;
     }
+
     // the last symbol in Client Name can be either an alpha character or a number (i.e. QARD3)
-    if ((!isalpha(sTaskName[Separator-1])) && (!isdigit(sTaskName[Separator-1]))) return false;
+    if (Separator > 0)
+    {
+        if ((!isalpha(sTaskName[Separator-1])) && (!isdigit(sTaskName[Separator-1]))) return false;
+        // copying Client name to sClientName
+        sClientName = sTaskName.Left(Separator);
+    }
 
     for (int j=Separator+1; j<sTaskName.GetLength(); j++)
     {
         if (!isdigit(sTaskName[j])) return false;
     }
+    // copying Client name to sClientName
+    sIDName = sTaskName.Right(sTaskName.GetLength()-Separator-1);
     return true;
 }
 
-bool CMainDlg::GetTaskNameFromRichEdit(CString &sTaskName)
+bool CMainDlg::GetTaskNameFromRichEdit(CString &sTaskName, CString &sClientName, CString &sIDName)
 {
     UINT TaskNameLength = TaskNameControl.GetWindowTextLength();
     ::GetWindowText(TaskNameControl,sTaskName.GetBuffer(TaskNameLength+1),TaskNameLength+1);
     sTaskName.ReleaseBuffer();
-    return IsTaskNameValid(sTaskName);
+    return IsTaskNameValid(sTaskName, sClientName, sIDName);
 }
 
-bool CMainDlg::GetTaskNameFromClipboard(CString &sTaskName)
+bool CMainDlg::GetTaskNameFromClipboard(CString &sTaskName, CString &sClientName, CString &sIDName)
 {
     if (!::OpenClipboard(m_hWnd)) return false;
     if (IsClipboardFormatAvailable(CF_TEXT))
@@ -249,19 +260,21 @@ bool CMainDlg::GetTaskNameFromClipboard(CString &sTaskName)
         }
     }
     CloseClipboard();
-    return IsTaskNameValid(sTaskName);
+    return IsTaskNameValid(sTaskName, sClientName, sIDName);
 }
 
 void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
 {
     CString sTaskName = "";
+    CString sClientName = "";
+    CString sIDName = "";
     CString Request = "";
     CString ErrorString = "Invalid task name format";
 
     // called after VIEW_TASK or VIEW_CHILD_TASKS button was pressed
     if ((wID == VIEW_TASK)||(wID == VIEW_CHILD_TASKS))
     {
-        if (!GetTaskNameFromRichEdit(sTaskName))
+        if (!GetTaskNameFromRichEdit(sTaskName, sClientName, sIDName))
         {
             ShowModal = true;
             MessageBox(ErrorString,szWinName,MB_OK|MB_ICONERROR);
@@ -271,7 +284,7 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
     }
     else // called after pressing ViewTaskHotKey or ViewChildTasksHotKey
     {
-        if (!GetTaskNameFromClipboard(sTaskName))
+        if (!GetTaskNameFromClipboard(sTaskName, sClientName, sIDName))
         {
             ShowModal = true;
             MessageBox(ErrorString+" in clipboard",szWinName,MB_OK|MB_ICONERROR);
@@ -284,17 +297,62 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
     bool ViewChildTasks = ((wID == VIEW_CHILD_TASKS)||(static_cast<UINT>(wID) == ViewChildTasksHotKeyID)||
                            (wID == VIEW_CHILD_TASKS_HOTKEY));
 
-    CreateRequest(sTaskName, Request, ViewChildTasks, (Settings.TMS==1));
+    CreateRequest(sClientName, sIDName, Request, ViewChildTasks, (Settings.TMS==1));
     ::ShellExecute(NULL,"open",Request,NULL,"",SW_SHOWNORMAL);
 }
 
-void CMainDlg::CreateRequest(const char *Text, CString &Request, bool ViewChildTasks, bool AltTMS)
+void CMainDlg::CreateRequest(const CString sClientName, const char *sIDName, CString &Request, bool ViewChildTasks, bool AltTMS)
 {
-    CString Temp = Text;
+    CString Temp = sIDName;
+    
+    // opening defect
+    if ((sClientName.CompareNoCase("LAB") == 0)||(sClientName.CompareNoCase("") == 0))
+    {
+        Request.Format("http://qa.isd.dp.ua/softtest/defect/st_labgui_synch/%s/",sIDName);
+        return;
+    }
+    if (sClientName.CompareNoCase("MIC") == 0)
+    {
+        Request.Format("http://qa.isd.dp.ua/softtest/defect/st_micgui_synch/%s/",sIDName);
+        return;
+    }
+    if ((sClientName.CompareNoCase("LABASC") == 0)||(sClientName.CompareNoCase("LABA") == 0))
+    {
+        Request.Format("http://qa.isd.dp.ua/softtest/defect/st_labascii_synch/%s/",sIDName);
+        return;
+    }
+    if ((sClientName.CompareNoCase("MICASC") == 0)||(sClientName.CompareNoCase("MICA") == 0))
+    {
+        Request.Format("http://qa.isd.dp.ua/softtest/defect/st_micascii_synch/%s/",sIDName);
+        return;
+    }
+    if ((sClientName.CompareNoCase("LABQCASC") == 0)||(sClientName.CompareNoCase("LABQC") == 0)||
+        (sClientName.CompareNoCase("LABQCA") == 0))
+    {
+        Request.Format("http://qa.isd.dp.ua/softtest/defect/st_labqcascii_synch/%s/",sIDName);
+        return;
+    }
+    if ((sClientName.CompareNoCase("MICQCASC") == 0)||(sClientName.CompareNoCase("MICQC") == 0)||
+        (sClientName.CompareNoCase("MICQCA") == 0))
+    {
+        Request.Format("http://qa.isd.dp.ua/softtest/defect/st_micqcascii_synch/%s/",sIDName);
+        return;
+    }
+    if (sClientName.CompareNoCase("STO") == 0)
+    {
+        Request.Format("http://qa.isd.dp.ua/softtest/defect/st_softstore/%s/",sIDName);
+        return;
+    }
+    if (sClientName.CompareNoCase("CMN") == 0)
+    {
+        Request.Format("http://qa.isd.dp.ua/softtest/defect/st_commonprod_synch/%s/",sIDName);
+        return;
+    }
 
+    // opening TMS task
     if (ViewChildTasks)
     {
-        Temp.Replace("-","&ParentID=");
+        Temp.Insert(0,"&ParentID=");
         if (AltTMS)
             Request = "http://scc1/~alttms/showtasks.php?ParentClient=";
         else
@@ -302,12 +360,13 @@ void CMainDlg::CreateRequest(const char *Text, CString &Request, bool ViewChildT
     }
     else
     {
-        Temp.Replace("-","&ID=");
+        Temp.Insert(0,"&ID=");
         if (AltTMS)
             Request = "http://scc1/~alttms/viewtask.php?Client=";
         else
             Request = "http://www.softcomputer.com/tms/viewtask.php?Client=";
     }
+    Request += sClientName;
     Request += Temp;
 }
 
