@@ -15,6 +15,8 @@ public:
     int TMS; // 0 - usual TMS, 1 - alternative TMS
     UINT ViewTaskHotKey;
     UINT ViewChildTasksHotKey;
+    int xPos;
+    int yPos;
     CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName);
     void LoadSettings();
     void SaveSettings();
@@ -35,6 +37,7 @@ public:
         MESSAGE_HANDLER_EX(WM_INITDIALOG, OnInitDialog)
         COMMAND_ID_HANDLER_EX(IDOK,OnOK)
         COMMAND_ID_HANDLER_EX(IDCANCEL,OnCancel)
+        COMMAND_ID_HANDLER_EX(IDC_ABOUT,OnAbout)
     END_MSG_MAP()
 
     CSettingsDlg(CSettings* TMS_Settings);
@@ -42,6 +45,7 @@ public:
     LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
     void OnOK(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnCancel(UINT wNotifyCode, INT wID, HWND hWndCtl);
+    void OnAbout(UINT wNotifyCode, INT wID, HWND hWndCtl);
 };
 
 #endif

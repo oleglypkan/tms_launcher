@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "settings.h"
+#include "About.h"
 
 extern const char* szWinName;
 UINT ViewTaskHotKeyID = 1;
@@ -127,6 +128,12 @@ void CSettingsDlg::OnCancel(UINT wNotifyCode, INT wID, HWND hWndCtl)
     EndDialog(wID);
 }
 
+void CSettingsDlg::OnAbout(UINT wNotifyCode, INT wID, HWND hWndCtl)
+{
+    CAbout dlg;
+    dlg.DoModal();
+}
+
 CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName)
 {
     AutoRun = false;
@@ -137,6 +144,8 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     TMS = 0;
     ViewTaskHotKey = 0;
     ViewChildTasksHotKey = 0;
+    xPos = -1; // for centered window
+    yPos = -1; // for centered window
     RegistryKey = RegKey;
     AutoRunRegistryKey = AutoRunRegKey;
     AutoRunValueName = AutoRunValName;    
@@ -184,6 +193,21 @@ void CSettings::LoadSettings()
 
     DWordSize=sizeof(DWORD);
     Reg.ReadValue(RegistryKey,"ViewChildTasksHotkey",REG_DWORD,(LPBYTE)&ViewChildTasksHotKey,DWordSize);
+
+    DWordSize=sizeof(DWORD);
+    Reg.ReadValue(RegistryKey,"xPos",REG_DWORD,(LPBYTE)&xPos,DWordSize);
+
+    DWordSize=sizeof(DWORD);
+    Reg.ReadValue(RegistryKey,"yPos",REG_DWORD,(LPBYTE)&yPos,DWordSize);
+    
+    RECT Rect;
+    GetWindowRect(GetDesktopWindow(),&Rect);
+
+    if ((xPos < Rect.left)||(xPos > Rect.right)||(yPos < Rect.top)||(yPos > Rect.bottom))
+    {
+        xPos = -1;
+        yPos = -1;
+    }
 }
 
 void CSettings::SaveSettings()
@@ -214,6 +238,8 @@ void CSettings::SaveSettings()
 
     Reg.AddValue(RegistryKey,"ViewTaskHotkey",REG_DWORD,(const BYTE*)&ViewTaskHotKey,sizeof(DWORD));
     Reg.AddValue(RegistryKey,"ViewChildTasksHotkey",REG_DWORD,(const BYTE*)&ViewChildTasksHotKey,sizeof(DWORD));
+    Reg.AddValue(RegistryKey,"xPos",REG_DWORD,(const BYTE*)&xPos,sizeof(DWORD));
+    Reg.AddValue(RegistryKey,"yPos",REG_DWORD,(const BYTE*)&yPos,sizeof(DWORD));    
 }
 
 bool CSettings::SettingsAvailable()

@@ -23,6 +23,8 @@ public:
         MESSAGE_HANDLER_EX(WM_TASKBARCREATED,OnTaskbarCreated)
         MESSAGE_HANDLER_EX(WM_TMS_LAUNCHER_ACTIVATE,OnTMSLauncherActivate)
         MESSAGE_HANDLER_EX(WM_HOTKEY,OnHotKey)
+        MESSAGE_HANDLER_EX(WM_ENDSESSION,OnEndSession)
+        MESSAGE_HANDLER_EX(WM_DISPLAYCHANGE,OnDisplayChange)
         NOTIFY_CODE_HANDLER_EX(EN_MSGFILTER,OnMsgFilter)
         COMMAND_ID_HANDLER_EX(VIEW_TASK,OnViewTask)
         COMMAND_ID_HANDLER_EX(VIEW_CHILD_TASKS,OnViewTask)
@@ -40,6 +42,8 @@ public:
     LRESULT OnTaskbarCreated(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
     LRESULT OnTMSLauncherActivate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
     LRESULT OnHotKey(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
+    LRESULT OnEndSession(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
+    LRESULT OnDisplayChange(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
     LRESULT OnMsgFilter(LPNMHDR pnmh);
     void OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnSettings(UINT wNotifyCode, INT wID, HWND hWndCtl);

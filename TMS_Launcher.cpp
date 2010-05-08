@@ -8,7 +8,7 @@
 
 CAppModule _Module;
 
-const char* szWinName = "TMS Launcher v1.2";
+const char* szWinName = "TMS Launcher v1.3";
 const char* MutexName = "TMS_Launcher";
 const char* AutoRunKeyName = "TMS Launcher";
 const UINT WM_TMS_LAUNCHER_ACTIVATE = ::RegisterWindowMessage("TMS_Launcher_Activate");

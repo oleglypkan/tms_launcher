@@ -41,6 +41,15 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     TaskNameControl.LimitText(1024);
     TaskNameControl.SetEventMask(ENM_MOUSEEVENTS);
 
+    if ((Settings.xPos < 0) && (Settings.yPos < 0))
+    {
+        CenterWindow();
+    }
+    else
+    {
+        SetWindowPos(HWND_TOPMOST,Settings.xPos,Settings.yPos,0,0,SWP_NOSIZE);
+    }
+
     Expanded = Settings.Expand;
     if (!Expanded)
     {
@@ -51,7 +60,7 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     {
         SetWindowPos(HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
     }
-    CenterWindow();
+    
     ShowModal = false;
     CMenu SystraySubMenu;
     SystraySubMenu.CreatePopupMenu();
@@ -119,11 +128,45 @@ void CMainDlg::OnHide(UINT wNotifyCode, INT wID, HWND hWndCtl)
 
 void CMainDlg::OnClose(UINT wNotifyCode, INT wID, HWND hWndCtl)
 {
+    RECT Rect;
+    GetWindowRect(&Rect);
+    Settings.xPos = Rect.left;
+    Settings.yPos = Rect.top;
+    Settings.SaveSettings();
+
     DeleteSysTrayIcon(m_hWnd);
     DestroyMenu(SystrayMenu);
-    DestroyWindow();
-    ::PostQuitMessage(0);
-//    EndDialog(wID);
+
+    if (wID == IDC_CLOSE)
+    {
+        DestroyWindow();
+        ::PostQuitMessage(0);
+    }
+}
+
+LRESULT CMainDlg::OnEndSession(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/)
+{
+    if (wParam) // the session is being ended
+    {
+        OnClose(0,0,0);
+    }
+    return 0;
+}
+
+LRESULT CMainDlg::OnDisplayChange(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/)
+{
+    RECT DesktopRect, WindowRect;
+    ::GetWindowRect(GetDesktopWindow(),&DesktopRect);
+    GetWindowRect(&WindowRect);
+    Settings.xPos = WindowRect.left;
+    Settings.yPos = WindowRect.top;
+
+    if ((Settings.xPos < DesktopRect.left)||(Settings.xPos > DesktopRect.right)||
+        (Settings.yPos < DesktopRect.top)||(Settings.yPos > DesktopRect.bottom))
+    {
+        CenterWindow();
+    }
+    return 0;
 }
 
 void CMainDlg::OnExpand(UINT wNotifyCode, INT wID, HWND hWndCtl)
@@ -255,7 +298,7 @@ void CMainDlg::CreateRequest(const char *Text, CString &Request, bool ViewChildT
         if (AltTMS)
             Request = "http://scc1/~alttms/showtasks.php?ParentClient=";
         else
-            Request = "http://scc1/tms/showtasks.php?ParentClient=";
+            Request = "http://www.softcomputer.com/tms/showtasks.php?ParentClient=";
     }
     else
     {
@@ -263,7 +306,7 @@ void CMainDlg::CreateRequest(const char *Text, CString &Request, bool ViewChildT
         if (AltTMS)
             Request = "http://scc1/~alttms/viewtask.php?Client=";
         else
-            Request = "http://scc1/tms/viewtask.php?Client=";
+            Request = "http://www.softcomputer.com/tms/viewtask.php?Client=";
     }
     Request += Temp;
 }

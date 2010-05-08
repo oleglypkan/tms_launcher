@@ -7,6 +7,7 @@
 #define TMS_LAUNCHER_DIALOG             129
 #define IDI_SYSTRAY_ICON                202
 #define SETTINGS_DIALOG                 204
+#define IDD_ABOUTBOX                    206
 #define IDC_TASKNAME                    1000
 #define VIEW_TASK                       1001
 #define IDC_EXPAND                      1002
@@ -24,14 +25,16 @@
 #define IDC_CHILD_RADIO                 1015
 #define IDC_MINIMIZE                    1016
 #define IDC_SINGLE_CLICK                1017
+#define IDC_ABOUT                       1018
+#define IDC_ABOUT_VERSION               1021
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        206
+#define _APS_NEXT_RESOURCE_VALUE        207
 #define _APS_NEXT_COMMAND_VALUE         32774
-#define _APS_NEXT_CONTROL_VALUE         1018
+#define _APS_NEXT_CONTROL_VALUE         1022
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
