@@ -7,10 +7,11 @@
 */
 
 #include "stdafx.h"
+#include <vector>
 #include "registry.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: Registry.cpp,v $$Revision: 1.6 $$Date: 2006/01/17 15:53:15Z $"; 
+ static char verid[]="@(#)$RCSfile: Registry.cpp,v $$Revision: 1.7 $$Date: 2007/12/17 17:09:23Z $"; 
 #endif
 
 void Registry::AddValue(LPCTSTR lpSubKey,LPCTSTR lpValueName,DWORD dwType,const BYTE *lpData,DWORD dwSizeOfData)
@@ -58,6 +59,24 @@ bool Registry::DeleteKeyIncludingSubKeys(HKEY hKey, LPCTSTR lpSubKey)
     else
     {
         return false;
+    }
+}
+
+void Registry::DeleteAllSubKeys(LPCTSTR lpKeyName)
+{
+    DWORD SubKeyIndex = 0;
+    CString SubKeyName = "";
+    std::vector<CString> SubKeys;
+
+    while (GetSubKeyName(lpKeyName,SubKeyIndex,SubKeyName.GetBuffer(255)))
+    {
+        SubKeyName.ReleaseBuffer();
+        SubKeys.push_back(SubKeyName);
+        SubKeyIndex++;
+    }
+    for (SubKeyIndex = 0; SubKeyIndex < SubKeys.size(); SubKeyIndex++)
+    {
+        DeleteKey(lpKeyName,SubKeys[SubKeyIndex]);
     }
 }
 

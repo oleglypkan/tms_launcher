@@ -12,7 +12,7 @@
 #include <windows.h>
 
 #ifdef INCLUDE_VERID
- static char Registry_h[]="@(#)$RCSfile: Registry.h,v $$Revision: 1.6 $$Date: 2006/01/17 15:53:32Z $";
+ static char Registry_h[]="@(#)$RCSfile: Registry.h,v $$Revision: 1.7 $$Date: 2007/12/17 17:09:34Z $";
 #endif
 
 class Registry 
@@ -24,6 +24,7 @@ public:
     void AddValue(LPCTSTR lpSubKey,LPCTSTR lpValueName,DWORD dwType,const BYTE *lpData,DWORD dwSizeOfData);
     void DeleteKey(LPCTSTR lpSubKey, LPCTSTR lpValueName); // dwType-REG_DWORD,REG_BINARY,REG_SZ,etc.
     bool DeleteKeyIncludingSubKeys(HKEY hKey, LPCTSTR lpSubKey);
+    void DeleteAllSubKeys(LPCTSTR lpKeyName);
     void DeleteValue(LPCTSTR lpSubKey, LPCTSTR lpValueName);
     bool ReadValue(LPCTSTR lpSubKey,LPCTSTR lpValueName,DWORD dwType,LPBYTE lpData,DWORD dwSizeOfData);
     DWORD GetNumberOfValues(LPCTSTR lpSubKey, DWORD *lpcMaxValueNameLen = NULL, DWORD *lpcMaxValueLen = NULL);

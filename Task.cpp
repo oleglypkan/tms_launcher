@@ -13,7 +13,7 @@
 using namespace boost;
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.12 $$Date: 2007/01/10 18:12:47Z $"; 
+ static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.13 $$Date: 2007/12/17 17:10:13Z $"; 
 #endif
  
 extern CSettings Settings;
@@ -347,6 +347,32 @@ void TASK::ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskAc
             Action += Requirements;
             TaskActions.push_back(Action);
         }
+    }
+}
+
+void TASK::ParseHTMLForAA_ID(const CString &HTML, CString &AA_ID)
+{
+    if (HTML.IsEmpty())
+    {
+        AA_ID = "";
+        return;
+    }
+
+    std::vector<std::string> AA_IDs;
+    AA_IDs.clear();
+   
+    RegEx expr;
+    expr.SetExpression(Settings.AA_ID_RegEx,true);
+    expr.Grep(AA_IDs,HTML,match_stop);
+
+    if (AA_IDs[0].empty())
+    {
+        AA_ID = "";
+    }
+    else
+    {
+        AA_ID = AA_IDs[0].c_str();
+        AA_ID.Replace("AA_ID=","");
     }
 }
 

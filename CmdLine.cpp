@@ -15,7 +15,7 @@
 #include "AmHttpSocket.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.17 $$Date: 2007/01/10 18:12:21Z $"; 
+ static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.18 $$Date: 2007/12/17 17:08:29Z $"; 
 #endif
 
 extern CSettings Settings;
@@ -242,7 +242,7 @@ void CmdLine::GetActionFromTasks(const char *InputFileName, const char *OutputFi
                         OutFile << Tasks[i] << " - is SoftTest defect" << endl << endl;
                         continue;
                     }
-                    Request.Format("http://%s:%s@scc1/~alttms/viewtask.php?Client=%s&ID=%s",
+                    Request.Format("http://%s:%s@scc1.softcomputer.com/~alttms/viewtask.php?Client=%s&ID=%s",
                                    Settings.links[index].Login,Settings.links[index].Password,
                                    Client, ID);
                     Message = Req.GetPage(Request);
@@ -359,14 +359,14 @@ void CmdLine::GetTasksList(const char *InputFileName, const char *OutputFileName
                     {
                         if (parent)
                         {
-                            Request.Format("http://%s:%s@scc1/~alttms/viewtask.php?Client=%s&ID=%s",
+                            Request.Format("http://%s:%s@scc1.softcomputer.com/~alttms/viewtask.php?Client=%s&ID=%s",
                                            Settings.links[index].Login,Settings.links[index].Password,
                                            Client, ID);
                         }
                         else
                         {
                             
-                            Request.Format("http://%s:%s@scc1/~alttms/showtasks.php?ParentClient=%s&ParentID=%s",
+                            Request.Format("http://%s:%s@scc1.softcomputer.com/~alttms/showtasks.php?ParentClient=%s&ParentID=%s",
                                            Settings.links[index].Login,Settings.links[index].Password,
                                            Client, ID);
                         }

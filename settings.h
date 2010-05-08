@@ -10,7 +10,7 @@
 #define SETTINGS_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.27 $$Date: 2007/01/10 18:12:42Z $";
+ static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.28 $$Date: 2007/12/17 17:09:58Z $";
 #endif
 
 #include "resource.h"
@@ -130,9 +130,10 @@ public:
     CString DefectFilter;        // contents of TMS Launcher's filter for SoftTest for defect
     CString ChildDefectsFilter;  // contents of TMS Launcher's filter for SoftTest for child defects
     CString ParentDefectFilter;  // contents of TMS Launcher's filter for SoftTest for parent defect
-    CString RtmRegEx;            // regular expression describing requirements section in QC actions of tasks
-    CString QcRegEx;             // regular expression describing QC actions of tasks
-    CString QbRegEx;             // regular expression describing QB/QR actions of tasks
+    CString RtmRegEx;            // regular expression that describes requirements section in QC actions of tasks
+    CString QcRegEx;             // regular expression that describes QC actions of tasks
+    CString QbRegEx;             // regular expression that describes QB/QR actions of tasks
+    CString AA_ID_RegEx;         // regular expression that describes AA_ID parameter in URL
     const CString& GetSoftTestCommandLine(const char *Project);
     CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
               const char* DefectsSubKeyName, const char* TasksSubKeyName, const char* LinksSubKeyName,
@@ -146,6 +147,7 @@ public:
     void SaveSoftTestSettings();
     void SaveHistorySettings();
     bool SettingsAvailable();
+    void AddingNewURLs();
     int RemoveUnacceptableSeparators(CString &String);
     int RemoveDuplicateSeparators(CString &String);
     bool CorrectCRLF(CString &Separators, CString &TasksSeparators);

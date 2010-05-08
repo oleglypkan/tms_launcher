@@ -14,7 +14,7 @@
 #endif // _MSC_VER >= 1000
 
 #ifdef INCLUDE_VERID
- static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.19 $$Date: 2006/08/22 12:57:59Z $";
+ static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.20 $$Date: 2007/12/17 17:09:06Z $";
 #endif
 
 #include "Systray.h"
@@ -100,6 +100,7 @@ protected:
     bool GetTaskNameFromRichEdit(CString &sTasks);
     bool GetTaskNameFromClipboard(CString &sTasks);
     void CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID);
+    void Replace_AA_ID(CString &Request, CString &Message, int index);
     void AddToHistory(const char *item);
     void LoadHistory();
     void SaveHistory();

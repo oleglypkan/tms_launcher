@@ -11,7 +11,7 @@
 #include "About.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.36 $$Date: 2007/01/10 18:12:37Z $"; 
+ static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.37 $$Date: 2007/12/17 17:09:46Z $"; 
 #endif
 
 extern CString szWinName;
@@ -69,6 +69,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     RtmRegEx = "^.*(Requirement[^?]*[:#])(.*)(<br><tr>|<br>[0-9][[:punct:]]|<br>[[:alpha:]]+\\b).*$";
     QbRegEx = "\"[^\"]*Q[BR]</td><td";
     QcRegEx = "\"[^\"]*QC</td><td.*(<hr|</table>)";
+    AA_ID_RegEx = "AA_ID=([0-9]+)";
     TasksSeparators = ";,\n\r";
     Separators = " _-*+|:~#@$%^\t";
     MinClientName = 0;
@@ -279,10 +280,13 @@ void CSettings::LoadSettings()
     }
     if (links.empty())
     {
-        links.push_back(link("Alternative TMS","http://scc1/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"","",false));
+        links.push_back(link("Alternative TMS","http://scc1.softcomputer.com/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
+                             "http://scc1.softcomputer.com/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"","",false));
+        links.push_back(link("SPC linked tasks","http://www.softcomputer.com/spc/showall.php?Client=%CLIENT%&ID=%ID%",
+                             "http://www.softcomputer.com/spc/showall.php?Client=%CLIENT%&ID=%ID%",0,0,0,false,"","",false));
         links.push_back(link("Usual TMS","http://www.softcomputer.com/tms/viewtask.php?Client=%CLIENT%&ID=%ID%",
                              "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,true,"","",false));
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey,"SPC linked tasks",REG_SZ,(const BYTE*)LPCTSTR(""),0);
     }
     else
     {
@@ -452,6 +456,8 @@ void CSettings::LoadSettings()
     QcRegEx.ReleaseBuffer();
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"QB regex",REG_SZ,(LPBYTE)QbRegEx.GetBuffer(512),512);
     QbRegEx.ReleaseBuffer();
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"AA_ID regex",REG_SZ,(LPBYTE)AA_ID_RegEx.GetBuffer(512),512);
+    AA_ID_RegEx.ReleaseBuffer();
 
     // reading history settings
     DWordSize=sizeof(DWORD); // will be changed by ReadValue()
@@ -534,18 +540,47 @@ void CSettings::SaveGeneralSettings(bool AfterImporting)
     }
 }
 
+void CSettings::AddingNewURLs()
+{
+    // adding "SPC linked tasks" URL
+    CString IsSPCURL = "";
+    if (!Reg.ReadValue(RegistryKey+"\\"+LinksSubKey,"SPC linked tasks",REG_SZ,(LPBYTE)IsSPCURL.GetBuffer(1),1))
+    {
+        if (!Reg.KeyPresent(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks"))
+        {
+            CString Str = "http://www.softcomputer.com/spc/showall.php?Client=%CLIENT%&ID=%ID%";
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","TaskURL",REG_SZ,(const BYTE*)LPCTSTR(Str),Str.GetLength()+1);
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","ChildTasksURL",REG_SZ,(const BYTE*)LPCTSTR(Str),Str.GetLength()+1);
+            DWORD def = 0;
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","ViewTaskHotkey",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","ViewChildTasksHotkey",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","ViewParentTaskHotkey",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","Default",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","DefectsInSoftTest",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","Login",REG_SZ,(const BYTE*)LPCTSTR(""),0);
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","Password",REG_SZ,(const BYTE*)LPCTSTR(""),0);
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\SPC linked tasks","Encrypted",REG_SZ,(const BYTE*)LPCTSTR(""),0);
+            Reg.AddValue(RegistryKey+"\\"+LinksSubKey,"SPC linked tasks",REG_SZ,(const BYTE*)LPCTSTR(""),0);
+        }
+    }
+}
+
 void CSettings::SaveLinksSettings()
 {
 //  deleting old settings
-    Reg.DeleteKeyIncludingSubKeys(HKEY_CURRENT_USER,RegistryKey+"\\"+LinksSubKey);
+    Reg.DeleteAllSubKeys(RegistryKey+"\\"+LinksSubKey);
 
 //  saving new settings
     if (links.empty())
     {
-        links.push_back(link("Alternative TMS","http://scc1/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"","",false));
+        links.push_back(link("Alternative TMS","http://scc1.softcomputer.com/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
+                             "http://scc1.softcomputer.com/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"","",false));
+        links.push_back(link("SPC linked tasks","http://www.softcomputer.com/spc/showall.php?Client=%CLIENT%&ID=%ID%",
+                             "http://www.softcomputer.com/spc/showall.php?Client=%CLIENT%&ID=%ID%",0,0,0,false,"","",false));
         links.push_back(link("Usual TMS","http://www.softcomputer.com/tms/viewtask.php?Client=%CLIENT%&ID=%ID%",
                              "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,true,"","",false));
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey,"SPC linked tasks",REG_SZ,(const BYTE*)LPCTSTR(""),0);
+
     }
     for (int i=0; i<links.size(); i++)
     {
@@ -577,6 +612,7 @@ void CSettings::SaveFormatSettings()
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"RTM regex",REG_SZ,(const BYTE*)LPCTSTR(RtmRegEx),RtmRegEx.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"QC regex",REG_SZ,(const BYTE*)LPCTSTR(QcRegEx),QcRegEx.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"QB regex",REG_SZ,(const BYTE*)LPCTSTR(QbRegEx),QbRegEx.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"AA_ID regex",REG_SZ,(const BYTE*)LPCTSTR(AA_ID_RegEx),AA_ID_RegEx.GetLength()+1);
 }
 
 void CSettings::SaveSoftTestSettings()

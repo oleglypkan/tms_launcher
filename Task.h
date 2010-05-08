@@ -10,7 +10,7 @@
 #define TASK_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char Task_h[]="@(#)$RCSfile: Task.h,v $$Revision: 1.9 $$Date: 2007/01/10 18:12:50Z $";
+ static char Task_h[]="@(#)$RCSfile: Task.h,v $$Revision: 1.10 $$Date: 2007/12/17 17:10:22Z $";
 #endif
 
 #include <vector>
@@ -60,6 +60,7 @@ public:
     int ParseHTMLForChildDefects(const CString &HTML, std::vector<CString> &Tasks);
     int ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML, std::vector<CHILD> &Tasks);
     void ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskActions, bool QB);
+    void ParseHTMLForAA_ID(const CString &HTML, CString &AA_ID);
 protected:
     void sort_defects(std::vector<TASKNAME> &Defects);
     void FormatActionOutput(CString &Action, bool QB);

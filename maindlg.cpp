@@ -9,7 +9,7 @@
 #include "stdafx.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.52 $$Date: 2006/11/27 22:20:26Z $"; 
+ static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.53 $$Date: 2007/12/17 17:08:51Z $"; 
 #endif
 
 #include <fstream.h>
@@ -556,6 +556,33 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
     Defects.clear();
 }
 
+void CMainDlg::Replace_AA_ID(CString &Request, CString &Message, int index)
+{
+    if (Request.Find("%AA_ID%") != -1)
+    {
+        if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
+        {
+            MessageBox("Both Login and Password must be specified\nin settings window for \""+Settings.links[index].Caption+"\" URL\nto open task with AA_ID parameter in URL",szWinName,MB_ICONERROR);
+            Request = "";
+            return;
+        }
+        CAmHttpSocket Req;
+        Message = Req.GetPage(Message);
+        TASK task;
+        task.ParseHTMLForAA_ID(Message,Message);
+        if (Message.IsEmpty())
+        {
+            MessageBox("Error while getting AA_ID parameter",szWinName,MB_ICONERROR);
+            Request = "";
+            return;
+        }
+        else
+        {
+            Request.Replace("%AA_ID%",Message);
+        }
+    }
+}
+
 void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID)
 {
     int index = -1;
@@ -651,11 +678,12 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
             if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
             {
                 MessageBox("Both Login and Password must be specified\nin settings window for \""+Settings.links[index].Caption+"\" URL\nto open parent task",szWinName,MB_ICONERROR);
+                Request = "";
                 break;
             }
             CString Message = "";
             CAmHttpSocket Req;
-            Request.Format("http://%s:%s@scc1/~alttms/viewtask.php?Client=%s&ID=%s",
+            Request.Format("http://%s:%s@scc1.softcomputer.com/~alttms/viewtask.php?Client=%s&ID=%s",
                            Settings.links[index].Login,Settings.links[index].Password,
                            sClientName, tempID);
             Message = Req.GetPage(Request);
@@ -682,6 +710,7 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
         case VIEW_TASK_HOTKEY:
             if (!Settings.links[index].TaskURL.IsEmpty())
             {
+                CString Message = "";
                 if (!Request.IsEmpty())
                 {
                     CString Client, ID;
@@ -691,13 +720,18 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
                     Request = Settings.links[index].TaskURL;
                     Request.Replace("%CLIENT%",Client);
                     Request.Replace("%ID%",ID);
+                    Message.Format("http://%s:%s@scc1.softcomputer.com/~alttms/viewtask_tab.php?Client=%s&ID=%s",
+                                   Settings.links[index].Login,Settings.links[index].Password,Client,ID);
                 }
                 else
                 {
                     Request = Settings.links[index].TaskURL;
                     Request.Replace("%CLIENT%",sClientName);
                     Request.Replace("%ID%",tempID);
+                    Message.Format("http://%s:%s@scc1.softcomputer.com/~alttms/viewtask_tab.php?Client=%s&ID=%s",
+                                   Settings.links[index].Login,Settings.links[index].Password,sClientName,tempID);
                 }
+                Replace_AA_ID(Request, Message, index);
             }
             else
             {
@@ -711,6 +745,10 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
                 Request = Settings.links[index].ChildTasksURL;
                 Request.Replace("%CLIENT%",sClientName);
                 Request.Replace("%ID%",tempID);
+                CString Message = "";
+                Message.Format("http://%s:%s@scc1.softcomputer.com/~alttms/viewtask_tab.php?Client=%s&ID=%s",
+                               Settings.links[index].Login,Settings.links[index].Password,sClientName,tempID);
+                Replace_AA_ID(Request, Message, index);
             }
             else
             {
