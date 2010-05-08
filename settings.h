@@ -10,7 +10,7 @@
 #define SETTINGS_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.24 $$Date: 2006/08/30 14:25:40Z $";
+ static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.27 $$Date: 2007/01/10 18:12:42Z $";
 #endif
 
 #include "resource.h"
@@ -105,6 +105,7 @@ public:
     std::vector<link>links;
     std::vector<defect> defects;
     std::vector<CString> History;
+    void sort_links(std::vector<link> &links_to_sort);
     // Task name format: [%CLIENT%-]%ID%[-%EXT%]
     CString Separators;
     CString TasksSeparators;
@@ -129,6 +130,9 @@ public:
     CString DefectFilter;        // contents of TMS Launcher's filter for SoftTest for defect
     CString ChildDefectsFilter;  // contents of TMS Launcher's filter for SoftTest for child defects
     CString ParentDefectFilter;  // contents of TMS Launcher's filter for SoftTest for parent defect
+    CString RtmRegEx;            // regular expression describing requirements section in QC actions of tasks
+    CString QcRegEx;             // regular expression describing QC actions of tasks
+    CString QbRegEx;             // regular expression describing QB/QR actions of tasks
     const CString& GetSoftTestCommandLine(const char *Project);
     CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
               const char* DefectsSubKeyName, const char* TasksSubKeyName, const char* LinksSubKeyName,

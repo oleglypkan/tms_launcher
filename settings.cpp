@@ -3,7 +3,7 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: August 30, 2006
+    Date of last modification: January 4, 2007
 */
 
 #include "stdafx.h"
@@ -11,7 +11,7 @@
 #include "About.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.32 $$Date: 2006/08/30 14:25:17Z $"; 
+ static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.36 $$Date: 2007/01/10 18:12:37Z $"; 
 #endif
 
 extern CString szWinName;
@@ -20,7 +20,8 @@ UINT LINK_MAX = 1024;
 int CompareNoCaseCP1251(const char *string1, const char *string2);
 
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
-                    const char* StringName = "ProductVersion", UINT VersionDigits = 2);
+                    const char* StringName = "ProductVersion", UINT VersionDigits = 2,
+                    const CString &ModulePath = "");
 
 CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
                      const char* DefectsSubKeyName, const char* FormatSubKeyName,
@@ -65,6 +66,9 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     ChildDefectsFilter = "SELECT * FROM BUG WHERE\nBG_USER_HR_01 IN (%ID%)";
     ParentDefectFilter = "SELECT * FROM BUG WHERE\nBG_BUG_ID IN (SELECT BG_USER_HR_01 FROM BUG WHERE BG_BUG_ID IN (%ID%))";
 
+    RtmRegEx = "^.*(Requirement[^?]*[:#])(.*)(<br><tr>|<br>[0-9][[:punct:]]|<br>[[:alpha:]]+\\b).*$";
+    QbRegEx = "\"[^\"]*Q[BR]</td><td";
+    QcRegEx = "\"[^\"]*QC</td><td.*(<hr|</table>)";
     TasksSeparators = ";,\n\r";
     Separators = " _-*+|:~#@$%^\t";
     MinClientName = 0;
@@ -99,8 +103,15 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
 const CString& CSettings::GetSoftTestCommandLine(const char *Project)
 {
 //  SoftTest.exe /nST_LABGUI_SYNCH /a"Track Defects" /uguest /p"" /f"TMS_Launcher"
+    // check for SoftTest version
+    CString SoftTestVer = "";
+    GetVersionInfo(SoftTestVer, 0x0409, 0x04b0, "ProductVersion", 3, SoftTestPath);
+
     CString temp = SoftTestFilterName;
-    temp = temp.Left(temp.Find("."));
+    if (SoftTestVer.Compare("1.5.1") < 0)
+    {
+        temp = temp.Left(temp.ReverseFind('.'));
+    }
     SoftTestCommandLine = "/n%PROJECT% /a\"Track Defects\" /u"+SoftTestLogin+" /p\""+SoftTestPassword+"\" /f\""+temp+"\"";
     SoftTestCommandLine.Replace("%PROJECT%",Project);
     return SoftTestCommandLine;
@@ -275,6 +286,7 @@ void CSettings::LoadSettings()
     }
     else
     {
+        sort_links(links);
         if (!IsDefault)
         {
             links[0].Default = true;
@@ -296,7 +308,7 @@ void CSettings::LoadSettings()
 
         DWORD type;
         CString value_name, value; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3";
-    
+
         for (int i=0; i<defects_number; i++)
         {
             DWORD ValueNameLength = MaxValueNameLength;
@@ -434,6 +446,12 @@ void CSettings::LoadSettings()
     {
         FillID = (DWbuf != 0);
     }
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"RTM regex",REG_SZ,(LPBYTE)RtmRegEx.GetBuffer(512),512);
+    RtmRegEx.ReleaseBuffer();
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"QC regex",REG_SZ,(LPBYTE)QcRegEx.GetBuffer(512),512);
+    QcRegEx.ReleaseBuffer();
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"QB regex",REG_SZ,(LPBYTE)QbRegEx.GetBuffer(512),512);
+    QbRegEx.ReleaseBuffer();
 
     // reading history settings
     DWordSize=sizeof(DWORD); // will be changed by ReadValue()
@@ -556,6 +574,9 @@ void CSettings::SaveFormatSettings()
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(const BYTE*)LPCTSTR(Separators),Separators.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"TasksSeparators",REG_SZ,(const BYTE*)LPCTSTR(TasksSeparators),TasksSeparators.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"FillID",REG_DWORD,(const BYTE*)&FillID,sizeof(DWORD));
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"RTM regex",REG_SZ,(const BYTE*)LPCTSTR(RtmRegEx),RtmRegEx.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"QC regex",REG_SZ,(const BYTE*)LPCTSTR(QcRegEx),QcRegEx.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"QB regex",REG_SZ,(const BYTE*)LPCTSTR(QbRegEx),QbRegEx.GetLength()+1);
 }
 
 void CSettings::SaveSoftTestSettings()
@@ -818,5 +839,24 @@ void CSettings::Crypt(CString &String)
     for (int i = 0; i < String.GetLength(); i++)
     {
         String.SetAt(i,String.GetAt(i)^(i+x));
+    }
+}
+
+void CSettings::sort_links(std::vector<link> &links_to_sort)
+{
+    for (int i=0; i<links_to_sort.size()-1; i++)
+    {
+        bool exchange = false;
+        for (int j=1; j<links_to_sort.size()-i; j++)
+        {
+            if (CompareNoCaseCP1251(links_to_sort[j-1].Caption,links_to_sort[j].Caption)>0)
+            {
+                link temp = links_to_sort[j-1];
+                links_to_sort[j-1] = links_to_sort[j];
+                links_to_sort[j] = temp;
+                exchange = true;
+            }
+        }
+        if (!exchange) break;
     }
 }

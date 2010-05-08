@@ -3,7 +3,7 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: August 16, 2006
+    Date of last modification: November 28, 2006
 */
 
 // Several pages should be created as dialogs templates with IDs == IDDs from pages classes.
@@ -35,6 +35,7 @@
 #include "settings.h"
 #include "About.h"
 #include "htmlhelp.h"
+#include "controls.h"
 
 extern CSettings Settings;
 extern CString szWinName;
@@ -670,27 +671,9 @@ public:
         COMMAND_ID_HANDLER_EX(IDC_LINK_COPY,OnNewLink)
         COMMAND_ID_HANDLER_EX(IDC_LINK_EDIT,OnNewLink)
         COMMAND_ID_HANDLER_EX(IDC_LINK_DELETE,OnDeleteLink)
+        COMMAND_ID_HANDLER_EX(IDC_URLS_LIST,OnListNotify)
         REFLECT_NOTIFICATIONS()
     END_MSG_MAP()
-
-    void sort_links()
-    {
-        for (int i=0; i<temp_links.size()-1; i++)
-        {
-            bool exchange = false;
-            for (int j=1; j<temp_links.size()-i; j++)
-            {
-                if (CompareNoCaseCP1251(temp_links[j-1].Caption,temp_links[j].Caption)>0)
-                {
-                    link temp = temp_links[j-1];
-                    temp_links[j-1] = temp_links[j];
-                    temp_links[j] = temp;
-                    exchange = true;
-                }
-            }
-            if (!exchange) break;
-        }
-    }
 
     int GetPosByCaption(const char *caption)
     {
@@ -811,7 +794,15 @@ public:
                 }
                 temp_links[realpos] = URLEditDlg.URL;
             }
-            sort_links();
+            Settings.sort_links(temp_links);
+        }
+    }
+
+    void OnListNotify(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        if (wNotifyCode == LBN_DBLCLK)
+        {
+            OnNewLink(0, IDC_LINK_EDIT, hWndCtl);
         }
     }
 
@@ -1299,6 +1290,7 @@ public:
         COMMAND_ID_HANDLER_EX(IDC_DEFECT_EDIT,OnNewDefect)
         COMMAND_ID_HANDLER_EX(IDC_DEFECT_COPY,OnNewDefect)
         COMMAND_ID_HANDLER_EX(IDC_DEFECT_DELETE,OnDeleteDefect)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECTS_LIST,OnListNotify)
         REFLECT_NOTIFICATIONS()
     END_MSG_MAP()
 
@@ -1428,6 +1420,14 @@ public:
         DefectsList.SetCurSel(0);
     }
 
+    void OnListNotify(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        if (wNotifyCode == LBN_DBLCLK)
+        {
+            OnNewDefect(0, IDC_DEFECT_EDIT, hWndCtl);
+        }
+    }
+
     bool OnSetActive(COptionItem *pItem)
     {
         return true;
@@ -1463,7 +1463,7 @@ class HistoryPage : public Mortimer::COptionPageImpl<HistoryPage,CPropPage>
 public:
     enum { IDD = HISTORY_PAGE };
     CComboBox TaskNameCombo;
-    CListBox HistoryList;
+    CMyListBox HistoryList;
     CButton DeleteButton;
     CButton ClearButton;
 
@@ -1543,19 +1543,11 @@ public:
 
     void OnItemDelete(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
-        int pos = HistoryList.GetCurSel();
-        if (pos == LB_ERR)
+        HistoryList.DeleteSelItems();
+        if (HistoryList.GetCount() == 0)
         {
-            return;
-        }
-        else
-        {
-            HistoryList.DeleteString(pos);
-            if (HistoryList.GetCount() == 0)
-            {
-                DeleteButton.EnableWindow(false);
-                ClearButton.EnableWindow(false);
-            }
+            DeleteButton.EnableWindow(false);
+            ClearButton.EnableWindow(false);
         }
     }
 

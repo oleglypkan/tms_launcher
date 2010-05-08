@@ -3,14 +3,14 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: August 31, 2006
+    Date of last modification: January 5, 2007
 */
 
 #ifndef TASK_H_INCLUDED
 #define TASK_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char Task_h[]="@(#)$RCSfile: Task.h,v $$Revision: 1.7 $$Date: 2006/09/07 10:12:08Z $";
+ static char Task_h[]="@(#)$RCSfile: Task.h,v $$Revision: 1.9 $$Date: 2007/01/10 18:12:50Z $";
 #endif
 
 #include <vector>
@@ -62,7 +62,9 @@ public:
     void ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskActions, bool QB);
 protected:
     void sort_defects(std::vector<TASKNAME> &Defects);
-    void TASK::FomatActionOutput(CString &Action);
+    void FormatActionOutput(CString &Action, bool QB);
+    void ParseActionForRequirements(const CString &Action, CString &Output);
+    void RemoveSpaces(CString &s);
 };
 
 #endif

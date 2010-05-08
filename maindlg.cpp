@@ -9,7 +9,7 @@
 #include "stdafx.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.51 $$Date: 2006/09/07 10:07:43Z $"; 
+ static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.52 $$Date: 2006/11/27 22:20:26Z $"; 
 #endif
 
 #include <fstream.h>
@@ -1164,7 +1164,7 @@ int CompareNoCaseCP1251(const char *string1, const char *string2)
     StringToUpperCase(str1);
     CString str2 = string2;
     StringToUpperCase(str2);
-    return str1.Compare(str2);
+    return StrCmp(str1, str2);
 }
 
 // This function converts lowercase characters to uppercase ones in passed string
@@ -1199,4 +1199,3 @@ void StringToUpperCase(CString &String)
             }
     }
 }
-

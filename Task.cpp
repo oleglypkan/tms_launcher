@@ -3,15 +3,17 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: August 31, 2006
+    Date of last modification: January 5, 2007
 */
 
 #include "stdafx.h"
 #include "Task.h"
 #include "settings.h"
+#include <boost/regex.hpp>
+using namespace boost;
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.10 $$Date: 2006/09/07 10:11:50Z $"; 
+ static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.12 $$Date: 2007/01/10 18:12:47Z $"; 
 #endif
  
 extern CSettings Settings;
@@ -314,81 +316,102 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
 void TASK::ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskActions, bool QB)
 {
     TaskActions.clear();
-    long pos = -1;
-    if (QB)
+    
+    std::vector<std::string> RawActions;
+    RawActions.clear();
+
+    RegEx expr; // regular expression object to be used to parse HTML
+
+    if (QB) // QB or QR actions
     {
-        pos = HTML.Find("QB</td><td");
-    }
-    else
-    {
-        pos = HTML.Find("QC</td><td");
-    }
-    while (pos != -1)
-    {
-        CString Action = HTML.Left(pos);
-        Action = Action.Right(pos-Action.ReverseFind('\"')-1);
-        FomatActionOutput(Action);
-        TaskActions.push_back(Action);
-        // searching for next action
-        if (QB)
+        expr.SetExpression(Settings.QbRegEx,true);
+        expr.Grep(RawActions,HTML,match_any);
+        for (long i = 0; i < RawActions.size(); i++)
         {
-            pos = HTML.Find("QB</td><td",pos+1);
+            CString Action = RawActions[i].c_str();
+            Action = Action.Left(Action.ReverseFind('Q'));
+            FormatActionOutput(Action,QB);
+            TaskActions.push_back(Action);
         }
-        else
+    }
+    else // QC actions
+    {
+        expr.SetExpression(Settings.QcRegEx,true);
+        expr.Grep(RawActions,HTML,match_any);
+        for (long i = 0; i < RawActions.size(); i++)
         {
-            pos = HTML.Find("QC</td><td",pos+1);
+            CString Action = RawActions[i].c_str();
+            CString Requirements = "";
+            ParseActionForRequirements(Action,Requirements);
+            FormatActionOutput(Action,QB);
+            Action += Requirements;
+            TaskActions.push_back(Action);
         }
     }
 }
 
-void TASK::FomatActionOutput(CString &Action)
+void TASK::FormatActionOutput(CString &Action, bool QB)
 {
-    CString Result = "";
-    long pos = Action.Find('>');
-    long section = 0;
+    std::vector<std::string> v;
+    v.clear();
+
+    RegEx expr;
+    expr.SetExpression(">[^<]+<",true);
+    expr.Grep(v,Action,match_any);
+
+    std::vector<CString> v2;
+    v2.clear();
+    
+    int components = 0;
+    (v.size() > 4) ? components = 5 : components = v.size();
+    for (int i= 0; i < components; i++)
+    {
+        CString temp = v[i].c_str();
+        temp.Remove('>');
+        temp.Remove('<');
+        v2.push_back(temp);
+    }
+    
+    if (v2.size() > 4)
+    {
+        Action.Format("%-4s%-12s%-7s%-18s",v2[0],v2[1],v2[2],v2[3]);
+        if (QB)
+        {
+            Action += v2[4];
+        }
+    }
+}
+
+void TASK::ParseActionForRequirements(const CString &Action, CString &Output)
+{
+    Output = "-------";
+    
+    RegEx expr(Settings.RtmRegEx,true);
+    if (expr.Match(Action,match_any))
+    {
+        Output = expr[2].c_str();
+        RemoveSpaces(Output);
+        if (Output.IsEmpty())
+        {
+            Output = "-------";
+        }
+    }
+}
+
+void TASK::RemoveSpaces(CString &s)
+{
+    if (s.IsEmpty()) return;
+
+    s.TrimLeft("}>]):");
+    s.TrimLeft();
+    s.TrimRight();
+    s.Replace("<br>","");
+    s.Replace("<br/>","");
+    s.Replace("&amp;","&");
+    long pos = s.Find("  ");
     while (pos != -1)
     {
-        if (pos < Action.GetLength())
-        {
-            long pos2 = Action.Find('<',pos);
-            if (pos2 != -1)
-            {
-                long length = pos2-pos-1;
-                if (length > 0)
-                {
-                    section++;
-                    Result += Action.Mid(pos+1,length);
-
-                    CString temp = "";
-                    switch (section)
-                    {
-                        case 1:
-                            temp += "    ";
-                            break;
-                        case 2:
-                            temp += "            ";
-                            break;
-                        case 3:
-                            temp += "       ";
-                            break;
-                        case 4:
-                            temp += "                  ";
-                            break;
-                    }
-                    if (!temp.IsEmpty())
-                    {
-                        temp.Delete(0,length);
-                        Result += temp;
-                    }
-                }
-                Action.Delete(0,pos2);
-            }
-            else
-            {
-                break;
-            }
-        }
-        pos = Action.Find('>');
+        s.Replace("  "," ");
+        pos = s.Find("  ",pos);
     }
-    Action = Result;
 }

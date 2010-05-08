@@ -3,7 +3,7 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: September 5, 2006
+    Date of last modification: January 4, 2007
 */
 
 #include "stdafx.h"
@@ -15,7 +15,7 @@
 #include "AmHttpSocket.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.15 $$Date: 2006/09/07 11:51:06Z $"; 
+ static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.17 $$Date: 2007/01/10 18:12:21Z $"; 
 #endif
 
 extern CSettings Settings;
@@ -205,13 +205,13 @@ void CmdLine::GetActionFromTasks(const char *InputFileName, const char *OutputFi
 
     if (QB)
     {
-        OutFile << "Task            QB action(s)" << endl;
+        OutFile << "Task            QB/QR action(s)" << endl;
     }
     else
     {
         OutFile << "Task            QC action(s)" << endl;
     }
-    OutFile << "--------------------------------------------------------------------" << endl;
+    OutFile << "-----------------------------------------------------------------------" << endl;
 
     while (!InFile.eof())
     {
@@ -263,7 +263,14 @@ void CmdLine::GetActionFromTasks(const char *InputFileName, const char *OutputFi
                             continue;
                         }
                         OutFile << Tasks[i];
-                        OutFile << "#   Date        Time   Person            Assigned to" << endl;
+                        if (QB)
+                        {
+                            OutFile << "#   Date        Time   Person            Assigned to" << endl;
+                        }
+                        else
+                        {
+                            OutFile << "#   Date        Time   Person            Requirement(s)" << endl;
+                        }
                         for (int j=0; j<TaskActions.size(); j++)
                         {
                             OutFile.width(16);

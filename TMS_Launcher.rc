@@ -273,7 +273,7 @@ FONT 8, "MS Sans Serif"
 BEGIN
     GROUPBOX        "&Saved tasks",IDC_STATIC,3,0,177,104
     LISTBOX         IDC_HISTORY_LIST,8,9,125,90,LBS_NOINTEGRALHEIGHT | 
-                    WS_VSCROLL | WS_TABSTOP
+                    LBS_EXTENDEDSEL | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&Delete",IDC_BUTTON_DELETE,137,10,38,13
     PUSHBUTTON      "&Clear",IDC_BUTTON_CLEAR,137,29,38,13
     LTEXT           "&Max items:",IDC_STATIC,138,76,39,8
@@ -327,7 +327,7 @@ END
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST ""res\\\\TMS_Launcher.exe.manifest""\r\n"
-    "1 SCCSID { ""@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.33 $$Date: 2006/09/07 12:13:26Z $\\0"" }\0"
+    "1 SCCSID { ""@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.35 $$Date: 2006/11/28 22:52:50Z $\\0"" }\0"
 END
 
 #endif    // APSTUDIO_INVOKED
@@ -340,8 +340,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,4,0,0
- PRODUCTVERSION 2,4,0,0
+ FILEVERSION 2,5,0,0
+ PRODUCTVERSION 2,5,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -359,14 +359,14 @@ BEGIN
             VALUE "Comments", "Designed and developed by Oleg Lypkan\0"
             VALUE "CompanyName", "Information Systems Development\0"
             VALUE "FileDescription", "TMS_Launcher Module\0"
-            VALUE "FileVersion", "2, 4, 0, 0\0"
+            VALUE "FileVersion", "2, 5, 0, 0\0"
             VALUE "InternalName", "TMS_Launcher\0"
             VALUE "LegalCopyright", "Copyright 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "TMS_Launcher.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "TMS_Launcher Module\0"
-            VALUE "ProductVersion", "2, 4, 0, 0\0"
+            VALUE "ProductVersion", "2, 5, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -389,7 +389,7 @@ END
 // Generated from the TEXTINCLUDE 3 resource.
 //
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "res\\TMS_Launcher.exe.manifest"
-1 SCCSID { "@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.33 $$Date: 2006/09/07 12:13:26Z $\0" }
+1 SCCSID { "@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.35 $$Date: 2006/11/28 22:52:50Z $\0" }
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 

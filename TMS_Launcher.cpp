@@ -3,7 +3,7 @@
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: January 17, 2006
+    Date of last modification: November 24, 2006
 */
 
 #include "stdafx.h"
@@ -13,7 +13,7 @@
 #include "CmdLine.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.21 $$Date: 2006/08/22 13:01:52Z $"; 
+ static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.22 $$Date: 2006/11/24 21:34:19Z $"; 
 #endif
 
 /* 
@@ -36,7 +36,8 @@ CSettings Settings("Software\\Winchester\\TMS Launcher",
                    "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
                    AutoRunKeyName, "Defects", "Format", "Links", "SoftTest", "History");
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
-                    const char* StringName = "ProductVersion", UINT VersionDigits = 2);
+                    const char* StringName = "ProductVersion", UINT VersionDigits = 2,
+                    const CString &ModulePath = "");
 
 int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lpstrCmdLine, int nCmdShow)
 {
@@ -145,17 +146,26 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 
 // function appends requested version infomation to the string
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
-                    const char* StringName, UINT VersionDigits)
+                    const char* StringName, UINT VersionDigits, const CString &ModulePath)
 {
     // reading version information from the resource
     DWORD Handle;
-    DWORD VersionInfoSize = GetFileVersionInfoSize("TMS_Launcher.exe",&Handle);
+    CString FileName;
+
+    if (ModulePath.IsEmpty())
+    {
+        GetModuleFileName(NULL,FileName.GetBuffer(MAX_PATH),MAX_PATH);
+        FileName.ReleaseBuffer();
+    }
+    else
+    {
+        FileName = ModulePath;
+    }
+
+    DWORD VersionInfoSize = GetFileVersionInfoSize(FileName,&Handle);
     if (VersionInfoSize)
     {
         char *VersionInfo = new char[VersionInfoSize];
-        CString FileName;
-        GetModuleFileName(NULL,FileName.GetBuffer(MAX_PATH),MAX_PATH);
-        FileName.ReleaseBuffer();
         if (GetFileVersionInfo(FileName.GetBuffer(MAX_PATH),0,VersionInfoSize,VersionInfo))
         {
             char *SubBlockBuffer;
@@ -171,9 +181,16 @@ bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
                 {
                     Version.Remove(' ');
                     Version.Replace(',','.');
-                    if (VersionDigits > 0 || VersionDigits < 4)
+                    if (VersionDigits > 0 && VersionDigits < 4)
                     {
-                        Version.Delete(VersionDigits*2-1,Version.GetLength()-(VersionDigits*2-1));
+                        int pos = -1, i = 0;
+                        do
+                        {
+                            pos = Version.Find('.',pos+1);
+                            i++;
+                        } while (i != VersionDigits);
+
+                        Version = Version.Left(pos);
                     }
                 }
                 string += Version;
