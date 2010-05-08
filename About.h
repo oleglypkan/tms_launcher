@@ -9,6 +9,10 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#ifdef INCLUDE_VERID
+ static char About_h[]="@(#)$RCSfile: About.h,v $$Revision: 1.2 $$Date: 2005/05/25 16:08:50Z $";
+#endif
+
 #include "resource.h"
 
 class CAbout : public CDialogImpl<CAbout>

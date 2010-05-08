@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "systray.h"
 
+#ifndef NO_VERID
+ static char verid[]="@(#)$RCSfile: Systray.cpp,v $$Revision: 1.2 $$Date: 2005/05/25 16:18:00Z $"; 
+#endif
+
 const UINT WM_TASKBARCREATED = ::RegisterWindowMessage("TaskbarCreated");
 
 void CreateSysTrayIcon(HWND hwnd, HICON IconHandle, const char *TipText)

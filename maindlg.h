@@ -9,7 +9,12 @@
 #pragma once
 #endif // _MSC_VER >= 1000
 
+#ifdef INCLUDE_VERID
+ static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.9 $$Date: 2005/07/04 10:08:57Z $";
+#endif
+
 #include "Systray.h"
+#include <vector>
 extern const UINT WM_TMS_LAUNCHER_ACTIVATE;
 
 class CMainDlg : public CDialogImpl<CMainDlg>
@@ -26,6 +31,7 @@ public:
         MESSAGE_HANDLER_EX(WM_ENDSESSION,OnEndSession)
         MESSAGE_HANDLER_EX(WM_DISPLAYCHANGE,OnDisplayChange)
         NOTIFY_CODE_HANDLER_EX(EN_MSGFILTER,OnMsgFilter)
+        NOTIFY_CODE_HANDLER_EX(EN_LINK,OnLink)
         COMMAND_ID_HANDLER_EX(VIEW_TASK,OnViewTask)
         COMMAND_ID_HANDLER_EX(VIEW_CHILD_TASKS,OnViewTask)
         COMMAND_ID_HANDLER_EX(VIEW_TASK_HOTKEY,OnViewTask)
@@ -45,6 +51,7 @@ public:
     LRESULT OnEndSession(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
     LRESULT OnDisplayChange(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/);
     LRESULT OnMsgFilter(LPNMHDR pnmh);
+    LRESULT OnLink(LPNMHDR pnmh);
     void OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnSettings(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnExpand(UINT wNotifyCode, INT wID, HWND hWndCtl);
@@ -52,13 +59,15 @@ public:
     void OnClose(UINT wNotifyCode, INT wID, HWND hWndCtl);
 protected:
     CMenu SystrayMenu;
+    CMenu SystraySubMenu;
     CRichEditCtrl TaskNameControl;
     bool Expanded;
     bool ShowModal;
+    void ParseTasks(CString &sTasks, std::vector<CString> &Tasks);
     bool IsTaskNameValid(CString &sTaskName, CString &sClientName, CString &sIDName);
-    bool GetTaskNameFromRichEdit(CString &sTaskName, CString &sClientName, CString &sIDName);
-    bool GetTaskNameFromClipboard(CString &sTaskName, CString &sClientName, CString &sIDName);
-    void CreateRequest(const CString sClientName, const char *sIDName, CString &Request, bool ViewChildTasks, bool AltTMS);
+    bool GetTaskNameFromRichEdit(CString &sTasks);
+    bool GetTaskNameFromClipboard(CString &sTasks);
+    void CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID);
 };
 
 

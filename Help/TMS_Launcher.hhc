@@ -1,0 +1,62 @@
+<!-- @(#)$RCSfile: TMS_Launcher.hhc,v $$Revision: 1.1 $$Date: 2005/07/07 16:01:51Z $ -->
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+<!-- Sitemap 1.0 -->
+</HEAD><BODY>
+<OBJECT type="text/site properties">
+    <param name="Window Styles" value="0x800025">
+</OBJECT>
+<UL>
+    <LI> <OBJECT type="text/sitemap">
+        <param name="Name" value="Introduction">
+        <param name="Local" value="introduction.html">
+        </OBJECT>
+    <LI> <OBJECT type="text/sitemap">
+        <param name="Name" value="Main features">
+        <param name="Local" value="mainfeatures.html">
+        </OBJECT>
+    <UL>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="Opening TMS tasks">
+            <param name="Local" value="Features\opentasks.html">
+            </OBJECT>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="Opening SoftTest defects">
+            <param name="Local" value="Features\opendefects.html">
+            </OBJECT>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="Opening links">
+            <param name="Local" value="Features\openlinks.html">
+            </OBJECT>
+    </UL>
+    <LI> <OBJECT type="text/sitemap">
+        <param name="Name" value="Settings">
+        <param name="Local" value="settings.html">
+        </OBJECT>
+    <UL>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="General page">
+            <param name="Local" value="Settings\general.html">
+            </OBJECT>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="URLs page">
+            <param name="Local" value="Settings\urls.html">
+            </OBJECT>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="Defects page">
+            <param name="Local" value="Settings\defects.html">
+            </OBJECT>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="Format page">
+            <param name="Local" value="Settings\format.html">
+            </OBJECT>
+    </UL>
+    <LI> <OBJECT type="text/sitemap">
+        <param name="Name" value="Credits">
+        <param name="Local" value="credits.html">
+        </OBJECT>
+</UL>
+</BODY></HTML>

@@ -2,164 +2,71 @@
 #include "settings.h"
 #include "About.h"
 
-extern const char* szWinName;
-UINT ViewTaskHotKeyID = 1;
-UINT ViewChildTasksHotKeyID = 2;
+#ifndef NO_VERID
+ static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.17 $$Date: 2005/07/08 10:02:33Z $"; 
+#endif
 
-CSettingsDlg::CSettingsDlg(CSettings* TMS_Settings)
-{
-    Settings = TMS_Settings;
-}
+extern CString szWinName;
+UINT LINK_MAX = 1024;
 
-LRESULT CSettingsDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/)
-{
-    switch (Settings->TMS)
-    {
-        case 0:
-            SendDlgItemMessage(IDC_USUAL_TMS,BM_SETCHECK,BST_CHECKED,0);
-            break;
-        case 1:
-            SendDlgItemMessage(IDC_ALT_TMS,BM_SETCHECK,BST_CHECKED,0);
-            break;
-    }
-    switch (Settings->RightClickAction)
-    {
-        case 0:
-            SendDlgItemMessage(IDC_TASK_RADIO,BM_SETCHECK,BST_CHECKED,0);
-            break;
-        case 1:
-            SendDlgItemMessage(IDC_CHILD_RADIO,BM_SETCHECK,BST_CHECKED,0);
-            break;
-    }
-    if (Settings->Expand) SendDlgItemMessage(IDC_EXPANDED,BM_SETCHECK,BST_CHECKED,0);
-    if (Settings->AutoRun) SendDlgItemMessage(IDC_AUTORUN,BM_SETCHECK,BST_CHECKED,0);
-    if (Settings->Minimize) SendDlgItemMessage(IDC_MINIMIZE,BM_SETCHECK,BST_CHECKED,0);
-    if (Settings->SingleClick) SendDlgItemMessage(IDC_SINGLE_CLICK,BM_SETCHECK,BST_CHECKED,0);
-    SendDlgItemMessage(VIEW_TASK_HOTKEY,HKM_SETHOTKEY,Settings->ViewTaskHotKey,0);
-    UnregisterHotKey(GetParent(),ViewTaskHotKeyID);
-    SendDlgItemMessage(VIEW_CHILD_TASKS_HOTKEY,HKM_SETHOTKEY,Settings->ViewChildTasksHotKey,0);
-    UnregisterHotKey(GetParent(),ViewChildTasksHotKeyID);
+bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
+                    const char* StringName = "ProductVersion", UINT VersionDigits = 2);
 
-    return TRUE;
-}
-
-void CSettingsDlg::OnOK(UINT wNotifyCode, INT wID, HWND hWndCtl)
-{
-    Settings->AutoRun=(SendDlgItemMessage(IDC_AUTORUN,BM_GETCHECK,0,0)==BST_CHECKED);
-    Settings->Expand=(SendDlgItemMessage(IDC_EXPANDED,BM_GETCHECK,0,0)==BST_CHECKED);
-    Settings->Minimize=(SendDlgItemMessage(IDC_MINIMIZE,BM_GETCHECK,0,0)==BST_CHECKED);
-    Settings->SingleClick=(SendDlgItemMessage(IDC_SINGLE_CLICK,BM_GETCHECK,0,0)==BST_CHECKED);
-
-    if (SendDlgItemMessage(IDC_USUAL_TMS,BM_GETCHECK,0,0)==BST_CHECKED)
-        Settings->TMS = 0;
-    else
-        Settings->TMS = 1;
-
-    if (SendDlgItemMessage(IDC_TASK_RADIO,BM_GETCHECK,0,0)==BST_CHECKED)
-        Settings->RightClickAction = 0;
-    else
-        Settings->RightClickAction = 1;
-    
-    UINT ViewTaskHotKey=(UINT)SendDlgItemMessage(VIEW_TASK_HOTKEY,HKM_GETHOTKEY,0,0);
-    UINT ViewChildTasksHotKey=(UINT)SendDlgItemMessage(VIEW_CHILD_TASKS_HOTKEY,HKM_GETHOTKEY,0,0);
-    
-    if ((ViewTaskHotKey == ViewChildTasksHotKey)&&(ViewTaskHotKey))
-    {
-        MessageBox("Hotkeys have to be different",szWinName,MB_ICONERROR);
-        return;
-    }
-
-    BOOL RegSuccess[2] = {true, true};
-    if (ViewTaskHotKey)
-    {
-        RegSuccess[0] = RegisterHotKey(GetParent(),ViewTaskHotKeyID, (!(ViewTaskHotKey&0x500)?
-                        HIBYTE(LOWORD(ViewTaskHotKey)):((ViewTaskHotKey&0x500)<0x500?
-                        HIBYTE(LOWORD(ViewTaskHotKey))^5:HIBYTE(LOWORD(ViewTaskHotKey)))),
-                        LOBYTE(LOWORD(ViewTaskHotKey)));
-        if(!RegSuccess[0])
-        {
-            MessageBox("Hotkey entered in \"HotKey for View Task\" field\nis already registered by another program.\nPlease choose another one",szWinName,MB_ICONERROR);
-        }        
-    }
-    if (ViewChildTasksHotKey)
-    {
-        RegSuccess[1] = RegisterHotKey(GetParent(),ViewChildTasksHotKeyID, (!(ViewChildTasksHotKey&0x500)?
-                        HIBYTE(LOWORD(ViewChildTasksHotKey)):((ViewChildTasksHotKey&0x500)<0x500?
-                        HIBYTE(LOWORD(ViewChildTasksHotKey))^5:HIBYTE(LOWORD(ViewChildTasksHotKey)))),
-                        LOBYTE(LOWORD(ViewChildTasksHotKey)));
-        if(!RegSuccess[1])
-        {
-            MessageBox("Hotkey entered in \"HotKey for View Child Task\" field\nis already registered by another program.\nPlease choose another one",szWinName,MB_ICONERROR);
-        }
-    }
-    if ((!RegSuccess[0])||(!RegSuccess[1]))
-    {
-        UnregisterHotKey(GetParent(),ViewTaskHotKeyID);
-        UnregisterHotKey(GetParent(),ViewChildTasksHotKeyID);
-        return;
-    }
-
-    Settings->ViewTaskHotKey = ViewTaskHotKey;
-    Settings->ViewChildTasksHotKey = ViewChildTasksHotKey;
-
-    Settings->SaveSettings();
-    EndDialog(wID);
-}
-
-void CSettingsDlg::OnCancel(UINT wNotifyCode, INT wID, HWND hWndCtl)
-{
-    if (Settings->ViewTaskHotKey)
-    {
-        if (!RegisterHotKey(GetParent(),ViewTaskHotKeyID,(!(Settings->ViewTaskHotKey&0x500)?
-                       HIBYTE(LOWORD(Settings->ViewTaskHotKey)):((Settings->ViewTaskHotKey&0x500)<0x500?
-                       HIBYTE(LOWORD(Settings->ViewTaskHotKey))^5:HIBYTE(LOWORD(Settings->ViewTaskHotKey)))),
-                       LOBYTE(LOWORD(Settings->ViewTaskHotKey))))
-            MessageBox("Hotkey used to View Task is already registered by another program.\nPlease enter another hotkey in TMS Launcher Settings window",szWinName,MB_OK|MB_ICONERROR);
-    }
-    if (Settings->ViewChildTasksHotKey)
-    {
-        if (!RegisterHotKey(GetParent(),ViewChildTasksHotKeyID,(!(Settings->ViewChildTasksHotKey&0x500)?
-                        HIBYTE(LOWORD(Settings->ViewChildTasksHotKey)):((Settings->ViewChildTasksHotKey&0x500)<0x500?
-                        HIBYTE(LOWORD(Settings->ViewChildTasksHotKey))^5:HIBYTE(LOWORD(Settings->ViewChildTasksHotKey)))),
-                        LOBYTE(LOWORD(Settings->ViewChildTasksHotKey))))
-            MessageBox("Hotkey used to View Child Tasks is already registered by another program.\nPlease enter another hotkey in TMS Launcher Settings window",szWinName,MB_OK|MB_ICONERROR);
-    }
-
-    EndDialog(wID);
-}
-
-void CSettingsDlg::OnAbout(UINT wNotifyCode, INT wID, HWND hWndCtl)
-{
-    CAbout dlg;
-    dlg.DoModal();
-}
-
-CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName)
+CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
+                     const char* DefectsSubKeyName, const char* FormatSubKeyName,
+                     const char* LinksSubKeyName):Reg(HKEY_CURRENT_USER)
 {
     AutoRun = false;
     Expand = false;
     Minimize = false;
     SingleClick = false;
     RightClickAction = 0;
-    TMS = 0;
-    ViewTaskHotKey = 0;
-    ViewChildTasksHotKey = 0;
     xPos = -1; // for centered window
     yPos = -1; // for centered window
     RegistryKey = RegKey;
+    DefectsSubKey = DefectsSubKeyName;
+    FormatSubKey = FormatSubKeyName;
+    LinksSubKey = LinksSubKeyName;
     AutoRunRegistryKey = AutoRunRegKey;
-    AutoRunValueName = AutoRunValName;    
+    AutoRunValueName = AutoRunValName;
+    BrowserPath = "";
+    DefaultBrowser = false;
+    TasksSeparators = ";,\n";
+    Separators = " _-*+|:~#@$%^\t";
+    MinClientName = 0;
+    MaxClientName = 8;
+    MinIDName = 1;
+    MaxIDName = 6;
+    MinExt = 0;
+    MaxExt = 1;
+    MinTaskName = MinClientName+MinIDName;
+    MaxTaskName = MaxClientName+MaxIDName+MaxExt+2; // 2 - separators
+    DefectsLink = "http://qa.isd.dp.ua/softtest/defect/%PROJECT%/%ID%/";
+    defects.push_back(defect("","ST_LABGUI_SYNCH"));
+    defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH"));
+    defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH"));
+    defects.push_back(defect("LAB","ST_LABGUI_SYNCH"));
+    defects.push_back(defect("LABA","ST_LABASCII_SYNCH"));
+    defects.push_back(defect("LABASC","ST_LABASCII_SYNCH"));
+    defects.push_back(defect("LABQC","ST_LABQCASCII_SYNCH"));
+    defects.push_back(defect("LABQCASC","ST_LABQCASCII_SYNCH"));
+    defects.push_back(defect("MIC","ST_MICGUI_SYNCH"));
+    defects.push_back(defect("MICA","ST_MICASCII_SYNCH"));
+    defects.push_back(defect("MICASC","ST_MICASCII_SYNCH"));
+    defects.push_back(defect("MICQC","ST_MICQCASCII_SYNCH"));
+    defects.push_back(defect("MICQCASC","ST_MICQCASCII_SYNCH"));
+    defects.push_back(defect("SEC","ST_SECURITY"));
+    defects.push_back(defect("STO","ST_SOFTSTORE"));
+    defects.push_back(defect("STORE","ST_SOFTSTORE"));
+    defects.push_back(defect("SUP","ST_ISD_SUPPORT"));
 }
 
 void CSettings::LoadSettings()
 {
     DWORD DWbuf;
     DWORD DWordSize;
-    
-    DWordSize=sizeof(DWORD); // will be changed by ReadValue()
-    Reg.ReadValue(RegistryKey,"Use TMS",REG_DWORD,(LPBYTE)&TMS,DWordSize);
-    if ((TMS < 0)||(TMS > 1)) TMS = 0;
 
+//  reading general settings
     DWordSize=sizeof(DWORD); // will be changed by ReadValue()
     Reg.ReadValue(RegistryKey,"Expand at start",REG_DWORD,(LPBYTE)&DWbuf,DWordSize);
     Expand = (DWbuf != 0);
@@ -177,23 +84,6 @@ void CSettings::LoadSettings()
     if ((RightClickAction < 0)||(RightClickAction > 1))
         RightClickAction = 0;
 
-    char lpFileName[MAX_PATH+3];
-    DWORD size = MAX_PATH+2;
-    AutoRun = Reg.ReadValue(AutoRunRegistryKey,AutoRunValueName,REG_SZ,(LPBYTE)lpFileName,size);
-    if (AutoRun)
-    {
-        strcpy(lpFileName,"\"");
-        GetModuleFileName(NULL,lpFileName+1,MAX_PATH);
-        strcat(lpFileName,"\"");
-        Reg.AddValue(AutoRunRegistryKey,AutoRunValueName,REG_SZ,(const BYTE*)lpFileName,lstrlen(lpFileName)+1);
-    }
-
-    DWordSize=sizeof(DWORD);
-    Reg.ReadValue(RegistryKey,"ViewTaskHotkey",REG_DWORD,(LPBYTE)&ViewTaskHotKey,DWordSize);
-
-    DWordSize=sizeof(DWORD);
-    Reg.ReadValue(RegistryKey,"ViewChildTasksHotkey",REG_DWORD,(LPBYTE)&ViewChildTasksHotKey,DWordSize);
-
     DWordSize=sizeof(DWORD);
     Reg.ReadValue(RegistryKey,"xPos",REG_DWORD,(LPBYTE)&xPos,DWordSize);
 
@@ -208,9 +98,154 @@ void CSettings::LoadSettings()
         xPos = -1;
         yPos = -1;
     }
+
+    Reg.ReadValue(RegistryKey,"PathToBrowser",REG_SZ,(LPBYTE)BrowserPath.GetBuffer(_MAX_PATH+1),_MAX_PATH+1);
+    BrowserPath.ReleaseBuffer();
+    BrowserPath.TrimLeft();
+    BrowserPath.TrimRight();
+
+    DWordSize=sizeof(DWORD);
+    Reg.ReadValue(RegistryKey,"DefaultBrowser",REG_DWORD,(LPBYTE)&DWbuf,DWordSize);
+    DefaultBrowser = (DWbuf != 0);
+
+    char lpFileName[MAX_PATH+3];
+    DWORD size = MAX_PATH+2;
+    AutoRun = Reg.ReadValue(AutoRunRegistryKey,AutoRunValueName,REG_SZ,(LPBYTE)lpFileName,size);
+    if (AutoRun)
+    {
+        strcpy(lpFileName,"\"");
+        GetModuleFileName(NULL,lpFileName+1,MAX_PATH);
+        strcat(lpFileName,"\"");
+        Reg.AddValue(AutoRunRegistryKey,AutoRunValueName,REG_SZ,(const BYTE*)lpFileName,lstrlen(lpFileName)+1);
+    }
+
+//  reading links settings
+    int SubKeyIndex = 0;
+    CString SubKeyName;
+    bool IsDefault = false;
+    while (Reg.GetSubKeyName(RegistryKey+"\\"+LinksSubKey,SubKeyIndex,SubKeyName.GetBuffer(255)))
+    {
+        SubKeyName.ReleaseBuffer();
+        // reading values of the subkey
+        const DWORD ValueLength = 255;
+        UINT ViewTaskHotKey;
+        UINT ViewChildTasksHotKey;
+        CString TaskURL;
+        CString ChildTasksURL;
+        DWORD Default;
+        DWordSize=sizeof(DWORD);
+        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ViewTaskHotkey",
+                      REG_DWORD,(LPBYTE)&ViewTaskHotKey,DWordSize);
+        DWordSize=sizeof(DWORD);
+        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ViewChildTasksHotkey",
+                      REG_DWORD,(LPBYTE)&ViewChildTasksHotKey,DWordSize);
+        
+        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"TaskURL",
+                      REG_SZ,(LPBYTE)TaskURL.GetBuffer(ValueLength),ValueLength);
+        TaskURL.ReleaseBuffer();
+        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ChildTasksURL",
+                      REG_SZ,(LPBYTE)ChildTasksURL.GetBuffer(ValueLength),ValueLength);
+        ChildTasksURL.ReleaseBuffer();
+               
+        DWordSize=sizeof(DWORD);
+        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"Default",
+                      REG_DWORD,(LPBYTE)&Default,DWordSize);
+        if (Default == 1)
+        {
+            if (IsDefault) Default = 0;
+            else IsDefault = true;
+        }
+
+        links.push_back(link(SubKeyName,TaskURL,ChildTasksURL,ViewTaskHotKey,
+                             ViewChildTasksHotKey,(Default == 1)));
+
+        SubKeyIndex++;
+    }
+    if (links.empty())
+    {
+        links.push_back(link("Alternative TMS","http://scc1/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
+                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,false));
+        links.push_back(link("Usual TMS","http://www.softcomputer.com/tms/viewtask.php?Client=%CLIENT%&ID=%ID%",
+                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,true));
+    }
+    else
+    {
+        if (!IsDefault)
+        {
+            links[0].Default = true;
+        }
+    }
+
+//  reading defects settings
+    // reading defects link
+    CString temp;
+    Reg.ReadValue(RegistryKey+"\\"+LinksSubKey,"DefectsLink",REG_SZ,(LPBYTE)temp.GetBuffer(LINK_MAX+1),LINK_MAX+1);
+    temp.ReleaseBuffer();
+    if (!temp.IsEmpty() &&  (temp.GetLength() <= LINK_MAX)) DefectsLink = temp;
+
+    if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
+    {
+        defects.clear();
+        DWordSize=sizeof(DWORD);
+        DWORD MaxValueNameLength = 260;
+        DWORD MaxValueLength = 255;
+        int defects_number = 0;
+        defects_number = Reg.GetNumberOfValues(RegistryKey+"\\"+DefectsSubKey,&MaxValueNameLength,&MaxValueLength);
+        MaxValueNameLength++;
+        MaxValueLength++;
+    
+        DWORD type;
+        CString value_name, value; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH";
+    
+        for (int i=0; i<defects_number; i++)
+        {
+            DWORD ValueNameLength = MaxValueNameLength;
+            DWORD ValueLength = MaxValueLength;
+            bool res = Reg.GetValueName(RegistryKey+"\\"+DefectsSubKey,i,value_name.GetBuffer(ValueNameLength),&ValueNameLength,&type);
+            value_name.ReleaseBuffer();
+            if (res && (type == REG_SZ))
+            {
+                Reg.ReadValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(LPBYTE)value.GetBuffer(ValueLength),ValueLength);
+                value.ReleaseBuffer();
+                int separator = value.Find(';');
+                if (separator != -1)
+                {
+                    defects.push_back(defect(value.Left(separator),value.Right(value.GetLength()-separator-1)));
+                }
+            }
+        }
+    }
+    // reading format settings
+    DWordSize=sizeof(DWORD);
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxClient",REG_DWORD,(LPBYTE)&MaxClientName,DWordSize);
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxID",REG_DWORD,(LPBYTE)&MaxIDName,DWordSize);
+    if (MaxIDName < 1) MaxIDName = 1;
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxExt",REG_DWORD,(LPBYTE)&MaxExt,DWordSize);
+    MinTaskName = MinClientName+MinIDName;
+    MaxTaskName = MaxClientName+MaxIDName+MaxExt+2; // 2 - separators
+    CString SEPARATORS = "";
+    CString TASKS_SEPARATORS = "";
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(LPBYTE)SEPARATORS.GetBuffer(255),255);
+    SEPARATORS.ReleaseBuffer();
+    RemoveUnacceptableSeparators(SEPARATORS);
+    RemoveDuplicateSeparators(SEPARATORS);
+    Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"TasksSeparators",REG_SZ,(LPBYTE)TASKS_SEPARATORS.GetBuffer(255),255);
+    TASKS_SEPARATORS.ReleaseBuffer();
+    RemoveUnacceptableSeparators(TASKS_SEPARATORS);
+    RemoveDuplicateSeparators(TASKS_SEPARATORS);
+    if (!SEPARATORS.FindOneOf(TASKS_SEPARATORS))
+    {
+        if (!SEPARATORS.IsEmpty()) Separators = SEPARATORS;
+        if (!TASKS_SEPARATORS.IsEmpty()) TasksSeparators = TASKS_SEPARATORS;
+    }
+    // it is possible that some settings are not read and default ones are saved
+    SaveGeneralSettings();
+    SaveDefectsSettings();
+    SaveFormatSettings();
+    SaveLinksSettings();
 }
 
-void CSettings::SaveSettings()
+void CSettings::SaveGeneralSettings(bool AfterImporting)
 {
     DWORD buf;
     buf = Expand ? 1:0;
@@ -224,8 +259,6 @@ void CSettings::SaveSettings()
 
     Reg.AddValue(RegistryKey,"RightClickAction",REG_DWORD,(const BYTE*)&RightClickAction,sizeof(DWORD));
 
-    Reg.AddValue(RegistryKey,"Use TMS",REG_DWORD,(const BYTE*)&TMS,sizeof(DWORD));
-
     if (AutoRun)
     {
         char lpFileName[MAX_PATH+3];
@@ -236,14 +269,80 @@ void CSettings::SaveSettings()
     }
     else Reg.DeleteValue(AutoRunRegistryKey,AutoRunValueName);
 
-    Reg.AddValue(RegistryKey,"ViewTaskHotkey",REG_DWORD,(const BYTE*)&ViewTaskHotKey,sizeof(DWORD));
-    Reg.AddValue(RegistryKey,"ViewChildTasksHotkey",REG_DWORD,(const BYTE*)&ViewChildTasksHotKey,sizeof(DWORD));
     Reg.AddValue(RegistryKey,"xPos",REG_DWORD,(const BYTE*)&xPos,sizeof(DWORD));
-    Reg.AddValue(RegistryKey,"yPos",REG_DWORD,(const BYTE*)&yPos,sizeof(DWORD));    
+    Reg.AddValue(RegistryKey,"yPos",REG_DWORD,(const BYTE*)&yPos,sizeof(DWORD));
+    if (!AfterImporting)
+    {
+        buf = DefaultBrowser ? 1:0;
+        Reg.AddValue(RegistryKey,"DefaultBrowser",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
+        Reg.AddValue(RegistryKey,"PathToBrowser",REG_SZ,(const BYTE*)LPCTSTR(BrowserPath),BrowserPath.GetLength()+1);
+    }
+}
+
+void CSettings::SaveLinksSettings()
+{
+//  deleting old settings
+    int SubKeyIndex = 0;
+    CString SubKeyName;
+    std::vector<CString> SubKeys;
+
+    while (Reg.GetSubKeyName(RegistryKey+"\\"+LinksSubKey,SubKeyIndex,SubKeyName.GetBuffer(255)))
+    {
+        SubKeyName.ReleaseBuffer();
+        SubKeys.push_back(SubKeyName);
+        SubKeyIndex++;
+    }
+    for (int i=0; i<SubKeys.size(); i++)
+    {
+        Reg.DeleteKeyIncludingSubKeys(HKEY_CURRENT_USER,RegistryKey+"\\"+LinksSubKey+"\\"+SubKeys[i]);
+    }
+    SubKeys.clear();
+
+//  saving new settings
+    if (links.empty())
+    {
+        links.push_back(link("Alternative TMS","http://scc1/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
+                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,false));
+        links.push_back(link("Usual TMS","http://www.softcomputer.com/tms/viewtask.php?Client=%CLIENT%&ID=%ID%",
+                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,true));
+    }
+    for (i=0; i<links.size(); i++)
+    {
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"TaskURL",REG_SZ,(const BYTE*)LPCTSTR(links[i].TaskURL),links[i].TaskURL.GetLength()+1);
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ChildTasksURL",REG_SZ,(const BYTE*)LPCTSTR(links[i].ChildTasksURL),links[i].ChildTasksURL.GetLength()+1);
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewTaskHotkey",REG_DWORD,(const BYTE*)&links[i].ViewTaskHotKey,sizeof(DWORD));
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewChildTasksHotkey",REG_DWORD,(const BYTE*)&links[i].ViewChildTasksHotKey,sizeof(DWORD));
+        DWORD def = links[i].Default ? 1:0;
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Default",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
+    }
+}
+
+void CSettings::SaveFormatSettings()
+{
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxClient",REG_DWORD,(const BYTE*)&MaxClientName,sizeof(DWORD));
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxID",REG_DWORD,(const BYTE*)&MaxIDName,sizeof(DWORD));
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxExt",REG_DWORD,(const BYTE*)&MaxExt,sizeof(DWORD));
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(const BYTE*)LPCTSTR(Separators),Separators.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"TasksSeparators",REG_SZ,(const BYTE*)LPCTSTR(TasksSeparators),TasksSeparators.GetLength()+1);
+}
+
+void CSettings::SaveDefectsSettings()
+{
+    Reg.DeleteKey(RegistryKey,DefectsSubKey);
+    int defects_number = defects.size();
+    CString value_name, value; // value_name == "Item0"; value == "LAB;ST_LABGUI_SYNCH";
+    for (int i=0; i<defects_number; i++)
+    {
+        value_name.Format("Item%d",i);
+        value.Format("%s;%s",defects[i].ClientID,defects[i].STProject);
+        Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+    }
+    Reg.AddValue(RegistryKey+"\\"+LinksSubKey,"DefectsLink",REG_SZ,(const BYTE*)LPCTSTR(DefectsLink),DefectsLink.GetLength()+1);
 }
 
 bool CSettings::SettingsAvailable()
 {
+    // checking for new registry key
     if (Reg.KeyPresent(RegistryKey))
     {
         return true;
@@ -251,5 +350,101 @@ bool CSettings::SettingsAvailable()
     else
     {
         return false;
+    }
+}
+
+// removes characters that cannot be separators and returns the number of characters left in string
+int CSettings::RemoveUnacceptableSeparators(CString &String)
+{
+    int i = 0;
+    while (i<String.GetLength())
+    {
+        if (isalnum(String[i]))
+        {
+            String.Delete(i);
+        }
+        else
+        {
+            i++;
+        }
+    }
+    return String.GetLength();
+}
+
+// removes duplicate separators and returns the number of characters left in string
+int CSettings::RemoveDuplicateSeparators(CString &String)
+{
+    char duplicates[255];
+    ZeroMemory(duplicates,255);
+    int i = 0;
+    while (i<String.GetLength())
+    {
+        if (duplicates[String[i]])
+        {
+            String.Delete(i);
+        }
+        else
+        {
+            duplicates[String[i]]++;
+            i++;
+        }
+    }
+    return String.GetLength();
+}
+
+void CSettings::ImportSettings(LPCTSTR lpSubKey)
+{
+    if (Reg.KeyPresent(lpSubKey))
+    {
+        if (MessageBox(NULL,"Settings of previous TMS Launcher version were detected.\nThey can be imported to this version and then removed.\n\nWould you like to import previous settings?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+        {
+            // reading old settings
+            DWORD DWbuf;
+            DWORD DWordSize;
+
+            // reading general settings
+            DWordSize=sizeof(DWORD); // will be changed by ReadValue()
+            Reg.ReadValue(lpSubKey,"Expand at start",REG_DWORD,(LPBYTE)&DWbuf,DWordSize);
+            Expand = (DWbuf != 0);
+
+            DWordSize=sizeof(DWORD); // will be changed by ReadValue()
+            Reg.ReadValue(lpSubKey,"Minimize at start",REG_DWORD,(LPBYTE)&DWbuf,DWordSize);
+            Minimize = (DWbuf != 0);
+
+            DWordSize=sizeof(DWORD); // will be changed by ReadValue()
+            Reg.ReadValue(lpSubKey,"Single click",REG_DWORD,(LPBYTE)&DWbuf,DWordSize);
+            SingleClick = (DWbuf != 0);
+
+            DWordSize=sizeof(DWORD); // will be changed by ReadValue()
+            Reg.ReadValue(lpSubKey,"RightClickAction",REG_DWORD,(LPBYTE)&RightClickAction,DWordSize);
+            if ((RightClickAction < 0)||(RightClickAction > 1))
+                RightClickAction = 0;
+
+            DWordSize=sizeof(DWORD);
+            Reg.ReadValue(lpSubKey,"xPos",REG_DWORD,(LPBYTE)&xPos,DWordSize);
+
+            DWordSize=sizeof(DWORD);
+            Reg.ReadValue(lpSubKey,"yPos",REG_DWORD,(LPBYTE)&yPos,DWordSize);
+    
+            RECT Rect;
+            GetWindowRect(GetDesktopWindow(),&Rect);
+
+            if ((xPos < Rect.left)||(xPos > Rect.right)||(yPos < Rect.top)||(yPos > Rect.bottom))
+            {
+                xPos = -1;
+                yPos = -1;
+            }
+            char lpFileName[MAX_PATH+3];
+            DWORD size = MAX_PATH+2;
+            AutoRun = Reg.ReadValue(AutoRunRegistryKey,AutoRunValueName,REG_SZ,(LPBYTE)lpFileName,size);
+
+            // saving old settings as new settings
+            SaveGeneralSettings(true);
+        }
+        // removing old registry key
+        if (MessageBox(NULL,"Would you like to remove previous settings?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+        {
+            Reg.DeleteKeyIncludingSubKeys(HKEY_CURRENT_USER,lpSubKey);
+        }
     }
 }

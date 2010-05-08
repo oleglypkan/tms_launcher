@@ -6,6 +6,10 @@
 #if !defined(AFX_STDAFX_H__51353A8C_4FE8_4996_B9A6_EA2293CA582D__INCLUDED_)
 #define AFX_STDAFX_H__51353A8C_4FE8_4996_B9A6_EA2293CA582D__INCLUDED_
 
+#ifdef INCLUDE_VERID
+ static char stdafx_h[]="@(#)$RCSfile: stdafx.h,v $$Revision: 1.3 $$Date: 2005/05/25 16:17:02Z $";
+#endif
+
 // Change these values to use different versions
 #define WINVER      0x0400
 #define _WIN32_IE   0x0400

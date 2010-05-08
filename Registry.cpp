@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "registry.h"
 
+#ifndef NO_VERID
+ static char verid[]="@(#)$RCSfile: Registry.cpp,v $$Revision: 1.5 $$Date: 2005/06/17 14:00:21Z $"; 
+#endif
+
 void Registry::AddValue(LPCTSTR lpSubKey,LPCTSTR lpValueName,DWORD dwType,const BYTE *lpData,DWORD dwSizeOfData)
 {
     RegCreateKeyEx(hMainKey,                   // handle of an open key 
@@ -36,6 +40,18 @@ void Registry::DeleteKey(LPCTSTR lpSubKey, LPCTSTR lpValueName)
     RegDeleteKey(hKey, lpValueName);
     RegCloseKey(hKey);
 };
+
+bool Registry::DeleteKeyIncludingSubKeys(HKEY hKey, LPCTSTR lpSubKey)
+{
+    if (SHDeleteKey(hKey, lpSubKey) == ERROR_SUCCESS)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
 void Registry::DeleteValue(LPCTSTR lpSubKey, LPCTSTR lpValueName)
 {
@@ -81,7 +97,64 @@ bool Registry::ReadValue(LPCTSTR lpSubKey,LPCTSTR lpValueName,DWORD dwType,LPBYT
                         &dwType,                           // address of buffer for value type 
                         lpData,                            // address of data buffer 
                         &dwSizeOfData)                     // address of data buffer size 
-                        !=ERROR_SUCCESS) return false;
+                        !=ERROR_SUCCESS)
+    {
+        RegCloseKey(hKey);
+        return false;
+    }
     RegCloseKey(hKey);
     return true;
 };
+
+DWORD Registry::GetNumberOfValues(LPCTSTR lpSubKey, DWORD *lpcMaxValueNameLen, DWORD *lpcMaxValueLen)
+{
+    DWORD values;
+    RegCreateKeyEx(hMainKey,lpSubKey,0,"",REG_OPTION_NON_VOLATILE,KEY_QUERY_VALUE,NULL,&hKey,
+                   &dwDisposition);
+    if (RegQueryInfoKey(hKey,NULL,NULL,NULL,NULL,NULL,NULL,&values,lpcMaxValueNameLen,lpcMaxValueLen,NULL,NULL) == ERROR_SUCCESS)
+    {
+        RegCloseKey(hKey);
+        return values;
+    }
+    else
+    {
+        RegCloseKey(hKey);
+        return 0;
+    }
+}
+
+bool Registry::GetValueName(LPCTSTR lpSubKey, DWORD index, LPSTR ValueName, DWORD *ValueNameLength,
+                            DWORD *type)
+{
+    RegCreateKeyEx(hMainKey,lpSubKey,0,"",REG_OPTION_NON_VOLATILE,KEY_QUERY_VALUE,
+                   NULL,&hKey,&dwDisposition);
+
+    if (RegEnumValue(hKey,index,ValueName,ValueNameLength,NULL,type,NULL,NULL) == ERROR_SUCCESS)
+    {
+        RegCloseKey(hKey);
+        return true;
+    }
+    else
+    {
+        RegCloseKey(hKey);
+        return false;
+    }    
+}
+
+bool Registry::GetSubKeyName(LPCTSTR lpSubKey, DWORD index, LPSTR SubKeyName)
+{
+    RegCreateKeyEx(hMainKey,lpSubKey,0,"",REG_OPTION_NON_VOLATILE,KEY_ENUMERATE_SUB_KEYS,
+                   NULL,&hKey,&dwDisposition);
+    DWORD lpcName;
+    FILETIME FileTime;
+    LONG Res = RegEnumKeyEx(hKey,index,SubKeyName,&lpcName,NULL,NULL,NULL,&FileTime);
+    RegCloseKey(hKey);
+    if (Res == ERROR_SUCCESS)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
