@@ -313,7 +313,7 @@ END
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST ""res\\\\TMS_Launcher.exe.manifest""\r\n"
-    "1 SCCSID { ""@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.28 $$Date: 2006/03/16 18:02:08Z $\\0"" }\0"
+    "1 SCCSID { ""@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.29 $$Date: 2006/05/04 09:24:27Z $\\0"" }\0"
 END
 
 #endif    // APSTUDIO_INVOKED
@@ -326,8 +326,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,0,0
- PRODUCTVERSION 2,2,0,0
+ FILEVERSION 2,3,0,0
+ PRODUCTVERSION 2,3,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -345,14 +345,14 @@ BEGIN
             VALUE "Comments", "Designed and developed by Oleg Lypkan\0"
             VALUE "CompanyName", "Information Systems Development\0"
             VALUE "FileDescription", "TMS_Launcher Module\0"
-            VALUE "FileVersion", "2, 2, 0, 0\0"
+            VALUE "FileVersion", "2, 3, 0, 0\0"
             VALUE "InternalName", "TMS_Launcher\0"
             VALUE "LegalCopyright", "Copyright 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "TMS_Launcher.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "TMS_Launcher Module\0"
-            VALUE "ProductVersion", "2, 2, 0, 0\0"
+            VALUE "ProductVersion", "2, 3, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -375,7 +375,7 @@ END
 // Generated from the TEXTINCLUDE 3 resource.
 //
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "res\\TMS_Launcher.exe.manifest"
-1 SCCSID { "@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.28 $$Date: 2006/03/16 18:02:08Z $\0" }
+1 SCCSID { "@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.29 $$Date: 2006/05/04 09:24:27Z $\0" }
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 

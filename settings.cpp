@@ -11,7 +11,7 @@
 #include "About.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.29 $$Date: 2006/03/30 14:33:10Z $"; 
+ static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.30 $$Date: 2006/05/29 14:15:16Z $"; 
 #endif
 
 extern CString szWinName;
@@ -24,7 +24,7 @@ bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
 
 CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
                      const char* DefectsSubKeyName, const char* FormatSubKeyName,
-                     const char* LinksSubKeyName, const char* SoftTestSubKeyName):Reg(HKEY_CURRENT_USER)
+                     const char* LinksSubKeyName, const char* SoftTestSubKeyName):Reg(HKEY_CURRENT_USER),x(138)
 {
     AutoRun = false;
     Expand = false;
@@ -232,6 +232,17 @@ void CSettings::LoadSettings()
         {
             Password = "";
         }
+        else // password is not empty
+        {
+            // determining if it is necessary to decrypt the password
+            CString Encrypted = "";
+            if (Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"Encrypted",
+                REG_SZ,(LPBYTE)Encrypted.GetBuffer(1),1))
+            {
+                Crypt(Password);
+            }
+            Encrypted.ReleaseBuffer();
+        }
 
         DWordSize=sizeof(DWORD);
         Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"Default",
@@ -381,7 +392,18 @@ void CSettings::LoadSettings()
     temp = "";
     Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPassword",REG_SZ,(LPBYTE)temp.GetBuffer(1025),1025);
     temp.ReleaseBuffer();
-    if (!temp.IsEmpty() || SoftTestLogin.Compare("guest")==0) SoftTestPassword = temp;
+    if (!temp.IsEmpty() || SoftTestLogin.Compare("guest")==0)
+    {
+        SoftTestPassword = temp;
+        // determining if it is necessary to decrypt the password
+        CString Encrypted = "";
+        if (Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"Encrypted",
+            REG_SZ,(LPBYTE)Encrypted.GetBuffer(1),1))
+        {
+            Crypt(SoftTestPassword);
+        }
+        Encrypted.ReleaseBuffer();
+    }
 
     // reading format settings
     DWordSize=sizeof(DWORD); // will be changed by ReadValue()
@@ -481,7 +503,10 @@ void CSettings::SaveLinksSettings()
         def = links[i].DefectsInSoftTest ? 1:0;
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"DefectsInSoftTest",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Login",REG_SZ,(const BYTE*)LPCTSTR(links[i].Login),links[i].Login.GetLength()+1);
-        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Password",REG_SZ,(const BYTE*)LPCTSTR(links[i].Password),links[i].Password.GetLength()+1);
+        CString Encrypted = links[i].Password;
+        Crypt(Encrypted);
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Password",REG_SZ,(const BYTE*)LPCTSTR(Encrypted),Encrypted.GetLength()+1);
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Encrypted",REG_SZ,(const BYTE*)LPCTSTR(""),0);
     }
 }
 
@@ -498,9 +523,12 @@ void CSettings::SaveFormatSettings()
 void CSettings::SaveSoftTestSettings()
 {
     Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPath",REG_SZ,(const BYTE*)LPCTSTR(SoftTestPath),SoftTestPath.GetLength()+1);
-    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestLogin",REG_SZ,(const BYTE*)LPCTSTR(SoftTestLogin),SoftTestLogin.GetLength()+1);
-    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPassword",REG_SZ,(const BYTE*)LPCTSTR(SoftTestPassword),SoftTestPassword.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestFilter",REG_SZ,(const BYTE*)LPCTSTR(SoftTestFilterName),SoftTestFilterName.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestLogin",REG_SZ,(const BYTE*)LPCTSTR(SoftTestLogin),SoftTestLogin.GetLength()+1);
+    CString Encrypted = SoftTestPassword;
+    Crypt(Encrypted);
+    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPassword",REG_SZ,(const BYTE*)LPCTSTR(Encrypted),Encrypted.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"Encrypted",REG_SZ,(const BYTE*)LPCTSTR(""),0);
 }
 
 void CSettings::SaveDefectsSettings()
@@ -731,4 +759,13 @@ bool CSettings::CorrectCRLF(CString &sSeparators, CString &sTasksSeparators)
         correction = true;
     }
     return correction;
+}
+
+void CSettings::Crypt(CString &String)
+{
+    if (String.IsEmpty()) return;
+    for (int i = 0; i < String.GetLength(); i++)
+    {
+        String.SetAt(i,String.GetAt(i)^(i+x));
+    }
 }

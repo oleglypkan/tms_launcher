@@ -9,7 +9,7 @@
 #include "stdafx.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.47 $$Date: 2006/03/21 14:55:57Z $"; 
+ static char verid[]="@(#)$RCSfile: maindlg.cpp,v $$Revision: 1.48 $$Date: 2006/05/04 14:53:44Z $"; 
 #endif
 
 #include <fstream.h>
@@ -256,6 +256,7 @@ void CMainDlg::OnClose(UINT wNotifyCode, INT wID, HWND hWndCtl)
     Settings.SaveGeneralSettings();
 
     DeleteSysTrayIcon(m_hWnd);
+    DestroyMenu(ContextMenu);
     DestroyMenu(ClipboardSubMenu);
     DestroyMenu(SettingsSubMenu);
     DestroyMenu(SystrayMenu);
@@ -389,7 +390,7 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
     if (busy) return;
 
     // called after VIEW_TASK, VIEW_CHILD_TASKS or VIEW_PARENT_TASK button was pressed
-    if ((wID == VIEW_TASK)||(wID == VIEW_CHILD_TASKS)||(wID == VIEW_PARENT_TASK))
+    if ((wID == VIEW_TASK)||(wID == VIEW_CHILD_TASKS)||(wID == VIEW_PARENT_TASK)||(wNotifyCode==1))
     {
         if (!GetTaskNameFromRichEdit(sTasks))
         {
@@ -978,6 +979,55 @@ void CMainDlg::OnContextMenu(HWND hwndFrom, CPoint CursorPos)
                     OnViewTask(0,VIEW_PARENT_TASK_HOTKEY,0);
                     break;
             }
+        }
+        else  // processing context menus for main window buttons
+        {
+            CMenu ButtonMenu;
+            ButtonMenu = CreatePopupMenu();
+            for (int i=0; i < Settings.links.size(); i++)
+            {
+                ButtonMenu.AppendMenu(MF_ENABLED,i+1,Settings.links[i].Caption);
+                if (Settings.links[i].Default)
+                {
+                    ButtonMenu.SetMenuDefaultItem(i+1);
+                }
+            }
+            CButton Button = hwndFrom;
+            RECT Rect;
+            Button.GetWindowRect(&Rect);
+            UINT Command = 0;
+
+            if (hwndFrom == GetDlgItem(VIEW_TASK))
+            {
+                Command = TrackPopupMenuEx(ButtonMenu,TPM_RETURNCMD|TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_TOPALIGN,Rect.left,Rect.bottom,m_hWnd,NULL);
+                if (Command != 0)
+                {
+                    OnViewTask(1,(Command-1)*3,0);
+                }
+            }
+            else
+            {
+                if (hwndFrom == GetDlgItem(VIEW_CHILD_TASKS))
+                {
+                    Command = TrackPopupMenuEx(ButtonMenu,TPM_RETURNCMD|TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_TOPALIGN,Rect.left,Rect.bottom,m_hWnd,NULL);
+                    if (Command != 0)
+                    {
+                        OnViewTask(1,(Command-1)*3+1,0);
+                    }
+                }
+                else
+                {
+                    if (hwndFrom == GetDlgItem(VIEW_PARENT_TASK))
+                    {
+                        Command = TrackPopupMenuEx(ButtonMenu,TPM_RETURNCMD|TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_TOPALIGN,Rect.left,Rect.bottom,m_hWnd,NULL);
+                        if (Command != 0)
+                        {
+                            OnViewTask(1,(Command-1)*3+2,0);
+                        }
+                    }
+                }
+            }
+            DestroyMenu(ButtonMenu);
         }
     }
 }

@@ -10,7 +10,7 @@
 #define SETTINGS_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.21 $$Date: 2006/03/30 14:33:17Z $";
+ static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.22 $$Date: 2006/05/29 14:15:32Z $";
 #endif
 
 #include "resource.h"
@@ -145,6 +145,7 @@ public:
     bool IsDefect(const char *Client, CString *Project, int *index);
     bool OpenDefectsInSoftTest(INT wID);
 protected:
+    BYTE x;
     Registry Reg;
     CString RegistryKey;
     CString DefectsSubKey;
@@ -154,6 +155,7 @@ protected:
     CString AutoRunRegistryKey;
     CString AutoRunValueName;
     CString SoftTestCommandLine; // command line that used to launch SoftTest
+    void Crypt(CString &String);
 };
 
 #endif

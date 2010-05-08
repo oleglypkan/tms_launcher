@@ -812,6 +812,7 @@ public:
                 }
                 temp_links[realpos] = URLEditDlg.URL;
             }
+            sort_links();
         }
     }
 
@@ -868,7 +869,6 @@ public:
 
     void OnOK()
     {
-        sort_links();
         URLsList.ResetContent();
         DefaultURL.ResetContent();
         Settings.links.clear();
