@@ -14,10 +14,11 @@
 #endif // _MSC_VER >= 1000
 
 #ifdef INCLUDE_VERID
- static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.16 $$Date: 2006/02/08 13:37:23Z $";
+ static char maindlg_h[]="@(#)$RCSfile: maindlg.h,v $$Revision: 1.18 $$Date: 2006/03/21 14:56:08Z $";
 #endif
 
 #include "Systray.h"
+#include "Task.h"
 #include <vector>
 extern const UINT WM_TMS_LAUNCHER_ACTIVATE;
 
@@ -44,6 +45,13 @@ public:
         COMMAND_ID_HANDLER_EX(VIEW_CHILD_TASKS_HOTKEY,OnViewTask)
         COMMAND_ID_HANDLER_EX(VIEW_PARENT_TASK_HOTKEY,OnViewTask)
         COMMAND_ID_HANDLER_EX(IDC_SETTINGS,OnSettings)
+        COMMAND_ID_HANDLER_EX(ID_SETTINGS_GENERAL,OnSettings)
+        COMMAND_ID_HANDLER_EX(ID_SETTINGS_URLS,OnSettings)
+        COMMAND_ID_HANDLER_EX(ID_SETTINGS_DEFECTS,OnSettings)
+        COMMAND_ID_HANDLER_EX(ID_SETTINGS_FORMAT,OnSettings)
+        COMMAND_ID_HANDLER_EX(ID_SETTINGS_SOFTTEST,OnSettings)
+        COMMAND_ID_HANDLER_EX(ID_SHOW_HIDE_WINDOW,OnShowHide)
+        COMMAND_ID_HANDLER_EX(ID_CLEAR_HISTORY,OnClearHistory)
         COMMAND_ID_HANDLER_EX(IDC_EXPAND,OnExpand)
         COMMAND_ID_HANDLER_EX(IDC_CONTENTS,OnContents)
         COMMAND_ID_HANDLER_EX(ID_MENU_UNDO,OnContextMenuCommand)
@@ -70,15 +78,20 @@ public:
     void OnContextMenuCommand(UINT code, int idFrom, HWND hwndFrom);
     void OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnSettings(UINT wNotifyCode, INT wID, HWND hWndCtl);
+    void OnShowHide(UINT wNotifyCode, INT wID, HWND hWndCtl);
+    void OnClearHistory(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnExpand(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnContents(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnHide(UINT wNotifyCode, INT wID, HWND hWndCtl);
     void OnClose(UINT wNotifyCode, INT wID, HWND hWndCtl);
     CRichEditCtrl TaskNameControl;
     CComboBox TaskNameCombo;
+    void OpenTask(const char *Request, bool SingleTask);
+    void OpenDefects(const std::vector<TASKNAME> &Defects, INT wID);
 protected:
     CMenu SystrayMenu;
-    CMenu SystraySubMenu;
+    CMenu ClipboardSubMenu;
+    CMenu SettingsSubMenu;
     CMenu ContextMenu;
     bool Expanded;
     bool ShowModal;
@@ -86,6 +99,8 @@ protected:
     bool GetTaskNameFromRichEdit(CString &sTasks);
     bool GetTaskNameFromClipboard(CString &sTasks);
     void CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID);
+    void AddToHistory(const char *item);
+    void OpenDefectsInOneProject(const char *Project, const char *IDs, INT wID);
 };
 
 

@@ -10,8 +10,12 @@
 #define CMDLINE_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char CmdLine_h[]="@(#)$RCSfile: CmdLine.h,v $$Revision: 1.3 $$Date: 2006/02/03 16:18:23Z $";
+ static char CmdLine_h[]="@(#)$RCSfile: CmdLine.h,v $$Revision: 1.6 $$Date: 2006/03/23 14:17:23Z $";
 #endif
+
+#include <vector>
+#include <fstream.h>
+#include "Task.h"
 
 class CmdLine
 {
@@ -20,8 +24,14 @@ public:
     void GetTasksList(const char *InputFileName, const char *OutputFileName, bool parent);
     CmdLine();
 private:
-    int Parameter;
-    void PrintInfo();
+    CString Parameters[5];
+//  Parameters[0] - "-c/p"
+//  Parameters[1] - "-name"
+//  Parameters[2] - "-prod"
+//  Parameters[3] - "-in"
+//  Parameters[4] - "-out"
+    void StringToArgv(const char *CommandLine, std::vector<CString> &params);
+    void PrintTask(ofstream &OutFile, CHILD &ChildTask);
 };
 
 #endif

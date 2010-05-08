@@ -1,0 +1,40 @@
+<!-- @(#)$RCSfile: softtest.html,v $$Revision: 1.2 $$Date: 2006/03/31 11:10:00Z $ -->
+<HTML>
+<HEAD>
+  <TITLE> TMS Launcher HTML Help </TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+  <link rel="STYLESHEET" href="..\style.css" type="text/css">
+</HEAD>
+
+<BODY>
+<table border="0">
+<tr>
+   <td><IMG SRC="Pictures\logo.gif"></td>
+   <td class="caption"> Launcher</td>
+</tr>
+</table>
+
+<hr size="1" noshade>
+
+<H2 align="center" class="boldfont">SoftTest page of settings window</H2>
+<IMG SRC="Pictures\softtest.png">
+<P align="justify" class="font">
+SoftTest page allows to specify some SoftTest settings:
+<UL class="font">
+  <LI><b>Path to SoftTest</b>
+      <br>Full path to SoftTest binary file including file name
+  <LI><b>SoftTest filter name</b>
+      <br>Name of the filter that will be used by the program to open defects.
+      The name should be unique for each SoftTest project. So, %PROJECT% variable
+      should not be removed from the filter name.
+  <LI><b>Login</b>
+      <br>User's login name to enter to SoftTest application
+  <LI><b>Password</b>
+      <br>User's password to enter to SoftTest application
+</UL>
+<P align="justify" class="font">
+<b>NOTE</b>: Both Login and Password are stored in Windows Registry in not in cipher form.
+So, if someone has administrator privileges on your PC he can view them.
+</P>
+</BODY>
+</HTML>

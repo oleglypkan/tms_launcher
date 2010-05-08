@@ -11,56 +11,44 @@
 #include "settings.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.5 $$Date: 2006/02/07 16:28:46Z $"; 
+ static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.9 $$Date: 2006/03/23 13:16:33Z $"; 
 #endif
  
 extern CSettings Settings;
 bool isalpha_cp1251(char ch);
+int CompareNoCaseCP1251(const char *string1, const char *string2);
 
-bool TASK::IsTaskNameValid(CString &sTaskName, CString &sClientName, CString &sIDName)
+bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CString &Sep, CString &sIDName)
 {
 //  Task name format: [%CLIENT%-]%ID%[-%EXT%]
 
+    CString sTaskName = OriginalTask;
     if (sTaskName.IsEmpty()) return false;
 
-    sTaskName.TrimLeft();
-    sTaskName.TrimRight();
-    CString OriginalTask = sTaskName;
+    CString Ext = "";
 
-    if ((sTaskName.GetLength()<Settings.MinTaskName)||
-        (sTaskName.GetLength()>Settings.MaxTaskName)) return false;
-
-    for (int i=1; i<Settings.Separators.GetLength(); i++)
-    {
-        sTaskName.Replace(Settings.Separators[i],Settings.Separators[0]);
-    }
-
-    int pos = sTaskName.Find(Settings.Separators[0],0);
+    int pos = sTaskName.FindOneOf(Settings.Separators);
 
     // parsing task name
     if (pos > -1)
     {
+        Sep = sTaskName[pos];
         sClientName = sTaskName.Left(pos);
         sIDName = sTaskName.Right(sTaskName.GetLength()-pos-1);
-        sIDName.TrimLeft(Settings.Separators[0]);
-        pos = sIDName.Find(Settings.Separators[0],0);
+        sIDName.TrimLeft(Settings.Separators);
+        pos = sIDName.FindOneOf(Settings.Separators);
         if (pos > -1)
         {
-            int ext_len = sIDName.GetLength()-pos-1;
-            if ((ext_len < Settings.MinExt) || (ext_len > Settings.MaxExt))
-            {
-                return false;
-            }
-            else
-            {
-                sIDName.Delete(pos,ext_len+1);
-            }
+            Ext = sIDName.Right(sIDName.GetLength()-pos-1);
+            Ext.TrimLeft(Settings.Separators);
+            sIDName.Delete(pos,sIDName.GetLength()-pos);
         }
     }
     else // there are no separators in the task name
         if (sTaskName.GetLength()<=Settings.MaxIDName)
         {
             sClientName = "";
+            Sep = "";
             sIDName = sTaskName;
         }
         else // wrong task name format
@@ -77,10 +65,9 @@ bool TASK::IsTaskNameValid(CString &sTaskName, CString &sClientName, CString &sI
         if (!sClientName.IsEmpty())
         {
             // checking for correct Client name
-            for (i=0; i<sClientName.GetLength()-1; i++)
+            for (int i=0; i<sClientName.GetLength()-1; i++)
             {
                 if (isdigit((unsigned char)(sClientName[i]))) return false;
-//                if (!isalpha_cp1251((unsigned int)(sClientName[i]))) return false;
             }
             // the last symbol in Client Name can be either an alpha character or a number (i.e. QARD3)
             if ((!isalpha_cp1251((unsigned char)(sClientName[sClientName.GetLength()-1]))) && (!isdigit((unsigned char)(sClientName[sClientName.GetLength()-1]))))
@@ -96,34 +83,108 @@ bool TASK::IsTaskNameValid(CString &sTaskName, CString &sClientName, CString &sI
     else
     {
         // checking for correct ID
-        for (i=0; i<sIDName.GetLength(); i++)
+        for (int i=0; i<sIDName.GetLength(); i++)
         {
             if (!isdigit((unsigned int)sIDName[i])) return false;
         }
     }
-    sTaskName = OriginalTask;
+    
+    if ((Ext.GetLength() < Settings.MinExt) || (Ext.GetLength() > Settings.MaxExt))
+    {
+        return false;
+    }
     return true;
 }
 
-void TASK::ParseTasks(const char *strTasks, std::vector<CString> &Tasks)
+// separate items between tasks separators symbols
+void TASK::SimpleParseTasks(const char *strTasks, std::vector<CString> &Tasks)
 {
     CString sTasks = strTasks;
     Tasks.clear();
-    for (int i=1; i<Settings.TasksSeparators.GetLength(); i++)
-    {
-        sTasks.Replace(Settings.TasksSeparators[i],Settings.TasksSeparators[0]);
-    }
+
     int pos = -1;
-    while ((pos = sTasks.Find(Settings.TasksSeparators[0],0)) != -1)
+    while (!sTasks.IsEmpty())
     {
+        pos = sTasks.FindOneOf(Settings.TasksSeparators);
+        if (pos == -1)
+        {
+            pos = sTasks.GetLength();
+        }
         CString temp = sTasks.Left(pos);
+        temp.TrimLeft(Settings.Separators);
+        temp.TrimRight(Settings.Separators);
         Tasks.push_back(temp);
         sTasks.Delete(0,pos);
-        sTasks.TrimLeft(Settings.TasksSeparators[0]);
+        sTasks.TrimLeft(Settings.TasksSeparators);
     }
-    if (!sTasks.IsEmpty())
+}
+
+// separate items between tasks separators symbols, items are checked for correct task name,
+// and saved with separated Client, Separator and ID parts.
+// Also defects are additionaly saved to separate array and sorted
+// PROJECT is saved instead of Client for defects
+bool TASK::ComplexParseTasks(const char *strTasks, std::vector<TASKNAME> &Tasks, std::vector<TASKNAME> &Defects, int &items)
+{
+    Tasks.clear();
+    Defects.clear();
+
+    CString sTasks = strTasks;
+
+    items = 0;
+    int pos = -1;
+    bool AllTasksValid = true;
+    CString Client, Sep, ID, Project;
+
+    while (!sTasks.IsEmpty())
     {
-        Tasks.push_back(sTasks);
+        pos = sTasks.FindOneOf(Settings.TasksSeparators);
+        if (pos == -1)
+        {
+            pos = sTasks.GetLength();
+        }
+
+        items++;
+        CString temp = sTasks.Left(pos);
+        temp.TrimLeft(Settings.Separators);
+        temp.TrimRight(Settings.Separators);
+        if (IsTaskNameValid(temp,Client,Sep,ID))
+        {
+            Tasks.push_back(TASKNAME(Client,Sep,ID));
+            if (Settings.IsDefect(Client, &Project, NULL))
+            {
+                Project.MakeUpper();
+                Defects.push_back(TASKNAME(Project,Sep,ID));
+            }
+        }
+        else
+        {
+            AllTasksValid = false;
+        }
+        sTasks.Delete(0,pos);
+        sTasks.TrimLeft(Settings.TasksSeparators);
+    }
+    
+    sort_defects(Defects);
+
+    return AllTasksValid;
+}
+
+void TASK::sort_defects(std::vector<TASKNAME> &Defects)
+{
+    for (int i = 0; i < Defects.size() - 1; i++)
+    {
+        bool exchange = false;
+        for (int j = 1; j < Defects.size() - i; j++)
+        {
+            if (CompareNoCaseCP1251(Defects[j-1].Client,Defects[j].Client) > 0)
+            {
+                TASKNAME temp = Defects[j-1];
+                Defects[j-1] = Defects[j];
+                Defects[j] = temp;
+                exchange = true;
+            }
+        }
+        if (!exchange) break;
     }
 }
 
@@ -211,7 +272,7 @@ int TASK::ParseHTMLForChildDefects(const CString &HTML, std::vector<CString> &Ta
 }
 
 // 0 - child task(s) found, 1 - no child task(s)
-int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML, std::vector<CString> &Tasks)
+int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML, std::vector<CHILD> &Tasks)
 {
     Tasks.clear();
     long pos = HTML.Find("No tasks found...<hr size=1>");
@@ -222,13 +283,29 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
     pos = HTML.Find("<A target=task");
     while (pos != -1)
     {
-        CString Child = "";
-        Child = HTML.Left(HTML.Find("</a>",pos));
-        Child = Child.Right(Child.GetLength()-Child.ReverseFind('>')-1);
-        if (ParentTask.CompareNoCase(Child) != 0)
+        // searching for task
+        CHILD Child;
+        Child.TaskName = "";
+        Child.Product = "";
+        Child.TaskName = HTML.Left(HTML.Find("</a>",pos));
+        Child.TaskName = Child.TaskName.Right(Child.TaskName.GetLength()-Child.TaskName.ReverseFind('>')-1);
+        if (ParentTask.CompareNoCase(Child.TaskName) != 0)
         {
+            // searching for "Product" of the task
+            for (int i = 0; i <= 2; i++)
+            {
+                pos = HTML.Find("<td",pos+1);
+            }
+            if (pos != -1)
+            {
+                Child.Product = HTML.Left(HTML.Find("</td>",pos+1));
+                Child.Product = Child.Product.Right(Child.Product.GetLength()-Child.Product.ReverseFind('>')-1);
+            }
+            // adding the task
             Tasks.push_back(Child);
         }
+
+        // searching for next task
         pos = HTML.Find("<A target=task",pos+1);
     }
     return 0;

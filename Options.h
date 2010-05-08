@@ -106,7 +106,7 @@ public:
         }
         if (Settings.DefaultBrowser) SendDlgItemMessage(IDC_DEFAULT_BROWSER,BM_SETCHECK,BST_CHECKED,0);
         PathToBrowser.Attach(GetDlgItem(IDC_BROWSER_PATH));
-        PathToBrowser.LimitText(_MAX_PATH);
+        PathToBrowser.LimitText(MAX_PATH);
         PathToBrowser.SetWindowText(Settings.BrowserPath);
         return 0;
     }
@@ -185,7 +185,7 @@ public:
         Settings.RightClickAction = RightClickAction;
         Settings.RightClickAction2 = RightClickAction2;        
         Settings.SingleClick = SingleClick;
-        PathToBrowser.GetWindowText(Settings.BrowserPath.GetBuffer(_MAX_PATH+1),_MAX_PATH+1);
+        PathToBrowser.GetWindowText(Settings.BrowserPath.GetBuffer(MAX_PATH+1),MAX_PATH+1);
         Settings.BrowserPath.ReleaseBuffer();
         Settings.BrowserPath.TrimLeft();
         Settings.BrowserPath.TrimRight();
@@ -259,7 +259,7 @@ public:
 
         // set minimum and maximum positions of spin button
         SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETRANGE,0,
-                    (LPARAM)MAKELONG((short)Settings.MaxPossibleHistory,(short)1));
+                    (LPARAM)MAKELONG((short)Settings.MaxPossibleHistory,(short)0));
         // set current position of spin button to Maximum log file size
         SendMessage(GetDlgItem(IDC_MAX_SPIN),(UINT)UDM_SETPOS,0,
                     (LPARAM) MAKELONG ((short)Settings.MaxHistoryItems, 0));
@@ -308,8 +308,6 @@ public:
         sMaxExtName.GetWindowText(temp.GetBuffer(max_value_length),max_value_length+1);
         temp.ReleaseBuffer();
         Settings.MaxExt = atoi(temp);
-        Settings.MinTaskName = Settings.MinClientName+Settings.MinIDName;
-        Settings.MaxTaskName = Settings.MaxClientName+Settings.MaxIDName+Settings.MaxExt+2; // 2 - separators 
 
         sSeparators.GetWindowText(temp.GetBuffer(255),255+1);
         temp.ReleaseBuffer();
@@ -410,7 +408,12 @@ public:
             MessageBox(Message,szWinName,MB_ICONERROR);
             return false;
         }
-        
+        if (Settings.CorrectCRLF(temp,temp2)) // correction was done
+        {
+            sSeparators.SetWindowText(temp);
+            sTasksSeparators.SetWindowText(temp2);
+            MessageBox("Characters 'CR' and 'LF' should be used simultaneously as a separator.\nNecessary corrections have been made to the settings",szWinName,MB_ICONINFORMATION);
+        }
         return true;
     }
 
@@ -466,7 +469,7 @@ public:
         TaskHotkey.Attach(GetDlgItem(VIEW_TASK_HOTKEY));
         ChildTasksHotkey.Attach(GetDlgItem(VIEW_CHILD_TASKS_HOTKEY));
         ParentTaskHotkey.Attach(GetDlgItem(VIEW_PARENT_TASK_HOTKEY));
-        
+
         CaptionEdit.SetWindowText(URL.Caption);
         TaskURL.SetWindowText(URL.TaskURL);
         ChildTasksURL.SetWindowText(URL.ChildTasksURL);
@@ -475,6 +478,7 @@ public:
         TaskHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewTaskHotKey,0);
         ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewChildTasksHotKey,0);
         ParentTaskHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewParentTaskHotKey,0);
+        SendDlgItemMessage(IDC_ST_DEFECTS,BM_SETCHECK,URL.DefectsInSoftTest ? BST_CHECKED : BST_UNCHECKED,0);
 
         switch(Action)
         {
@@ -629,11 +633,12 @@ public:
             URL.ViewTaskHotKey = Hotkey1;
             URL.ViewChildTasksHotKey = Hotkey2;
             URL.ViewParentTaskHotKey = Hotkey3;
+            URL.DefectsInSoftTest = (SendDlgItemMessage(IDC_ST_DEFECTS,BM_GETCHECK,0,0) == BST_CHECKED);
         }
         EndDialog(wID);
         return 0;
     }
-    
+
     int GetPosByCaption(const char *caption)
     {
         for (int i=0; i<(*Links).size(); i++)
@@ -761,7 +766,7 @@ public:
     void OnNewLink(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
         int position, realpos;
-        URLEditPage URLEditDlg(0,link("","","",0,0,0,false,"",""),&temp_links);
+        URLEditPage URLEditDlg(0,link("","","",0,0,0,false,"","",false),&temp_links);
 
         if ((wID == IDC_LINK_COPY) || (wID == IDC_LINK_EDIT))
         {
@@ -1151,6 +1156,132 @@ public:
     }
 };
 
+class SoftTestPage : public Mortimer::COptionPageImpl<SoftTestPage,CPropPage>
+{
+public:
+    enum { IDD = SOFTTEST_PAGE };
+    CEdit SoftTestPath;
+    CEdit SoftTestFilter;
+    CEdit SoftTestLogin;
+    CEdit SoftTestPassword;
+
+    BEGIN_MSG_MAP(SoftTestPage)
+        MSG_WM_INITDIALOG(OnInitDialog)
+        COMMAND_ID_HANDLER_EX(IDC_SOFTTEST_BROWSE,OnBrowse)
+        REFLECT_NOTIFICATIONS()
+    END_MSG_MAP()
+
+    // called once when options dialog is opened
+    LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
+    {
+        SoftTestPath.Attach(GetDlgItem(IDC_SOFTTEST_PATH));
+        SoftTestPath.LimitText(MAX_PATH);
+        SoftTestPath.SetWindowText(Settings.SoftTestPath);
+
+        SoftTestFilter.Attach(GetDlgItem(IDC_SOFTTEST_FILTER));
+        SoftTestFilter.LimitText(MAX_PATH);
+        SoftTestFilter.SetWindowText(Settings.SoftTestFilterName);
+
+        SoftTestLogin.Attach(GetDlgItem(IDC_SOFTTEST_LOGIN));
+        SoftTestLogin.LimitText(1024);
+        SoftTestLogin.SetWindowText(Settings.SoftTestLogin);
+
+        SoftTestPassword.Attach(GetDlgItem(IDC_SOFTTEST_PASSWORD));
+        SoftTestPassword.LimitText(1024);
+        SoftTestPassword.SetWindowText(Settings.SoftTestPassword);
+
+        return 0;
+    }
+
+    void OnBrowse(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        CFileDialog Browser(TRUE,NULL,NULL,OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_LONGNAMES|OFN_PATHMUSTEXIST,
+                            "Programs\0*.exe");
+        CString temp = szWinName;
+        temp += " - Select SoftTest executable";
+        Browser.m_ofn.lpstrTitle = temp;
+        Browser.DoModal();
+        if (lstrcmp(Browser.m_szFileName,"")!=0)
+        {
+            SoftTestPath.SetWindowText(Browser.m_szFileName);
+        }
+    }
+
+    bool OnSetActive(COptionItem *pItem)
+    {
+        return true;
+    }
+    
+    bool OnKillActive(COptionItem *pItem)
+    {
+        CString temp = "";
+        // checking for correct Path to SoftTest value
+        SoftTestPath.GetWindowText(temp.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        temp.ReleaseBuffer();
+        temp.TrimLeft();
+        temp.TrimRight();
+        if (temp.IsEmpty())
+        {
+            MessageBox("\"Path to SoftTest\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
+            return false;
+        }
+        // checking for correct SoftTest filter name value
+        temp = "";
+        SoftTestFilter.GetWindowText(temp.GetBuffer(1025),1025);
+        temp.ReleaseBuffer();
+        if (temp.IsEmpty())
+        {
+            MessageBox("\"SoftTest filter name\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
+            return false;
+        }
+        if (temp.Find("%PROJECT%") == -1)
+        {
+            MessageBox("%PROJECT% variable must not be removed\nfrom filter name. Please add it to filter name",szWinName,MB_ICONERROR);
+            return false;
+        }
+        CString login = "";
+        SoftTestLogin.GetWindowText(login.GetBuffer(1025),1025);
+        login.ReleaseBuffer();
+        if (login.IsEmpty())
+        {
+            MessageBox("\"Login\" field must not be empty.\nPlease fill it with correct value",szWinName,MB_ICONERROR);
+            return false;
+        }
+        CString password = "";
+        SoftTestPassword.GetWindowText(password.GetBuffer(1025),1025);
+        password.ReleaseBuffer();
+        if (password.IsEmpty() && login.Compare("guest")!=0)
+        {
+            MessageBox("\"Password\" field must not be empty unless login is \"guest\".\nPlease fill it with correct value",szWinName,MB_ICONERROR);
+            return false;
+        }
+        return true;
+    }
+
+    void OnOK()
+    {
+        // saving SoftTest settings
+        SoftTestPath.GetWindowText(Settings.SoftTestPath.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        Settings.SoftTestPath.ReleaseBuffer();
+        Settings.SoftTestPath.TrimLeft();
+        Settings.SoftTestPath.TrimRight();
+
+        SoftTestFilter.GetWindowText(Settings.SoftTestFilterName.GetBuffer(1025),1025);
+        Settings.SoftTestFilterName.ReleaseBuffer();
+
+        SoftTestLogin.GetWindowText(Settings.SoftTestLogin.GetBuffer(1025),1025);
+        Settings.SoftTestLogin.ReleaseBuffer();
+
+        SoftTestPassword.GetWindowText(Settings.SoftTestPassword.GetBuffer(1025),1025);
+        Settings.SoftTestPassword.ReleaseBuffer();
+
+        Settings.SaveSoftTestSettings();
+    }
+
+    // called every time when whole sheet is closed by clicking on Cancel button
+    void OnCancel() {}
+};
+
 class DefectsPage : public Mortimer::COptionPageImpl<DefectsPage,CPropPage>
 {
 public:
@@ -1220,6 +1351,7 @@ public:
         }
 
         DefectsList.SetCurSel(0);
+
         return 0;
     }
 
@@ -1318,6 +1450,7 @@ public:
             Settings.defects.push_back(projects[i]);
         }
         projects.clear();
+
         Settings.SaveDefectsSettings();
     }
 
@@ -1375,7 +1508,7 @@ public:
         return FALSE;
     }
 
-    bool DoInit(bool FirstTime)
+    bool DoInit(bool FirstTime, LPARAM lParam)
     {
         m_PageCaption.Attach(GetDlgItem(IDC_PAGE_CAPTION));
         m_PageCaption.SetFont(PageCaptionFont);
@@ -1386,6 +1519,7 @@ public:
             m_PageFormat.Create(this);
             m_PageDefects.Create(this);
             m_PageURLs.Create(this);
+            m_PageSoftTest.Create(this);
         }
 
 #if (USE_ICONS != 0)
@@ -1399,36 +1533,53 @@ public:
         NewItem->SetCaption("General");
         // adding new page
         AddItem(NewItem);
+        // checking if this page should be active and activate it if so
+        if (lParam == 0) SetActiveItem(NewItem);
 
         NewItem = new COptionSelectionTreeCtrl::CItem(1,1);
         NewItem->SetPage(&m_PageURLs);
         NewItem->SetCaption("URLs");
         // adding new page
         AddItem(NewItem);
+        // checking if this page should be active and activate it if so
+        if (lParam == 1) SetActiveItem(NewItem);
 
         NewItem = new COptionSelectionTreeCtrl::CItem(2,2);
         NewItem->SetPage(&m_PageDefects);
         NewItem->SetCaption("Defects");
         // adding new page
         AddItem(NewItem);
+        // checking if this page should be active and activate it if so
+        if (lParam == 2) SetActiveItem(NewItem);
 
         NewItem = new COptionSelectionTreeCtrl::CItem(3,3);
         NewItem->SetPage(&m_PageFormat);
         NewItem->SetCaption("Format");
         // adding new page
         AddItem(NewItem);
+        // checking if this page should be active and activate it if so
+        if (lParam == 3) SetActiveItem(NewItem);
+
+        NewItem = new COptionSelectionTreeCtrl::CItem(4,4);
+        NewItem->SetPage(&m_PageSoftTest);
+        NewItem->SetCaption("SoftTest");
+        // adding new page
+        AddItem(NewItem);
+        // checking if this page should be active and activate it if so
+        if (lParam == 4) SetActiveItem(NewItem);
 #else
         //In order not to use icons just use the following statements: 
         AddItem(new COptionItem("General", &m_PageGeneral));
         AddItem(new COptionItem("URLs", &m_PageURLs));
         AddItem(new COptionItem("Defects",&m_PageDefects));
         AddItem(new COptionItem("Format", &m_PageFormat));
+        AddItem(new COptionItem("SoftTest", &m_PageSoftTest));
 #endif
 
         SetFlags(OSF_HASBUTTON_OK|OSF_HASBUTTON_CANCEL);
 
-        return CPropSheet::DoInit(FirstTime);
-    };
+        return CPropSheet::DoInit(FirstTime, lParam);
+    }
 
     void OnItemChange(COptionItem *pNewItem, COptionItem *pOldItem)
     {
@@ -1464,6 +1615,7 @@ protected:
     FormatPage m_PageFormat;
     DefectsPage m_PageDefects;
     URLsPage m_PageURLs;
+    SoftTestPage m_PageSoftTest;
     CStatic m_PageCaption;
     CMenu HelpMenu;
 #if (USE_ICONS != 0)

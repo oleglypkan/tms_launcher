@@ -40,6 +40,11 @@
 		<param name="Local" value="Features\opendefects.html">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="SoftTest settings">
+		<param name="Name" value="SoftTest settings">
+		<param name="Local" value="Settings\softtest.html">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Settings">
 		<param name="Name" value="Settings">
 		<param name="Local" value="settings.html">

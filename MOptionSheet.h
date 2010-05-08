@@ -257,7 +257,9 @@ protected:
 
     /// Called at OnInitDialog(), do your own init here
     /// @param FirstTime true at OnInitDialog() time. false every other time the dialog needs re-init like in OnReload();
-    virtual bool DoInit(bool FirstTime);
+    /// Changed by Oleg Lypkan in order to pass lParam parameter from 
+    /// DoModal() or Create() functions to DoInit().
+    virtual bool DoInit(bool FirstTime, LPARAM lParam);
 
     /// Called each time a new item is choosed.
     /// @param pNewItem the newly selected item.
@@ -530,7 +532,15 @@ protected:
             return 0;
         }
 
-        if (!DoInit(true))
+        // Changed by Oleg Lypkan in order to pass lParam parameter
+        // to DoInit() function. It can be used to specify the page that
+        // should be activated. 
+        // For example:
+        //     Sheet.DoModal(::GetActiveWindow(),1);
+        // or 
+        //     Sheet.Create(::GetActiveWindow(),1);
+        // Where "1" can be position of the page to be activated
+        if (!DoInit(true, lParam))
         {
             DoEndDialog(IDCANCEL);
             return 0;

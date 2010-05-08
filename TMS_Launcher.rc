@@ -32,6 +32,36 @@ IDI_SYSTRAY_ICON        ICON    DISCARDABLE     "res\\TMS_Launcher.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Accelerator
+//
+
+IDR_ACCELERATORS ACCELERATORS DISCARDABLE 
+BEGIN
+    VK_F1,          IDC_CONTENTS,           VIRTKEY, NOINVERT
+END
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP1             BITMAP  DISCARDABLE     "res\\icons.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Dialog
 //
 
@@ -78,32 +108,34 @@ BEGIN
     CTEXT           "Information Systems Development",IDC_STATIC,34,29,121,8
 END
 
-URL_EDIT_PAGE DIALOG DISCARDABLE  0, 0, 174, 174
+URL_EDIT_PAGE DIALOG DISCARDABLE  0, 0, 174, 182
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Adding/editing an URL record"
 FONT 8, "MS Sans Serif"
 BEGIN
     LTEXT           "&URL caption:",IDC_STATIC,4,2,42,8
     EDITTEXT        IDC_URL_EDIT,4,12,166,13,ES_AUTOHSCROLL
-    LTEXT           "&Open Task using:",IDC_STATIC,5,28,60,8
-    EDITTEXT        IDC_TASK_URL,4,38,166,12,ES_AUTOHSCROLL
-    LTEXT           "Open C&hild Tasks using:",IDC_STATIC,4,53,81,8
-    EDITTEXT        IDC_CHILD_TASKS_URL,4,63,166,12,ES_AUTOHSCROLL
-    LTEXT           "&Login:",IDC_STATIC,5,78,37,8
-    EDITTEXT        IDC_LOGIN,4,88,70,12,ES_AUTOHSCROLL
-    LTEXT           "P&assword:",IDC_STATIC,78,78,37,8
-    EDITTEXT        IDC_PASSWORD,77,88,93,12,ES_PASSWORD | ES_AUTOHSCROLL
-    LTEXT           "HotKey to View &Task:",IDC_STATIC,4,107,69,8
+    LTEXT           "&Open Task using:",IDC_STATIC,5,27,60,8
+    EDITTEXT        IDC_TASK_URL,4,37,166,12,ES_AUTOHSCROLL
+    LTEXT           "Open C&hild Tasks using:",IDC_STATIC,4,52,81,8
+    EDITTEXT        IDC_CHILD_TASKS_URL,4,62,166,12,ES_AUTOHSCROLL
+    LTEXT           "&Login:",IDC_STATIC,5,77,37,8
+    EDITTEXT        IDC_LOGIN,4,87,70,12,ES_AUTOHSCROLL
+    LTEXT           "P&assword:",IDC_STATIC,78,77,37,8
+    EDITTEXT        IDC_PASSWORD,77,87,93,12,ES_PASSWORD | ES_AUTOHSCROLL
+    LTEXT           "HotKey to View &Task:",IDC_STATIC,4,105,69,8
     CONTROL         "HotKey1",VIEW_TASK_HOTKEY,"msctls_hotkey32",WS_BORDER | 
-                    WS_TABSTOP,77,105,93,13
-    LTEXT           "To View &Child Tasks:",IDC_STATIC,4,122,67,8
+                    WS_TABSTOP,77,103,93,13
+    LTEXT           "To View &Child Tasks:",IDC_STATIC,4,120,67,8
     CONTROL         "HotKey2",VIEW_CHILD_TASKS_HOTKEY,"msctls_hotkey32",
-                    WS_BORDER | WS_TABSTOP,77,121,93,13
-    LTEXT           "To View &Parent Task:",IDC_STATIC,4,138,70,8
+                    WS_BORDER | WS_TABSTOP,77,119,93,13
+    LTEXT           "To View &Parent Task:",IDC_STATIC,4,136,70,8
     CONTROL         "HotKey3",VIEW_PARENT_TASK_HOTKEY,"msctls_hotkey32",
-                    WS_BORDER | WS_TABSTOP,77,137,94,13
-    PUSHBUTTON      "OK",IDOK,45,158,35,13
-    PUSHBUTTON      "Cancel",IDCANCEL,94,158,36,13
+                    WS_BORDER | WS_TABSTOP,77,135,94,13
+    CONTROL         "Open defects in &SoftTest",IDC_ST_DEFECTS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,4,152,96,8
+    PUSHBUTTON      "OK",IDOK,45,166,35,13
+    PUSHBUTTON      "Cancel",IDCANCEL,94,166,36,13
 END
 
 DEFECTS_PAGE DIALOG DISCARDABLE  55, 15, 183, 106
@@ -113,12 +145,12 @@ FONT 8, "MS Sans Serif"
 BEGIN
     GROUPBOX        "Tasks that are treated as defects",IDC_STATIC,3,0,177,
                     104
+    LISTBOX         IDC_DEFECTS_LIST,8,9,125,90,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&New",IDC_DEFECT_NEW,137,9,38,13
     PUSHBUTTON      "&Edit",IDC_DEFECT_EDIT,137,25,38,13
     PUSHBUTTON      "&Copy",IDC_DEFECT_COPY,137,41,38,13
     PUSHBUTTON      "&Delete",IDC_DEFECT_DELETE,137,57,38,13
-    LISTBOX         IDC_DEFECTS_LIST,8,9,125,90,LBS_SORT | 
-                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_MYOPTIONSHEET DIALOG DISCARDABLE  0, 0, 239, 141
@@ -171,7 +203,7 @@ STYLE DS_CONTROL | WS_CHILD | WS_CAPTION
 CAPTION "Dialog"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "&Available URLs",IDC_STATIC,3,0,177,75
+    GROUPBOX        "&Available URLs",IDC_STATIC,3,0,177,73
     LISTBOX         IDC_URLS_LIST,8,9,125,60,LBS_SORT | LBS_NOINTEGRALHEIGHT | 
                     WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&New",IDC_LINK_NEW,137,9,38,13
@@ -204,58 +236,23 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,94,120,36,13
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-IDB_BITMAP1             BITMAP  DISCARDABLE     "res\\icons.bmp"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Accelerator
-//
-
-IDR_ACCELERATORS ACCELERATORS DISCARDABLE 
+SOFTTEST_PAGE DIALOG DISCARDABLE  55, 15, 183, 106
+STYLE DS_CONTROL | WS_CHILD | WS_CAPTION
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
 BEGIN
-    VK_F1,          IDC_CONTENTS,           VIRTKEY, NOINVERT
+    GROUPBOX        "SoftTest settings",IDC_STATIC,3,0,177,104
+    LTEXT           "Path to &SoftTest:",IDC_STATIC,10,12,54,8
+    EDITTEXT        IDC_SOFTTEST_PATH,9,23,144,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_SOFTTEST_BROWSE,157,22,16,13
+    LTEXT           "SoftTest &filter name:",IDC_STATIC,10,45,64,8
+    EDITTEXT        IDC_SOFTTEST_FILTER,9,55,165,12,ES_AUTOHSCROLL
+    LTEXT           "&Login:",IDC_STATIC,8,82,21,8
+    EDITTEXT        IDC_SOFTTEST_LOGIN,30,80,53,12,ES_AUTOHSCROLL
+    LTEXT           "&Password:",IDC_STATIC,88,82,33,8
+    EDITTEXT        IDC_SOFTTEST_PASSWORD,124,80,50,12,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
 END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    URL_EDIT_PAGE, DIALOG
-    BEGIN
-        RIGHTMARGIN, 173
-        BOTTOMMARGIN, 154
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-#endif    // Russian resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
 
 TMS_LAUNCHER_DIALOG DIALOGEX 0, 0, 144, 38
 STYLE DS_3DLOOK | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
@@ -282,6 +279,12 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO DISCARDABLE 
 BEGIN
+    URL_EDIT_PAGE, DIALOG
+    BEGIN
+        RIGHTMARGIN, 173
+        BOTTOMMARGIN, 162
+    END
+
     TMS_LAUNCHER_DIALOG, DIALOG
     BEGIN
         BOTTOMMARGIN, 36
@@ -310,7 +313,7 @@ END
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST ""res\\\\TMS_Launcher.exe.manifest""\r\n"
-    "1 SCCSID { ""@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.26 $$Date: 2006/02/08 13:38:04Z $\\0"" }\0"
+    "1 SCCSID { ""@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.28 $$Date: 2006/03/16 18:02:08Z $\\0"" }\0"
 END
 
 #endif    // APSTUDIO_INVOKED
@@ -323,8 +326,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,1,0,0
- PRODUCTVERSION 2,1,0,0
+ FILEVERSION 2,2,0,0
+ PRODUCTVERSION 2,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -339,17 +342,17 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "Developed by Oleg Lypkan\0"
+            VALUE "Comments", "Designed and developed by Oleg Lypkan\0"
             VALUE "CompanyName", "Information Systems Development\0"
             VALUE "FileDescription", "TMS_Launcher Module\0"
-            VALUE "FileVersion", "2, 1, 0, 0\0"
+            VALUE "FileVersion", "2, 2, 0, 0\0"
             VALUE "InternalName", "TMS_Launcher\0"
-            VALUE "LegalCopyright", "Copyright 2005\0"
+            VALUE "LegalCopyright", "Copyright 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "TMS_Launcher.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "TMS_Launcher Module\0"
-            VALUE "ProductVersion", "2, 1, 0, 0\0"
+            VALUE "ProductVersion", "2, 2, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -372,7 +375,7 @@ END
 // Generated from the TEXTINCLUDE 3 resource.
 //
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "res\\TMS_Launcher.exe.manifest"
-1 SCCSID { "@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.26 $$Date: 2006/02/08 13:38:04Z $\0" }
+1 SCCSID { "@(#)$RCSfile: TMS_Launcher.rc,v $$Revision: 1.28 $$Date: 2006/03/16 18:02:08Z $\0" }
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 

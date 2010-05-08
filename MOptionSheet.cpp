@@ -99,8 +99,9 @@ DWORD COptionSheet::GetFlags()
 }
 
 //---------------------------------------------------------------------------------------
-
-bool COptionSheet::DoInit(bool FirstTime)
+// Changed by Oleg Lypkan in order to pass lParam parameter from 
+// DoModal() or Create() functions to DoInit().
+bool COptionSheet::DoInit(bool FirstTime, LPARAM lParam)
 {
     // Any page made active ? If not let the root one be active
     if (!m_pActiveItem)

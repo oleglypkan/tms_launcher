@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: opendefects.html,v $$Revision: 1.3 $$Date: 2006/02/10 11:18:35Z $ -->
+<!-- @(#)$RCSfile: opendefects.html,v $$Revision: 1.4 $$Date: 2006/03/31 11:06:16Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
@@ -10,7 +10,7 @@
 <table border="0">
 <tr>
    <td><IMG SRC="Pictures\logo.gif"></td>
-   <td class="caption"> Launcher 2.1</td>
+   <td class="caption"> Launcher</td>
 </tr>
 </table>
 
@@ -18,9 +18,28 @@
 
 <H2 align="center" class="boldfont">Opening SoftTest defects</H2>
 <P align="justify" class="font">
-SoftTest defects are considered by TMS Launcher as specific type of TMS tasks. TMS tasks with client names that match with predefined strings are supposed to be defects and opened by specified link.<br>
-There is a possibility to assign a SoftTest project from which defect will be read and URL to open defect for each such string.
-<BR>Described settings can be made in <a href="..\Settings\defects.html">Defects page</a> of settings window.
+SoftTest defects are considered by TMS Launcher as special type of TMS tasks. 
+TMS tasks with client names that match with predefined values are supposed to be defects.<br>
+Main window buttons and hotkeys, specified on <a href="..\Settings\urls.html">URLs page</a> of settings window for all available URLs,
+can be used to open defects, child and parent defects.
+<br><br>Defects can be opened in two applications:
+<UL class="font">
+    <LI><b>In a browser on ISD QA site</b>
+    <br>In this case, for each predefined value user can assign a SoftTest project from which defect will be read and an URL to open defect.
+    Described settings can be made on <a href="..\Settings\defects.html">Defects page</a> of settings window.
+    <LI><b>In SoftTest application directly</b>
+    <br>In this case, settings from <a href="..\Settings\defects.html">Defects page</a> are used as well.
+    However, since defects are opened using main window buttons and hotkeys, specified
+    for all URLs, it is possible to specify where defects can be opened for each such URL.
+    <br>For example, you can specify that defects will be opened on <b>ISD QA site</b> when
+    using "Usual TMS" URL and in <b>SoftTest</b> when using "Alternative TMS" URL.<br>
+    <b>NOTE</b>: if you open several defects from the same project simultaneuosly, only one SoftTest application
+    will be started and the defects will be opened in it.
+</UL>
+</P>
+<P align="justify" class="font">
+Also there is <a href="..\Settings\softtest.html">SoftTest page</a> in settings window 
+that allows to specify some settings related to SoftTest.
 </P>
 </BODY>
 </HTML>

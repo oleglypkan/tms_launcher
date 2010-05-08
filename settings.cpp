@@ -11,18 +11,20 @@
 #include "About.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.23 $$Date: 2006/02/08 13:37:49Z $"; 
+ static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.29 $$Date: 2006/03/30 14:33:10Z $"; 
 #endif
 
 extern CString szWinName;
 UINT LINK_MAX = 1024;
+
+int CompareNoCaseCP1251(const char *string1, const char *string2);
 
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
                     const char* StringName = "ProductVersion", UINT VersionDigits = 2);
 
 CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
                      const char* DefectsSubKeyName, const char* FormatSubKeyName,
-                     const char* LinksSubKeyName):Reg(HKEY_CURRENT_USER)
+                     const char* LinksSubKeyName, const char* SoftTestSubKeyName):Reg(HKEY_CURRENT_USER)
 {
     AutoRun = false;
     Expand = false;
@@ -38,11 +40,29 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     DefectsSubKey = DefectsSubKeyName;
     FormatSubKey = FormatSubKeyName;
     LinksSubKey = LinksSubKeyName;
+    SoftTestSubKey = SoftTestSubKeyName;
     AutoRunRegistryKey = AutoRunRegKey;
     AutoRunValueName = AutoRunValName;
     BrowserPath = "";
     DefaultBrowser = false;
-    TasksSeparators = ";,\n";
+    
+    CString SpecialFolder;
+    GetEnvironmentVariable("PROGRAMFILES",SpecialFolder.GetBuffer(MAX_PATH+1),MAX_PATH);
+    SpecialFolder.ReleaseBuffer();
+
+    SoftTestPath = SpecialFolder+"\\SoftComputer\\SoftTest\\Bin\\SoftTest.exe";
+    SoftTestLogin = "guest";
+    SoftTestPassword = "";
+
+    GetEnvironmentVariable("APPDATA",SpecialFolder.GetBuffer(MAX_PATH+1),MAX_PATH);
+    SpecialFolder.ReleaseBuffer();
+    SoftTestFiltersPath = SpecialFolder+"\\SoftComputer\\SoftTest\\Filters\\";
+    SoftTestFilterName = "%PROJECT%-TMS_Launcher.fil";
+    DefectFilter = "SELECT * FROM BUG WHERE\nBG_BUG_ID IN (%ID%)";
+    ChildDefectsFilter = "SELECT * FROM BUG WHERE\nBG_USER_HR_01 IN (%ID%)";
+    ParentDefectFilter = "SELECT * FROM BUG WHERE\nBG_BUG_ID IN (SELECT BG_USER_HR_01 FROM BUG WHERE BG_BUG_ID IN (%ID%))";
+
+    TasksSeparators = ";,\n\r";
     Separators = " _-*+|:~#@$%^\t";
     MinClientName = 0;
     MaxClientName = 8;
@@ -51,8 +71,6 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     MinExt = 0;
     MaxExt = 1;
     TaskNameControlType = 1; // ComboBox control
-    MinTaskName = MinClientName+MinIDName;
-    MaxTaskName = MaxClientName+MaxIDName+MaxExt+2; // 2 - separators
     DefectsLink = "http://qa.isd.dp.ua/softtest/defect/%PROJECT%/%ID%/";
     ChildDefectsLink = "http://qa.isd.dp.ua/softtest/child_defects/%PROJECT%/%ID%/";
     ParentDefectLink = "http://qa.isd.dp.ua/softtest/parent_defect/%PROJECT%/%ID%/";
@@ -73,6 +91,16 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     defects.push_back(defect("STO","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink));
     defects.push_back(defect("STORE","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink));
     defects.push_back(defect("SUP","ST_ISD_SUPPORT",DefectsLink, ChildDefectsLink, ParentDefectLink));
+}
+
+const CString& CSettings::GetSoftTestCommandLine(const char *Project)
+{
+//  SoftTest.exe /nST_LABGUI_SYNCH /a"Track Defects" /uguest /p"" /f"TMS_Launcher"
+    CString temp = SoftTestFilterName;
+    temp = temp.Left(temp.Find("."));
+    SoftTestCommandLine = "/n%PROJECT% /a\"Track Defects\" /u"+SoftTestLogin+" /p\""+SoftTestPassword+"\" /f\""+temp+"\"";
+    SoftTestCommandLine.Replace("%PROJECT%",Project);
+    return SoftTestCommandLine;
 }
 
 void CSettings::LoadSettings()
@@ -123,7 +151,7 @@ void CSettings::LoadSettings()
         yPos = -1;
     }
 
-    Reg.ReadValue(RegistryKey,"PathToBrowser",REG_SZ,(LPBYTE)BrowserPath.GetBuffer(_MAX_PATH+1),_MAX_PATH+1);
+    Reg.ReadValue(RegistryKey,"PathToBrowser",REG_SZ,(LPBYTE)BrowserPath.GetBuffer(MAX_PATH+1),MAX_PATH+1);
     BrowserPath.ReleaseBuffer();
     BrowserPath.TrimLeft();
     BrowserPath.TrimRight();
@@ -155,13 +183,15 @@ void CSettings::LoadSettings()
         UINT ViewTaskHotKey;
         UINT ViewChildTasksHotKey;
         UINT ViewParentTaskHotKey;
-
         CString TaskURL;
         CString ChildTasksURL;
         CString Login;
         CString Password;
         DWORD Default;
+        DWORD STDefects;
+        
         DWordSize=sizeof(DWORD);
+
         if (!Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"ViewTaskHotkey",
                            REG_DWORD,(LPBYTE)&ViewTaskHotKey,DWordSize))
         {
@@ -190,6 +220,7 @@ void CSettings::LoadSettings()
         bool res = Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"Login",
                                  REG_SZ,(LPBYTE)Login.GetBuffer(ValueLength),ValueLength);
         Login.ReleaseBuffer();
+
         if (!res)
         {
             Login = "";
@@ -211,18 +242,22 @@ void CSettings::LoadSettings()
             else IsDefault = true;
         }
 
+        DWordSize=sizeof(DWORD);
+        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"DefectsInSoftTest",
+                      REG_DWORD,(LPBYTE)&STDefects,DWordSize);
+
         links.push_back(link(SubKeyName,TaskURL,ChildTasksURL,ViewTaskHotKey,
                              ViewChildTasksHotKey,ViewParentTaskHotKey,(Default == 1),
-                             Login, Password));
+                             Login, Password, (STDefects == 1)));
 
         SubKeyIndex++;
     }
     if (links.empty())
     {
         links.push_back(link("Alternative TMS","http://scc1/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"",""));
+                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"","",false));
         links.push_back(link("Usual TMS","http://www.softcomputer.com/tms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,true,"",""));
+                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,true,"","",false));
     }
     else
     {
@@ -244,7 +279,7 @@ void CSettings::LoadSettings()
         defects_number = Reg.GetNumberOfValues(RegistryKey+"\\"+DefectsSubKey,&MaxValueNameLength,&MaxValueLength);
         MaxValueNameLength++;
         MaxValueLength++;
-    
+
         DWORD type;
         CString value_name, value; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3";
     
@@ -320,10 +355,38 @@ void CSettings::LoadSettings()
             }
         }
     }
+
+    // reading SoftTest settings
+    CString temp = "";
+    Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPath",REG_SZ,(LPBYTE)temp.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+    temp.ReleaseBuffer();
+    temp.TrimLeft();
+    temp.TrimRight();
+    if (!temp.IsEmpty()) SoftTestPath = temp;
+
+    temp = "";
+    Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestFilter",REG_SZ,(LPBYTE)temp.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+    temp.ReleaseBuffer();
+    if (!temp.IsEmpty()) SoftTestFilterName = temp;
+    if (SoftTestFilterName.Find("%PROJECT%") == -1)
+    {
+        SoftTestFilterName.Insert(0,"%PROJECT%");
+    }
+
+    temp = "";
+    Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestLogin",REG_SZ,(LPBYTE)temp.GetBuffer(1025),1025);
+    temp .ReleaseBuffer();
+    if (!temp .IsEmpty()) SoftTestLogin = temp ;
+    
+    temp = "";
+    Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPassword",REG_SZ,(LPBYTE)temp.GetBuffer(1025),1025);
+    temp.ReleaseBuffer();
+    if (!temp.IsEmpty() || SoftTestLogin.Compare("guest")==0) SoftTestPassword = temp;
+
     // reading format settings
     DWordSize=sizeof(DWORD); // will be changed by ReadValue()
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxHistoryItems",REG_DWORD,(LPBYTE)&MaxHistoryItems,DWordSize);
-    if ((MaxHistoryItems < 1)||(MaxHistoryItems > MaxPossibleHistory))
+    if ((MaxHistoryItems < 0)||(MaxHistoryItems > MaxPossibleHistory))
         MaxHistoryItems = 25;
 
     DWordSize=sizeof(DWORD);
@@ -331,8 +394,6 @@ void CSettings::LoadSettings()
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxID",REG_DWORD,(LPBYTE)&MaxIDName,DWordSize);
     if (MaxIDName < 1) MaxIDName = 1;
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxExt",REG_DWORD,(LPBYTE)&MaxExt,DWordSize);
-    MinTaskName = MinClientName+MinIDName;
-    MaxTaskName = MaxClientName+MaxIDName+MaxExt+2; // 2 - separators
     CString SEPARATORS = "";
     CString TASKS_SEPARATORS = "";
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(LPBYTE)SEPARATORS.GetBuffer(255),255);
@@ -348,11 +409,13 @@ void CSettings::LoadSettings()
         if (!SEPARATORS.IsEmpty()) Separators = SEPARATORS;
         if (!TASKS_SEPARATORS.IsEmpty()) TasksSeparators = TASKS_SEPARATORS;
     }
+    CorrectCRLF(SEPARATORS,TASKS_SEPARATORS);
     // it is possible that some settings are not read and default ones are saved
     SaveGeneralSettings();
     SaveDefectsSettings();
     SaveFormatSettings();
     SaveLinksSettings();
+    SaveSoftTestSettings();
 }
 
 void CSettings::SaveGeneralSettings(bool AfterImporting)
@@ -396,31 +459,17 @@ void CSettings::SaveGeneralSettings(bool AfterImporting)
 void CSettings::SaveLinksSettings()
 {
 //  deleting old settings
-    int SubKeyIndex = 0;
-    CString SubKeyName;
-    std::vector<CString> SubKeys;
-
-    while (Reg.GetSubKeyName(RegistryKey+"\\"+LinksSubKey,SubKeyIndex,SubKeyName.GetBuffer(255)))
-    {
-        SubKeyName.ReleaseBuffer();
-        SubKeys.push_back(SubKeyName);
-        SubKeyIndex++;
-    }
-    for (int i=0; i<SubKeys.size(); i++)
-    {
-        Reg.DeleteKeyIncludingSubKeys(HKEY_CURRENT_USER,RegistryKey+"\\"+LinksSubKey+"\\"+SubKeys[i]);
-    }
-    SubKeys.clear();
+    Reg.DeleteKeyIncludingSubKeys(HKEY_CURRENT_USER,RegistryKey+"\\"+LinksSubKey);
 
 //  saving new settings
     if (links.empty())
     {
         links.push_back(link("Alternative TMS","http://scc1/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"",""));
+                             "http://scc1/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,false,"","",false));
         links.push_back(link("Usual TMS","http://www.softcomputer.com/tms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,true,"",""));
+                             "http://www.softcomputer.com/tms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",0,0,0,true,"","",false));
     }
-    for (i=0; i<links.size(); i++)
+    for (int i=0; i<links.size(); i++)
     {
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"TaskURL",REG_SZ,(const BYTE*)LPCTSTR(links[i].TaskURL),links[i].TaskURL.GetLength()+1);
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ChildTasksURL",REG_SZ,(const BYTE*)LPCTSTR(links[i].ChildTasksURL),links[i].ChildTasksURL.GetLength()+1);
@@ -429,6 +478,8 @@ void CSettings::SaveLinksSettings()
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewParentTaskHotkey",REG_DWORD,(const BYTE*)&links[i].ViewParentTaskHotKey,sizeof(DWORD));
         DWORD def = links[i].Default ? 1:0;
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Default",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
+        def = links[i].DefectsInSoftTest ? 1:0;
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"DefectsInSoftTest",REG_DWORD,(const BYTE*)&def,sizeof(DWORD));
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Login",REG_SZ,(const BYTE*)LPCTSTR(links[i].Login),links[i].Login.GetLength()+1);
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"Password",REG_SZ,(const BYTE*)LPCTSTR(links[i].Password),links[i].Password.GetLength()+1);
     }
@@ -444,9 +495,18 @@ void CSettings::SaveFormatSettings()
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxHistoryItems",REG_DWORD,(const BYTE*)&MaxHistoryItems,sizeof(DWORD));
 }
 
+void CSettings::SaveSoftTestSettings()
+{
+    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPath",REG_SZ,(const BYTE*)LPCTSTR(SoftTestPath),SoftTestPath.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestLogin",REG_SZ,(const BYTE*)LPCTSTR(SoftTestLogin),SoftTestLogin.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPassword",REG_SZ,(const BYTE*)LPCTSTR(SoftTestPassword),SoftTestPassword.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestFilter",REG_SZ,(const BYTE*)LPCTSTR(SoftTestFilterName),SoftTestFilterName.GetLength()+1);
+}
+
 void CSettings::SaveDefectsSettings()
 {
     Reg.DeleteKey(RegistryKey,DefectsSubKey);
+   
     int defects_number = defects.size();
     CString value_name, value; // value_name == "Item0"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3";
     for (int i=0; i<defects_number; i++)
@@ -564,4 +624,111 @@ void CSettings::ImportSettings(LPCTSTR lpSubKey)
             Reg.DeleteKeyIncludingSubKeys(HKEY_CURRENT_USER,lpSubKey);
         }
     }
+}
+
+int CSettings::GetDefaultUrlIndex()
+{
+    int index = -1;
+    for (int i = 0; i < links.size(); i++)
+    {
+        if (links[i].Default)
+        {
+            index = i;
+            break;
+        }
+    }
+    return index;
+}
+
+bool CSettings::IsDefect(const char *Client, CString *Project, int *index)
+{
+    bool result = false;
+    if (Project != NULL)
+    {
+        *Project = CString("");
+    }
+    if (index != NULL)
+    {
+        *index = -1;
+    }
+
+    for (int i=0; i < defects.size(); i++)
+    {
+        if (CompareNoCaseCP1251(Client,defects[i].ClientID)==0)
+        {
+            result = true;
+            if (Project != NULL)
+            {
+                *Project = defects[i].STProject;
+            }
+            if (index != NULL)
+            {
+                *index = i;
+            }
+            break;
+        }
+    }
+
+    return result;
+}
+
+bool CSettings::OpenDefectsInSoftTest(INT wID)
+{
+    switch (wID)
+    {
+        case VIEW_TASK:
+        case VIEW_TASK_HOTKEY:
+        case VIEW_CHILD_TASKS:
+        case VIEW_CHILD_TASKS_HOTKEY:
+        case VIEW_PARENT_TASK:
+        case VIEW_PARENT_TASK_HOTKEY:
+            return (links[GetDefaultUrlIndex()].DefectsInSoftTest);
+        default:
+            int index = wID / 3;
+            if (index < links.size())
+            {
+                return (links[index].DefectsInSoftTest);
+            }
+            else
+            {
+                return false;
+            }
+    }
+}
+
+bool CSettings::CorrectCRLF(CString &sSeparators, CString &sTasksSeparators)
+{
+    bool correction = false;
+
+    if ((sTasksSeparators.Find('\n') != -1) && (sTasksSeparators.Find('\r') == -1))
+    {
+        sTasksSeparators += '\r';
+        correction = true;
+        int pos = -1;
+        if ((pos = sSeparators.Find('\r')) != -1)
+        {
+            sSeparators.Delete(pos);
+        }
+    }
+    if ((sSeparators.Find('\n') != -1) && (sSeparators.Find('\r') == -1))
+    {
+        sSeparators += '\r';
+        correction = true;
+        int pos = -1;
+        if ((pos = sTasksSeparators.Find('\r')) != -1)
+        {
+            sTasksSeparators.Delete(pos);
+        }
+    }
+    if ((sTasksSeparators.Find('\r') != -1) && (sTasksSeparators.Find('\n') == -1))
+    {
+        sTasksSeparators += '\n';
+        correction = true;
+    }
+    if ((sSeparators.Find('\r') != -1) && (sSeparators.Find('\n') == -1))
+    {
+        sSeparators += '\n';
+        correction = true;
+    }
+    return correction;
 }

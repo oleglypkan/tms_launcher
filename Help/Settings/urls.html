@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: urls.html,v $$Revision: 1.4 $$Date: 2006/02/10 11:20:11Z $ -->
+<!-- @(#)$RCSfile: urls.html,v $$Revision: 1.6 $$Date: 2006/03/31 11:07:12Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
@@ -10,36 +10,60 @@
 <table border="0">
 <tr>
    <td><IMG SRC="Pictures\logo.gif"></td>
-   <td class="caption"> Launcher 2.1</td>
+   <td class="caption"> Launcher</td>
 </tr>
 </table>
 
 <hr size="1" noshade>
 
 <H2 align="center" class="boldfont">URLs page of settings window</H2>
-<IMG SRC="Pictures\urls.jpg">
+<table width="100%" border="0">
+<tr>
+  <td colspan="2">
+<IMG SRC="Pictures\urls.png">
+  </td>
+</tr>
+<tr>
+  <td colspan="2">
 <P align="justify" class="font">
-<B>Available URLs</B> section shows the list of URLs that can be used to open 
-tasks. It allows to create, modify and remove URLs from the list.
-<br><br>For each URL it is possible to define:
+<B>Available URLs</B> section of URLs page shows the list of URL records that can be used to open 
+tasks. It allows to create, modify and remove records from the list.<br>
+<B>By default open tasks in</B> section allows to choose which URL record
+will be used to open task(s) when user uses buttons on main window and 
+systray menu commands.
+</P>
+  </td>
+</tr>
+<tr><td height="10"></td></tr>
+<tr>
+  <td valign="top">
+<P align="justify" class="font">
+For each URL it is possible to define:
 <UL class="font">
 <LI>URL caption
 <LI>Link to open task
 <LI>Link to open child tasks
 <LI>Login, Password
 <LI>3 hotkeys to be used to open tasks, child and parent tasks correspondingly
+<LI>Where SoftTest defects (that are considered as special type of tasks) should be opened: 
+on ISD QA site or in SoftTest application
 </UL>
 </P>
 <P align="justify" class="font">
-<b>NOTE</b>: when you use a hotkey a task name is read from Windows Clipboard, not from "Task Name" field.<br>
+<b>NOTES</b>:
+<UL class="font">
+  <LI>When you use a hotkey, a task name is read from Windows Clipboard, not from "Task Name" field.<br>
+  <LI>Both Login and Password are stored in Windows Registry in not in cipher form.
+      So, if someone has administrator privileges on your PC he can view them.
+</UL>
 </P>
-<P align="justify" class="font">
-<B>By default open tasks in</B> section allows to choose which URL 
-will be used to open task(s) when user uses buttons on main window and 
-systray menu commands.
-</P>
-<table border="0" bgcolor="#DDDDDD">
-<tr><td>
+  </td>
+  <td valign="top" align="right">
+    <IMG SRC="Pictures\url.png">
+  </td>
+</tr>
+<tr bgcolor="#DDDDDD">
+  <td colspan="2">
 <P align="justify" class="font">
 There is a useful feature that allows to enter login and password that will be passed to the browser when you open a site if required.<br>
 To use this feature you can enter your login and password to an URL in the following form:

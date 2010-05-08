@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: TMS_Launcher.hhc,v $$Revision: 1.2 $$Date: 2006/02/09 16:11:22Z $ -->
+<!-- @(#)$RCSfile: TMS_Launcher.hhc,v $$Revision: 1.3 $$Date: 2006/03/31 11:05:27Z $ -->
 
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <HTML>
@@ -39,6 +39,10 @@
             <param name="Name" value="Command line interface">
             <param name="Local" value="Features\commandline.html">
             </OBJECT>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="System tray menu">
+            <param name="Local" value="Features\systraymenu.html">
+            </OBJECT>
     </UL>
     <LI> <OBJECT type="text/sitemap">
         <param name="Name" value="Settings">
@@ -60,6 +64,10 @@
         <LI> <OBJECT type="text/sitemap">
             <param name="Name" value="Format page">
             <param name="Local" value="Settings\format.html">
+            </OBJECT>
+        <LI> <OBJECT type="text/sitemap">
+            <param name="Name" value="SoftTest page">
+            <param name="Local" value="Settings\softtest.html">
             </OBJECT>
     </UL>
     <LI> <OBJECT type="text/sitemap">

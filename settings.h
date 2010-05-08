@@ -10,7 +10,7 @@
 #define SETTINGS_H_INCLUDED
 
 #ifdef INCLUDE_VERID
- static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.17 $$Date: 2006/02/08 13:37:56Z $";
+ static char settings_h[]="@(#)$RCSfile: settings.h,v $$Revision: 1.21 $$Date: 2006/03/30 14:33:17Z $";
 #endif
 
 #include "resource.h"
@@ -53,12 +53,13 @@ struct link
     UINT ViewTaskHotKey;
     UINT ViewChildTasksHotKey;
     UINT ViewParentTaskHotKey;
-    bool Default;
     CString Login;
     CString Password;
+    bool Default;
+    bool DefectsInSoftTest;
     link(const CString& caption, const CString& task_url, const CString& child_tasks_url,
          const UINT TaskHotKey, const UINT ChildTasksHotKey, const UINT ParentTaskHotKey,
-         bool UseByDefault, const CString& login, const CString& password)
+         bool UseByDefault, const CString& login, const CString& password, bool STDefects)
     {
         Caption = caption;
         TaskURL = task_url;
@@ -69,6 +70,7 @@ struct link
         Default = UseByDefault;
         Login = login;
         Password = password;
+        DefectsInSoftTest = STDefects;
     }
     const link& operator=(const link& Link)
     {
@@ -82,6 +84,7 @@ struct link
         Default = Link.Default;
         Login = Link.Login;
         Password = Link.Password;
+        DefectsInSoftTest = Link.DefectsInSoftTest;
         return *this;
     }
 };
@@ -110,33 +113,47 @@ public:
     int MaxIDName;
     int MinExt;
     int MaxExt;
-    int MinTaskName;
-    int MaxTaskName;
     int TaskNameControlType;
     CString DefectsLink;
     CString ChildDefectsLink;
     CString ParentDefectLink;
     CString BrowserPath;
     bool DefaultBrowser;
+    CString SoftTestPath;        // path to SoftTest binary file including the name of the file
+    CString SoftTestLogin;       // user's login to SoftTest
+    CString SoftTestPassword;    // user's password to SoftTest
+    CString SoftTestFiltersPath; // path to SoftTest filters
+    CString SoftTestFilterName;  // name of TMS Launcher's filter for SoftTest
+    CString DefectFilter;        // contents of TMS Launcher's filter for SoftTest for defect
+    CString ChildDefectsFilter;  // contents of TMS Launcher's filter for SoftTest for child defects
+    CString ParentDefectFilter;  // contents of TMS Launcher's filter for SoftTest for parent defect
+    const CString& GetSoftTestCommandLine(const char *Project);
     CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
-              const char* DefectsSubKeyName, const char* TasksSubKeyName, const char* LinksSubKeyName);
+              const char* DefectsSubKeyName, const char* TasksSubKeyName, const char* LinksSubKeyName, const char* SoftTestSubKeyName);
     void LoadSettings();
     void ImportSettings(LPCTSTR lpSubKey);
     void SaveGeneralSettings(bool AfterImporting = false);
     void SaveFormatSettings();
     void SaveDefectsSettings();
     void SaveLinksSettings();
+    void SaveSoftTestSettings();
     bool SettingsAvailable();
     int RemoveUnacceptableSeparators(CString &String);
     int RemoveDuplicateSeparators(CString &String);
+    bool CorrectCRLF(CString &Separators, CString &TasksSeparators);
+    int GetDefaultUrlIndex();
+    bool IsDefect(const char *Client, CString *Project, int *index);
+    bool OpenDefectsInSoftTest(INT wID);
 protected:
     Registry Reg;
     CString RegistryKey;
     CString DefectsSubKey;
     CString FormatSubKey;
     CString LinksSubKey;
+    CString SoftTestSubKey;
     CString AutoRunRegistryKey;
     CString AutoRunValueName;
+    CString SoftTestCommandLine; // command line that used to launch SoftTest
 };
 
 #endif

@@ -16,6 +16,7 @@
 #define IDR_ACCELERATORS                212
 #define URL_EDIT_PAGE                   213
 #define DEFECT_EDIT_PAGE                214
+#define SOFTTEST_PAGE                   216
 #define IDC_TASKNAME                    1000
 #define VIEW_TASK                       1001
 #define IDC_EXPAND                      1002
@@ -79,20 +80,33 @@
 #define IDC_TASK_NAME_CONTROL           1065
 #define IDC_MAX_HISTORY                 1066
 #define IDC_MAX_SPIN                    1068
+#define IDC_SOFTTEST_PATH               1069
+#define IDC_SOFTTEST_LOGIN              1070
+#define IDC_SOFTTEST_PASSWORD           1071
+#define IDC_SOFTTEST_BROWSE             1072
+#define IDC_ST_DEFECTS                  1073
+#define IDC_SOFTTEST_FILTER             1074
 #define ID_MENU_UNDO                    32774
 #define ID_MENU_CUT                     32775
 #define ID_MENU_COPY                    32776
 #define ID_MENU_PASTE                   32777
 #define ID_MENU_DELETE                  32778
 #define ID_MENU_SELECT                  32779
+#define ID_CLEAR_HISTORY                32780
+#define ID_SHOW_HIDE_WINDOW             32781
+#define ID_SETTINGS_GENERAL             32782
+#define ID_SETTINGS_URLS                32783
+#define ID_SETTINGS_DEFECTS             32784
+#define ID_SETTINGS_FORMAT              32785
+#define ID_SETTINGS_SOFTTEST            32786
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        215
-#define _APS_NEXT_COMMAND_VALUE         32780
-#define _APS_NEXT_CONTROL_VALUE         1069
+#define _APS_NEXT_RESOURCE_VALUE        217
+#define _APS_NEXT_COMMAND_VALUE         32787
+#define _APS_NEXT_CONTROL_VALUE         1075
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

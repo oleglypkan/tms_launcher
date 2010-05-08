@@ -1,4 +1,4 @@
-<!-- @(#)$RCSfile: defects.html,v $$Revision: 1.3 $$Date: 2006/02/10 11:19:58Z $ -->
+<!-- @(#)$RCSfile: defects.html,v $$Revision: 1.5 $$Date: 2006/03/31 11:06:44Z $ -->
 <HTML>
 <HEAD>
   <TITLE> TMS Launcher HTML Help </TITLE>
@@ -10,21 +10,43 @@
 <table border="0">
 <tr>
    <td><IMG SRC="Pictures\logo.gif"></td>
-   <td class="caption"> Launcher 2.1</td>
+   <td class="caption"> Launcher</td>
 </tr>
 </table>
 
 <hr size="1" noshade>
 
 <H2 align="center" class="boldfont">Defects page of settings window</H2>
-<IMG SRC="Pictures\defects.jpg">
+<table width="100%" border="0">
+<tr>
+  <td colspan="3">
+    <IMG SRC="Pictures\defects.png">
+  </td>
+</tr>
+<tr>
+  <td colspan="3">
 <P align="justify" class="font">
-Defects page allows to create, modify and remove sets of records that will be used to determine 
-if a task is TMS task or SoftTest defect.<BR>Each record contains a pair of 
-values: Client and Project as well as 3 URLs to open defect, child and parent defect(s).
-Client name of entered task is compared with Client value of all records 
-and if match is found the task is considered as defect.
-After that defect is opened by specified URL.
+Defects page allows to create, modify and remove records that will be used to determine 
+if a task is TMS task or SoftTest defect.
 </P>
+  </td>
+</tr>
+<tr><td height="10"></td></tr>
+<tr>
+  <td valign="top">
+<P align="justify" class="font">
+Each record contains a pair of values: Client and Project as well as 3 URLs to open defect, child and parent defect(s).
+<br>Client name of entered task is compared with Client value of all records and if match is found the task is 
+considered as defect.
+<br>After that defect is opened by specified URL on ISD QA site or in SoftTest application depending on
+settings made on <a href="urls.html">URLs page</a>.
+</P>
+  </td>
+  <td width="10"></td>
+  <td valign="top" align="right">
+    <IMG SRC="Pictures\defect.png">
+  </td>
+</tr>
+</table>
 </BODY>
 </HTML>

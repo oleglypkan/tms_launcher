@@ -13,7 +13,7 @@
 #include "CmdLine.h"
 
 #ifndef NO_VERID
- static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.19 $$Date: 2006/01/17 19:02:46Z $"; 
+ static char verid[]="@(#)$RCSfile: TMS_Launcher.cpp,v $$Revision: 1.20 $$Date: 2006/03/15 16:19:24Z $"; 
 #endif
 
 /* 
@@ -34,7 +34,7 @@ const char* AutoRunKeyName = "TMS Launcher";
 const UINT WM_TMS_LAUNCHER_ACTIVATE = ::RegisterWindowMessage("TMS_Launcher_Activate");
 CSettings Settings("Software\\Winchester\\TMS Launcher",
                    "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-                   AutoRunKeyName, "Defects", "Format", "Links");
+                   AutoRunKeyName, "Defects", "Format", "Links", "SoftTest");
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
                     const char* StringName = "ProductVersion", UINT VersionDigits = 2);
 
@@ -98,6 +98,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         Settings.SaveFormatSettings();
         Settings.SaveDefectsSettings();
         Settings.SaveLinksSettings();
+        Settings.SaveSoftTestSettings();
     }
 
     if (lstrlen(lpstrCmdLine) != 0)
@@ -152,9 +153,9 @@ bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
     {
         char *VersionInfo = new char[VersionInfoSize];
         CString FileName;
-        GetModuleFileName(NULL,FileName.GetBuffer(_MAX_PATH),_MAX_PATH);
+        GetModuleFileName(NULL,FileName.GetBuffer(MAX_PATH),MAX_PATH);
         FileName.ReleaseBuffer();
-        if (GetFileVersionInfo(FileName.GetBuffer(_MAX_PATH),0,VersionInfoSize,VersionInfo))
+        if (GetFileVersionInfo(FileName.GetBuffer(MAX_PATH),0,VersionInfoSize,VersionInfo))
         {
             char *SubBlockBuffer;
             UINT SubBlockSize;
