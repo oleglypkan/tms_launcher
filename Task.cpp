@@ -692,6 +692,8 @@ void TASK::RemoveSpaces(CString &s)
 {
     if (s.IsEmpty()) return;
 
+    s.Replace("&nbsp;"," ");
+    s.Replace("&nbsp"," ");
     s.TrimLeft("}>]):");
     s.TrimLeft();
     s.TrimRight();
