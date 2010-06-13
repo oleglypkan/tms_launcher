@@ -50,7 +50,7 @@ extern UINT LINK_MAX;
 const int max_value_length = 2;
 const char *HelpFileName = "TMS_Launcher.chm";
 
-bool isalpha_cp1251(char ch);
+bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
 
 //////////////////////////// General options page //////////////////////

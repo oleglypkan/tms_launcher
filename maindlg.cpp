@@ -34,7 +34,7 @@ extern CSettings Settings;
 #define new DEBUG_NEW
 #endif
 
-bool isalpha_cp1251(char ch);
+bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
 void StringToUpperCase(CString &String);
 
@@ -1527,9 +1527,9 @@ void CMainDlg::OnContextMenuCommand(UINT code, int idFrom, HWND hwndFrom)
     }
 }
 
-bool isalpha_cp1251(char ch)
+bool isalpha_cp1251(unsigned char ch)
 {
-    if ((ch >= (char)0xC0) && (ch <= (char)0xFF))  // cyrilic characters in cp1251
+    if ((ch >= (unsigned char)0xC0) && (ch <= (unsigned char)0xFF))  // cyrilic characters in cp1251
     {
         return true;
     }

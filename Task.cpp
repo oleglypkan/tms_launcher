@@ -25,7 +25,7 @@ using namespace boost;
 #endif
 
 extern CSettings Settings;
-bool isalpha_cp1251(char ch);
+bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
 
 void TASK::FillupTaskID(CString &ID)

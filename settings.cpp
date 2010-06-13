@@ -25,7 +25,7 @@
 extern CString szWinName;
 UINT LINK_MAX = 1024;
 
-bool isalpha_cp1251(char ch);
+bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
 
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
