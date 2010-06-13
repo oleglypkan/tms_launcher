@@ -953,18 +953,18 @@ int CSettings::RemoveUnacceptableSeparators(CString &String)
 // removes duplicate separators and returns the number of characters left in string
 int CSettings::RemoveDuplicateSeparators(CString &String)
 {
-    char duplicates[255];
-    ZeroMemory(duplicates,255);
+    unsigned char duplicates[256];
+    ZeroMemory(duplicates,256);
     int i = 0;
     while (i<String.GetLength())
     {
-        if (duplicates[String[i]])
+        if (duplicates[(unsigned char)(String[i])])
         {
             String.Delete(i);
         }
         else
         {
-            duplicates[String[i]]++;
+            duplicates[(unsigned char)(String[i])]++;
             i++;
         }
     }
