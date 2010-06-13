@@ -163,7 +163,8 @@ public:
     CMainDlg *MainDialog; // pointer to main dialog window
     CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
               const char* DefectsSubKeyName, const char* TasksSubKeyName, const char* LinksSubKeyName,
-              const char* SoftTestSubKeyName, const char* HistorySubKeyName, const char* OtherSubKeyName);
+              const char* SoftTestSubKeyName, const char* HistorySubKeyName, const char* OtherSubKeyName,
+              const char* FlagsSubKeyName);
     void LoadSettings();
     void ImportSettings(LPCTSTR lpSubKey);
     void SaveGeneralSettings(bool AfterImporting = false);
@@ -192,6 +193,7 @@ protected:
     CString SoftTestSubKey;
     CString HistorySubKey;
     CString OtherSubKey;
+    CString FlagsSubKey;
     CString AutoRunRegistryKey;
     CString AutoRunValueName;
     CString SoftTestCommandLine; // command line that used to launch SoftTest

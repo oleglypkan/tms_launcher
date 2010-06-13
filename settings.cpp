@@ -35,7 +35,8 @@ bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
 CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* AutoRunValName, 
                      const char* DefectsSubKeyName, const char* FormatSubKeyName,
                      const char* LinksSubKeyName, const char* SoftTestSubKeyName,
-                     const char* HistorySubKeyName, const char* OtherSubKeyName):Reg(HKEY_CURRENT_USER),x(138),GlobalHotkeyID(0xBFFF),
+                     const char* HistorySubKeyName, const char* OtherSubKeyName,
+                     const char* FlagsSubKeyName):Reg(HKEY_CURRENT_USER),x(138),GlobalHotkeyID(0xBFFF),
                      iTMSviewTask("https://www.softcomputer.com:443/itms/gentaskdetails.php?Client=%s&ID=%s"),
                      iTMSviewChildTasks("https://www.softcomputer.com:443/itms/gentaskdetails.php?Client=%s&ID=%s"),
                      iTMSviewRelatedTasks("https://www.softcomputer.com:443/itms/showall.php?Client=%s&ID=%s"),
@@ -58,6 +59,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     SoftTestSubKey = SoftTestSubKeyName;
     HistorySubKey = HistorySubKeyName;
     OtherSubKey = OtherSubKeyName;
+    FlagsSubKey = FlagsSubKeyName;
     AutoRunRegistryKey = AutoRunRegKey;
     AutoRunValueName = AutoRunValName;
     BrowserPath = "";
@@ -102,7 +104,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     AA_ID_RegEx = "AA_ID=([0-9]+)";
     iTMSTimesheetsRegEx = "<tr><td nowrap >([^<]+)</td><td nowrap >([^<]+)</td><td[^>]*>([^<]+)</td><td>([^<]+)</td></tr>";
     TasksSeparators = ";,\n\r";
-    Separators = " -*+|:~#@$%^\t";
+    Separators = " —– -*+|:~#@$%^\t";
     HistoryTasks = "";
     MinClientName = 0;
     MaxClientName = 8;
@@ -505,7 +507,15 @@ void CSettings::LoadSettings()
     RemoveDuplicateSeparators(TASKS_SEPARATORS);
     if (SEPARATORS.FindOneOf(TASKS_SEPARATORS) == -1)
     {
-        if (!SEPARATORS.IsEmpty()) Separators = SEPARATORS;
+        if (!SEPARATORS.IsEmpty())
+        {
+            Separators = SEPARATORS;
+        }
+        else
+        {
+            // adding flag meaning that default separators (including new ones) are used
+            Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"NewSeparators",REG_SZ,(const BYTE*)LPCTSTR(""),0);
+        }
         if (!TASKS_SEPARATORS.IsEmpty()) TasksSeparators = TASKS_SEPARATORS;
     }
     CorrectCRLF(SEPARATORS,TASKS_SEPARATORS);
@@ -681,7 +691,22 @@ void CSettings::ConvertSettings()
 
 void CSettings::AddingNewURLs()
 {
-//  if links sub-key does not exist, default URLs should be restored
+    // adding new values to "Separators" field if these values were not added before
+    // this is determined by existence of "NewSeparators" flag
+    CString SEPARATORS = "";
+    if (Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(LPBYTE)SEPARATORS.GetBuffer(255),255))
+    {
+        SEPARATORS.ReleaseBuffer();
+        char NewSeparatorsFlag[2] = ""; // this flag was added in 3.1
+        if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"NewSeparators",REG_SZ,(LPBYTE)NewSeparatorsFlag,1))
+        {
+            SEPARATORS.Insert(0," —–");
+            Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(const BYTE*)LPCTSTR(SEPARATORS),SEPARATORS.GetLength()+1);
+            Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"NewSeparators",REG_SZ,(const BYTE*)LPCTSTR(""),0);
+        }       
+    }
+    
+    //  if links sub-key does not exist, default URLs should be restored
     if (!Reg.KeyPresent(RegistryKey+"\\"+LinksSubKey))
     {
         return;

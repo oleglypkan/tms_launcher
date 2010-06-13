@@ -35,7 +35,7 @@ const char* AutoRunKeyName = "TMS Launcher";
 const UINT WM_TMS_LAUNCHER_ACTIVATE = ::RegisterWindowMessage("TMS_Launcher_Activate");
 CSettings Settings("Software\\Winchester\\TMS Launcher",
                    "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-                   AutoRunKeyName, "Defects", "Format", "Links", "SoftTest", "History", "Other");
+                   AutoRunKeyName, "Defects", "Format", "Links", "SoftTest", "History", "Other", "Flags");
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
                     const char* StringName = "ProductVersion", UINT VersionDigits = 2,
                     const CString &ModulePath = "");
