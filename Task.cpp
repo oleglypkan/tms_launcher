@@ -119,7 +119,7 @@ bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CStri
         // checking for correct ID
         for (int i=0; i<sIDName.GetLength(); i++)
         {
-            if (!isdigit((unsigned int)sIDName[i])) return false;
+            if (!isdigit((unsigned char)(sIDName[i]))) return false;
         }
     }
     
