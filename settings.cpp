@@ -508,20 +508,12 @@ void CSettings::LoadSettings()
     TASKS_SEPARATORS.ReleaseBuffer();
     RemoveUnacceptableSeparators(TASKS_SEPARATORS);
     RemoveDuplicateSeparators(TASKS_SEPARATORS);
+    CorrectCRLF(SEPARATORS,TASKS_SEPARATORS);
     if (SEPARATORS.FindOneOf(TASKS_SEPARATORS) == -1)
     {
-        if (!SEPARATORS.IsEmpty())
-        {
-            Separators = SEPARATORS;
-        }
-        else
-        {
-            // adding flag meaning that default separators (including new ones) are used
-            Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"NewSeparators",REG_SZ,(const BYTE*)LPCTSTR(""),0);
-        }
+        if (!SEPARATORS.IsEmpty()) Separators = SEPARATORS;
         if (!TASKS_SEPARATORS.IsEmpty()) TasksSeparators = TASKS_SEPARATORS;
     }
-    CorrectCRLF(SEPARATORS,TASKS_SEPARATORS);
     if (Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"FillID",REG_DWORD,(LPBYTE)&DWbuf,DWordSize))
     {
         FillID = (DWbuf != 0);
@@ -870,6 +862,7 @@ void CSettings::SaveFormatSettings()
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxID",REG_DWORD,(const BYTE*)&MaxIDName,sizeof(DWORD));
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxExt",REG_DWORD,(const BYTE*)&MaxExt,sizeof(DWORD));
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(const BYTE*)LPCTSTR(Separators),Separators.GetLength()+1);
+    Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"NewSeparators",REG_SZ,(const BYTE*)LPCTSTR(""),0); // new flag added in 3.1
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"TasksSeparators",REG_SZ,(const BYTE*)LPCTSTR(TasksSeparators),TasksSeparators.GetLength()+1);
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"FillID",REG_DWORD,(const BYTE*)&FillID,sizeof(DWORD));
     Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"iTMS RTM regex",REG_SZ,(const BYTE*)LPCTSTR(iTMSRtmRegEx),iTMSRtmRegEx.GetLength()+1);
