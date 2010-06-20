@@ -27,6 +27,7 @@ UINT LINK_MAX = 1024;
 
 bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
+void StringToUpperCase(CString &String);
 
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
                     const char* StringName = "ProductVersion", UINT VersionDigits = 2,
@@ -117,6 +118,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     ChildDefectsLink = "http://qa.isd.dp.ua/softtest/child_defects/%PROJECT%/%ID%/";
     ParentDefectLink = "http://qa.isd.dp.ua/softtest/parent_defect/%PROJECT%/%ID%/";
     RelatedDefectsLink = "http://qa.isd.dp.ua/softtest/related_defects/%PROJECT%/%ID%/";
+    SifLink = "http://se-web.softcomputer.com/SE_DB_ENGINE/tools/forms/sif/saveToDb.do?&shortcut=true&actionS=Edit&id=%ID%";
     defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
@@ -135,6 +137,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     defects.push_back(defect("STO","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("STORE","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("SUP","ST_ISD_SUPPORT",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
+    defects.push_back(defect("SIF","SIF",SifLink, SifLink, SifLink, SifLink));
 }
 
 const CString& CSettings::GetSoftTestCommandLine(const char *Project)
@@ -691,6 +694,22 @@ void CSettings::ConvertSettings()
 
 void CSettings::AddingNewURLs()
 {
+    // adding SIF record to defects records list
+    if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
+    {
+        char SIFflag[2] = ""; // this flag was added in 3.1
+        if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(LPBYTE)SIFflag,1))
+        {
+            if (!IsDefectInRegistry("SIF;"))
+            {
+                CString value = "";
+                value.Format("%s;%s;%s;%s;%s;%s", "SIF", "SIF", SifLink, SifLink, SifLink, SifLink);
+                Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+            }
+            Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
+        }
+    }
+
     // adding new values to "Separators" field if these values were not added before
     // this is determined by existence of "NewSeparators" flag
     CString SEPARATORS = "";
@@ -786,36 +805,9 @@ void CSettings::AddingNewURLs()
         // adding defect record for LMM defects
         if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
         {
-            DWORD DWordSize=sizeof(DWORD);
-            DWORD MaxValueNameLength = 255;
-            DWORD MaxValueLength = 16000;
-            int defects_number = 0;
-            defects_number = Reg.GetNumberOfValues(RegistryKey+"\\"+DefectsSubKey,&MaxValueNameLength,&MaxValueLength);
-            MaxValueNameLength++;
-            MaxValueLength++;
-            DWORD type;
-            CString value_name = "", value = ""; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3;URL4";
-            bool isLMM = false;
-            for (int i=0; i<defects_number; i++)
+            if (!IsDefectInRegistry("LMM;"))
             {
-                DWORD ValueNameLength = MaxValueNameLength;
-                DWORD ValueLength = MaxValueLength;
-                value_name = "", value = "";
-                bool res = Reg.GetValueName(RegistryKey+"\\"+DefectsSubKey,i,value_name.GetBuffer(ValueNameLength),&ValueNameLength,&type);
-                value_name.ReleaseBuffer();
-                if (res && (type == REG_SZ))
-                {
-                    Reg.ReadValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(LPBYTE)value.GetBuffer(ValueLength),ValueLength);
-                    value.ReleaseBuffer();
-                    if (value.Find("LMM;")==0)
-                    {
-                        isLMM = true;
-                        break;
-                    }
-                }
-            }
-            if (!isLMM)
-            {
+                CString value = "";
                 value.Format("%s;%s;%s;%s;%s;%s", "LMM", "ST_LM_MAYO_SYNCH", DefectsLink, ChildDefectsLink, ParentDefectLink, RelatedDefectsLink);
                 Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"LMM",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
             }
@@ -910,6 +902,7 @@ void CSettings::SaveDefectsSettings()
         value.Format("%s;%s;%s;%s;%s;%s",defects[i].ClientID,defects[i].STProject,defects[i].DefectURL,defects[i].ChildDefectsURL,defects[i].ParentDefectURL,defects[i].RelatedDefectsURL);
         Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
     }
+    Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
 }
 
 void CSettings::SaveHistorySettings()
@@ -1067,6 +1060,9 @@ int CSettings::GetDefaultUrlIndex()
     return index;
 }
 
+// returns true if there is a record among defects with Client = ClientID
+// additionally it determines if "SIF" should be considered as regular defect or as special SIF
+// depending on URL used to open it
 bool CSettings::IsDefect(const char *Client, CString *Project, int *index)
 {
     bool result = false;
@@ -1083,7 +1079,6 @@ bool CSettings::IsDefect(const char *Client, CString *Project, int *index)
     {
         if (CompareNoCaseCP1251(Client,defects[i].ClientID)==0)
         {
-            result = true;
             if (Project != NULL)
             {
                 *Project = defects[i].STProject;
@@ -1092,10 +1087,30 @@ bool CSettings::IsDefect(const char *Client, CString *Project, int *index)
             {
                 *index = i;
             }
+            if (IsSIF(i)) break; // in this case defect with ClientID == "SIF" is considered as special SIF but not as regular defect
+            result = true;       // this is regular defect
             break;
         }
     }
 
+    return result;
+}
+
+// returns true if a defect should be considered as special SIF but not as regular defect
+bool CSettings::IsSIF(int index)
+{
+    if (index < 0) return false;
+    bool result = false;
+
+    if (CompareNoCaseCP1251(defects[index].ClientID,"SIF")==0)
+    {
+        CString temp = defects[index].DefectURL;
+        StringToUpperCase(temp);
+        if (temp.Find("HTTP://SE-WEB")==0)
+        {
+            result = true;
+        }
+    }
     return result;
 }
 
@@ -1188,6 +1203,38 @@ void CSettings::sort_links(std::vector<link> &links_to_sort)
         }
         if (!exchange) break;
     }
+}
+
+// returns true if there is a value in RegistryKey\DefectsSubKey that begins with text specified in "Client" parameter
+bool CSettings::IsDefectInRegistry(const char *Client)
+{
+    DWORD DWordSize=sizeof(DWORD);
+    DWORD MaxValueNameLength = 255;
+    DWORD MaxValueLength = 16000;
+    int defects_number = 0;
+    defects_number = Reg.GetNumberOfValues(RegistryKey+"\\"+DefectsSubKey,&MaxValueNameLength,&MaxValueLength);
+    MaxValueNameLength++;
+    MaxValueLength++;
+    DWORD type;
+    CString value_name = "", value = ""; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3;URL4";
+    for (int i=0; i<defects_number; i++)
+    {
+        DWORD ValueNameLength = MaxValueNameLength;
+        DWORD ValueLength = MaxValueLength;
+        value_name = "", value = "";
+        bool res = Reg.GetValueName(RegistryKey+"\\"+DefectsSubKey,i,value_name.GetBuffer(ValueNameLength),&ValueNameLength,&type);
+        value_name.ReleaseBuffer();
+        if (res && (type == REG_SZ))
+        {
+            Reg.ReadValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(LPBYTE)value.GetBuffer(ValueLength),ValueLength);
+            value.ReleaseBuffer();
+            if (value.Find(Client)==0)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void CSettings::SetRelatedDefectsFilter()

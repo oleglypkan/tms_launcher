@@ -131,6 +131,7 @@ public:
     CString ChildDefectsLink;
     CString ParentDefectLink;
     CString RelatedDefectsLink;
+    CString SifLink;
     CString BrowserPath;
     bool DefaultBrowser;
     bool EnableOpacity;
@@ -183,6 +184,8 @@ public:
     int GetDefaultUrlIndex();
     bool IsDefect(const char *Client, CString *Project, int *index);
     bool OpenDefectsInSoftTest(INT wID);
+    bool IsDefectInRegistry(const char *Client);
+    bool IsSIF(int index);
 protected:
     BYTE x;
     Registry Reg;
