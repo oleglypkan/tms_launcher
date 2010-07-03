@@ -275,19 +275,34 @@ int TASK::ParseHTMLForParentTask(CString &TaskToFind, const CString &HTML)
  // 0 - parent found, 1 - no parent, 2 - no such defect
 int TASK::ParseHTMLForParentDefect(CString &DefectToFind, const CString &HTML)
 {
-    long pos = HTML.Find("<title>R&amp;D / SoftTest / Defect Info / @");
-    if (pos != -1)
+    RegEx expr; // regular expression object used to parse HTML page
+    try
+    {
+        expr.SetExpression("<title>.+ / SoftTest / Defect Info / @",true);      
+    }
+    catch (bad_expression)
+    {
+        return 2;
+    }
+    if (expr.Search(HTML,match_any))
     {
         DefectToFind = "Defect "+DefectToFind+" not found";
         return 2;
     }
-    pos = HTML.Find("<title>R&amp;D / SoftTest / Defect Info / 0@");
-    if (pos != -1)
+    try
+    {
+        expr.SetExpression("<title>.+ / SoftTest / Defect Info / 0@",true);      
+    }
+    catch (bad_expression)
+    {
+        return 2;
+    }
+    if (expr.Search(HTML,match_any))
     {
         DefectToFind = "Defect "+DefectToFind+" does not have parent";
         return 1;
     }
-    pos = HTML.Find("</title>");
+    long pos = HTML.Find("</title>");
     if (pos == -1) return 2;
     DefectToFind = HTML.Left(pos);
     DefectToFind.Delete(0,DefectToFind.Find("<title>"));
