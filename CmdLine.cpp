@@ -661,8 +661,16 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                     bool IsDefect = false;
                     int defect_index = -1;
 
-                    // checking if a task is SoftTest defect
-                    if (IsDefect = Settings.IsDefect(Client,NULL,&defect_index))
+                    // checking if a task is SoftTest defect or SIF
+                    IsDefect = Settings.IsDefect(Client,NULL,&defect_index);
+                    if (Settings.IsSIF(defect_index))
+                    {
+                        OutFile.width(16);
+                        OutFile << Tasks[i] << "- is Software Installation Form" << endl;
+                        if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
+                        continue;
+                    }
+                    if (IsDefect)
                     {
                         // build URL to open request specific page for SoftTest defects
                         switch (type)
