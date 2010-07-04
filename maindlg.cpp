@@ -843,7 +843,7 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
     Request = "";
 
     // opening defect
-    if (Settings.IsDefect(sClientName, NULL, &index) || Settings.IsSIF(index))
+    if (Settings.IsDefect(sClientName, NULL, &index) || Settings.IsSIF(index) || Settings.IsHF(index))
     {
         switch (wID)
         {

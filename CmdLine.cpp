@@ -670,6 +670,13 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                         if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
                         continue;
                     }
+                    if (Settings.IsHF(defect_index))
+                    {
+                        OutFile.width(16);
+                        OutFile << Tasks[i] << "- is Hotfix" << endl;
+                        if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
+                        continue;
+                    }
                     if (IsDefect)
                     {
                         // build URL to open request specific page for SoftTest defects

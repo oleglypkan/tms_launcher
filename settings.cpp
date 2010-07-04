@@ -119,6 +119,8 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     ParentDefectLink = "http://qa.isd.dp.ua/softtest/parent_defect/%PROJECT%/%ID%/";
     RelatedDefectsLink = "http://qa.isd.dp.ua/softtest/related_defects/%PROJECT%/%ID%/";
     SifLink = "http://se-web.softcomputer.com/SE_DB_ENGINE/tools/forms/sif/saveToDb.do?&shortcut=true&actionS=Edit&id=%ID%";
+    HfLinkActive = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_status[]=active&hotfixid=%ID%";
+    HfLinkAll = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=999&hotfixid=%ID%";
     defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
@@ -138,6 +140,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     defects.push_back(defect("STORE","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("SUP","ST_ISD_SUPPORT",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("SIF","SIF",SifLink, SifLink, SifLink, SifLink));
+    defects.push_back(defect("HF","HF",HfLinkActive, HfLinkAll, HfLinkAll, HfLinkAll));
 }
 
 const CString& CSettings::GetSoftTestCommandLine(const char *Project)
@@ -686,6 +689,22 @@ void CSettings::ConvertSettings()
 
 void CSettings::AddingNewURLs()
 {
+    // adding HF record to defects records list
+    if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
+    {
+        char HFflag[2] = ""; // this flag was added in 3.1
+        if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"HF",REG_SZ,(LPBYTE)HFflag,1))
+        {
+            if (!IsDefectInRegistry("HF;"))
+            {
+                CString value = "";
+                value.Format("%s;%s;%s;%s;%s;%s", "HF", "HF", HfLinkActive, HfLinkAll, HfLinkAll, HfLinkAll);
+                Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+            }
+            Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
+        }
+    }
+
     // adding SIF record to defects records list
     if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
     {
@@ -896,6 +915,7 @@ void CSettings::SaveDefectsSettings()
         Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
     }
     Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
+    Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
 }
 
 void CSettings::SaveHistorySettings()
@@ -1054,7 +1074,7 @@ int CSettings::GetDefaultUrlIndex()
 }
 
 // returns true if there is a record among defects with Client = ClientID
-// additionally it determines if "SIF" should be considered as regular defect or as special SIF
+// additionally it determines if "SIF" or "HF" should be considered as regular defect or as special SIF or HF
 // depending on URL used to open it
 bool CSettings::IsDefect(const char *Client, CString *Project, int *index)
 {
@@ -1081,6 +1101,7 @@ bool CSettings::IsDefect(const char *Client, CString *Project, int *index)
                 *index = i;
             }
             if (IsSIF(i)) break; // in this case defect with ClientID == "SIF" is considered as special SIF but not as regular defect
+            if (IsHF(i)) break;  // in this case defect with ClientID == "HF" is considered as special HF but not as regular defect
             result = true;       // this is regular defect
             break;
         }
@@ -1100,6 +1121,24 @@ bool CSettings::IsSIF(int index)
         CString temp = defects[index].DefectURL;
         StringToUpperCase(temp);
         if (temp.Find("HTTP://SE-WEB")==0)
+        {
+            result = true;
+        }
+    }
+    return result;
+}
+
+// returns true if a defect should be considered as special HF but not as regular defect
+bool CSettings::IsHF(int index)
+{
+    if (index < 0) return false;
+    bool result = false;
+
+    if (CompareNoCaseCP1251(defects[index].ClientID,"HF")==0)
+    {
+        CString temp = defects[index].DefectURL;
+        StringToUpperCase(temp);
+        if (temp.Find("HTTP://SE")==0)
         {
             result = true;
         }
