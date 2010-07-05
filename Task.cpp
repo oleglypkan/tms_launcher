@@ -27,6 +27,7 @@ using namespace boost;
 extern CSettings Settings;
 bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
+void RemoveSeparators(CString &string, const CString &separators);
 
 void TASK::FillupTaskID(CString &ID)
 {
@@ -61,16 +62,45 @@ bool TASK::IsClientNameValid(const CString &ClientName)
 
 bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CString &Sep, CString &sIDName)
 {
-//  Task name format: [%CLIENT%-]%ID%[-%EXT%]
-
     CString sTaskName = OriginalTask;
     if (sTaskName.IsEmpty()) return false;
 
     CString Ext = "";
 
-    int pos = sTaskName.FindOneOf(Settings.Separators);
+    // checking for hotfix (special type of defect with different format)
+    // hotfix format: [HF][1.]%ID%[.%EXT%]
+    if ( (Settings.Separators.Find('.') == -1) && (sTaskName.Find('.') != -1) ) // possibly hotfix
+    {
+        RegEx expr; // regular expression object to be used to parse possible hotfix
+        RemoveSeparators(sTaskName,Settings.Separators);
+        CString temp = "";
+        temp.Format("(HF)?(1\\.|\\.)?([0-9]{1,%d})([\\.]|[\\.][0-9]{1,%d})?",Settings.MaxIDName,(Settings.MaxExt>3)?Settings.MaxExt:3);
+        try
+        {
+            expr.SetExpression(temp,true);
+        }
+        catch (bad_expression)
+        {
+            return false;
+        }
+        if (expr.Match(sTaskName,match_stop))
+        {
+            sClientName = expr.Matched(1) ? expr.What(1).c_str() : "HF";
+            Sep = "";
+            sIDName = expr.Matched(3) ? expr.What(3).c_str() : "";
+            Ext = expr.Matched(4) ? expr.What(4).c_str() : "";
+            Ext.TrimLeft('.');
+            // check if there is defect record "HF" and the record is really HF, not regular defect
+            int index = -1;
+            Settings.IsDefect(sClientName,NULL,&index);
+            return Settings.IsHF(index);
+        }
+        return false;
+    }
 
     // parsing task name
+    // task name format: [%CLIENT%-]%ID%[-%EXT%]
+    int pos = sTaskName.FindOneOf(Settings.Separators);
     if (pos > -1)
     {
         Sep = sTaskName[pos];
@@ -720,5 +750,17 @@ void TASK::RemoveSpaces(CString &s)
     {
         s.Replace("  "," ");
         pos = s.Find("  ",pos);
+    }
+}
+
+// removes all separators from string
+void RemoveSeparators(CString &string, const CString &separators)
+{
+    if (string.IsEmpty()) return;
+    if (separators.IsEmpty()) return;
+    int pos = -1;
+    while ( ( pos = string.FindOneOf(separators) ) != -1)
+    {
+        string.Remove(string[pos]);
     }
 }
