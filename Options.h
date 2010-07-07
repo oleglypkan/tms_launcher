@@ -395,6 +395,14 @@ public:
                 return false;
             }
         }
+        if (temp.Find('.') != -1)
+        {
+            if (MyMessageBox(m_hWnd,"\"Separators\" field has character(s) '.' that will prevent opening hotfixes.\nWould you like the character(s) to be removed automatically?",szWinName,MB_YESNO|MB_ICONWARNING)==IDYES)
+            {
+                temp.Remove('.');
+                sSeparators.SetWindowText(temp);
+            }
+        }
 
         sTasksSeparators.GetWindowText(temp2.GetBuffer(256),256);
         temp2.ReleaseBuffer();
@@ -415,6 +423,15 @@ public:
                 return false;
             }
         }
+        if (temp2.Find('.') != -1)
+        {
+            if (MyMessageBox(m_hWnd,"\"Tasks separators\" field has character(s) '.' that will prevent opening hotfixes.\nWould you like the character(s) to be removed automatically?",szWinName,MB_YESNO|MB_ICONWARNING)==IDYES)
+            {
+                temp2.Remove('.');
+                sTasksSeparators.SetWindowText(temp2);
+            }
+        }
+
         int pos = temp.FindOneOf(temp2);
         if (pos != -1)
         {

@@ -121,6 +121,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     SifLink = "http://se-web.softcomputer.com/SE_DB_ENGINE/tools/forms/sif/saveToDb.do?&shortcut=true&actionS=Edit&id=%ID%";
     HfLinkActive = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_status[]=active&hotfixid=%ID%";
     HfLinkAll = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=999&hotfixid=%ID%";
+    HfLinkRevision = "http://se.softcomputer.com/CM/hotfix/HFinformation.php?HF_mainpage=1&hotfixID=%ID%";
     defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
@@ -507,10 +508,24 @@ void CSettings::LoadSettings()
     SEPARATORS.ReleaseBuffer();
     RemoveUnacceptableSeparators(SEPARATORS);
     RemoveDuplicateSeparators(SEPARATORS);
+    if (SEPARATORS.Find('.') != -1)
+    {
+        if (MyMessageBox(NULL,"\"Separators\" field has character(s) '.' that will prevent opening hotfixes.\nWould you like the character(s) to be removed automatically?",szWinName,MB_YESNO|MB_ICONWARNING)==IDYES)
+        {
+            SEPARATORS.Remove('.');
+        }
+    }
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"TasksSeparators",REG_SZ,(LPBYTE)TASKS_SEPARATORS.GetBuffer(255),255);
     TASKS_SEPARATORS.ReleaseBuffer();
     RemoveUnacceptableSeparators(TASKS_SEPARATORS);
     RemoveDuplicateSeparators(TASKS_SEPARATORS);
+    if (TASKS_SEPARATORS.Find('.') != -1)
+    {
+        if (MyMessageBox(NULL,"\"Tasks separators\" field has character(s) '.' that will prevent opening hotfixes.\nWould you like the character(s) to be removed automatically?",szWinName,MB_YESNO|MB_ICONWARNING)==IDYES)
+        {
+            TASKS_SEPARATORS.Remove('.');
+        }
+    }
     CorrectCRLF(SEPARATORS,TASKS_SEPARATORS);
     if (SEPARATORS.FindOneOf(TASKS_SEPARATORS) == -1)
     {

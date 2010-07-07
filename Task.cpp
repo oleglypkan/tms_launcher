@@ -27,7 +27,7 @@ using namespace boost;
 extern CSettings Settings;
 bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
-void RemoveSeparators(CString &string, const CString &separators);
+void RemoveSeparators(CString &string, const CString &separators, CString &sep);
 
 void TASK::FillupTaskID(CString &ID)
 {
@@ -60,19 +60,18 @@ bool TASK::IsClientNameValid(const CString &ClientName)
     return true;
 }
 
-bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CString &Sep, CString &sIDName)
+bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CString &Sep, CString &sIDName, CString &Ext)
 {
     CString sTaskName = OriginalTask;
     if (sTaskName.IsEmpty()) return false;
-
-    CString Ext = "";
+    sClientName = Sep = sIDName = Ext = "";
 
     // checking for hotfix (special type of defect with different format)
     // hotfix format: [HF][1.]%ID%[.%EXT%]
     if ( (Settings.Separators.Find('.') == -1) && (sTaskName.Find('.') != -1) ) // possibly hotfix
     {
         RegEx expr; // regular expression object to be used to parse possible hotfix
-        RemoveSeparators(sTaskName,Settings.Separators);
+        RemoveSeparators(sTaskName,Settings.Separators,Sep);
         CString temp = "";
         temp.Format("(HF)?(1\\.|\\.)?([0-9]{1,%d})([\\.]|[\\.][0-9]{1,%d})?",Settings.MaxIDName,(Settings.MaxExt>3)?Settings.MaxExt:3);
         try
@@ -86,10 +85,8 @@ bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CStri
         if (expr.Match(sTaskName,match_stop))
         {
             sClientName = expr.Matched(1) ? expr.What(1).c_str() : "HF";
-            Sep = "";
             sIDName = expr.Matched(3) ? expr.What(3).c_str() : "";
             Ext = expr.Matched(4) ? expr.What(4).c_str() : "";
-            Ext.TrimLeft('.');
             // check if there is defect record "HF" and the record is really HF, not regular defect
             int index = -1;
             Settings.IsDefect(sClientName,NULL,&index);
@@ -197,7 +194,7 @@ bool TASK::ComplexParseTasks(const char *strTasks, std::vector<TASKNAME> &Tasks,
     items = 0;
     int pos = -1;
     bool AllTasksValid = true;
-    CString Client, Sep, ID, Project;
+    CString Client, Sep, ID, Ext, Project;
 
     while (!sTasks.IsEmpty())
     {
@@ -213,13 +210,13 @@ bool TASK::ComplexParseTasks(const char *strTasks, std::vector<TASKNAME> &Tasks,
         if (!temp.IsEmpty())
         {
             items++;
-            if (IsTaskNameValid(temp,Client,Sep,ID))
+            if (IsTaskNameValid(temp,Client,Sep,ID,Ext))
             {
-                Tasks.push_back(TASKNAME(Client,Sep,ID));
+                Tasks.push_back(TASKNAME(Client,Sep,ID,Ext));
                 if (Settings.IsDefect(Client, &Project, NULL))
                 {
                     Project.MakeUpper();
-                    Defects.push_back(TASKNAME(Project,Sep,ID));
+                    Defects.push_back(TASKNAME(Project,Sep,ID,Ext));
                 }
             }
             else
@@ -753,14 +750,19 @@ void TASK::RemoveSpaces(CString &s)
     }
 }
 
-// removes all separators from string
-void RemoveSeparators(CString &string, const CString &separators)
+// removes all separators from string and returns first found separator as "sep"
+void RemoveSeparators(CString &string, const CString &separators, CString &sep)
 {
     if (string.IsEmpty()) return;
     if (separators.IsEmpty()) return;
-    int pos = -1;
-    while ( ( pos = string.FindOneOf(separators) ) != -1)
+
+    int pos = string.FindOneOf(separators);
+    if (pos != -1) sep = string[pos];
+    else sep = "";
+
+    while ( pos != -1)
     {
         string.Remove(string[pos]);
+        pos = string.FindOneOf(separators);
     }
 }

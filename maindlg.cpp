@@ -20,6 +20,8 @@
 #include "Options.h"
 #include "Task.h"
 #include "AmHttpSocket.h"
+#include <boost/regex.hpp>
+using namespace boost;
 using Mortimer::COptionSheetDialogImpl;
 using Mortimer::COptionSelectionTreeCtrl;
 using namespace std;
@@ -751,17 +753,35 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
     for (unsigned int i = 0; i < Tasks.size(); i++)
     {
         // skip opening defects if they need to be opened in SoftTest
-        if (InSoftTest && Settings.IsDefect(Tasks[i].Client, NULL, NULL))
+        int defect_index = -1;
+        bool IsDefect = Settings.IsDefect(Tasks[i].Client, NULL, &defect_index);
+        if (InSoftTest && IsDefect)
         {
             AddToHistory(Tasks[i].Client+Tasks[i].Separator+Tasks[i].ID);
         }
         else
         {
-            CreateRequest(Tasks[i].Client, Tasks[i].ID, Request, wID);
+            // request for HF in full format (with revision) should be created differently
+            if ( (Tasks[i].Client.CompareNoCase("HF") == 0) && (Tasks[i].Ext.GetLength() > 1) )
+            {
+                CreateRequestForHF(Tasks[i].ID, Tasks[i].Ext, Request);
+            }
+            else
+            {
+                // request for tasks/defects/SIFs
+                CreateRequest(Tasks[i].Client, Tasks[i].ID, Request, wID);
+            }
             if (!Request.IsEmpty())
             {
                 OpenTask(Request, (Tasks.size() == 1));
-                AddToHistory(Tasks[i].Client+Tasks[i].Separator+Tasks[i].ID);
+                if (Settings.IsHF(defect_index)) // history for HF is written differently
+                {
+                    AddToHistory(Tasks[i].Client+Tasks[i].Separator+"1."+Tasks[i].ID+Tasks[i].Ext);
+                }
+                else
+                {
+                    AddToHistory(Tasks[i].Client+Tasks[i].Separator+Tasks[i].ID);
+                }
             }
         }
     }
@@ -834,6 +854,52 @@ void CMainDlg::Replace_AA_ID(CString &Request, CString &Message, int index)
     {
         Request.Replace("%AA_ID%",Message);
     }
+}
+
+void CMainDlg::CreateRequestForHF(const char *sIDName, const char *Ext, CString &Request)
+{
+    CString Message = "";
+    CAmHttpSocket Req;
+    Request = Settings.HfLinkAll;
+    Request.Replace("%ID%", sIDName);
+    CString reply = Req.GetHeaders(Request);
+    if (Req.GetPageStatusCode() != 200) // some problems with loading web-page
+    {
+        MyMessageBox(m_hWnd,"Error while loading page with hotfix",szWinName,MB_ICONERROR);
+        Request = "";
+        return;
+    }
+    Message = Req.GetPage(Request);
+    if (Message.IsEmpty())
+    {
+        MyMessageBox(m_hWnd,"Error while loading page with hotfix",szWinName,MB_ICONERROR);
+        Request = "";
+        return;
+    }
+    RegEx expr; // regular expression object to be used to parse HTML
+    try
+    {
+        CString temp = "";
+        temp.Format("<a href=.+hotfixID=([0-9]+)[^0-9][^>]+>1.%s%s</a>", sIDName, Ext);
+        expr.SetExpression(temp,true);
+    }
+    catch (bad_expression)
+    {
+        Request = "";
+        return;
+    }
+    if (expr.Search(Message,match_any))
+    {
+        if (expr.Matched(1))
+        {
+            Request = Settings.HfLinkRevision;
+            Request.Replace("%ID%", expr.What(1).c_str());
+            return;
+        }
+    }
+    MyMessageBox(m_hWnd,"Cannot find hotfix 1."+CString(sIDName)+Ext,szWinName,MB_ICONERROR);
+    Request = "";
+    return;
 }
 
 void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID)

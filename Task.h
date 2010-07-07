@@ -22,12 +22,14 @@ public:
         Client = "";
         Separator = "";
         ID = "";
+        Ext = "";
     }
-    TASKNAME(CString client, CString separator, CString id)
+    TASKNAME(CString client, CString separator, CString id, CString ext)
     {
         Client = client;
         Separator = separator;
         ID = id;
+        Ext = ext;
     }
     const TASKNAME& operator=(const TASKNAME& task_name)
     {
@@ -35,11 +37,13 @@ public:
         Client = task_name.Client;
         Separator = task_name.Separator;
         ID = task_name.ID;
+        Ext = task_name.Ext;
         return *this;
     }
     CString Client;
     CString Separator;
     CString ID;
+    CString Ext;
 };
 
 struct CHILD
@@ -62,7 +66,7 @@ struct CHILD
 class TASK
 {
 public:
-    bool IsTaskNameValid(const char *OriginalTask, CString &sClientName, CString &Sep, CString &sIDName);
+    bool IsTaskNameValid(const char *OriginalTask, CString &sClientName, CString &Sep, CString &sIDName, CString &Ext);
     static bool IsClientNameValid(const CString &ClientName);
     static void FillupTaskID(CString &ID);
     void SimpleParseTasks(const char *strTasks, std::vector<CString> &Tasks);

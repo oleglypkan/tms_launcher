@@ -132,8 +132,9 @@ public:
     CString ParentDefectLink;
     CString RelatedDefectsLink;
     CString SifLink;
-    CString HfLinkActive;
-    CString HfLinkAll;
+    CString HfLinkActive;         // URL to show only active hotfixes
+    CString HfLinkAll;            // URL to show all hotfixes
+    CString HfLinkRevision;       // URL to show specific revision of a HF
     CString BrowserPath;
     bool DefaultBrowser;
     bool EnableOpacity;

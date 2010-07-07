@@ -648,8 +648,8 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
             task.SimpleParseTasks(TasksLine, Tasks);
             for (unsigned int i=0; i<Tasks.size(); i++)
             {
-                CString Client = "", Sep = "", ID = "";
-                if (!task.IsTaskNameValid(Tasks[i],Client,Sep,ID))
+                CString Client = "", Sep = "", ID = "", Ext = "";
+                if (!task.IsTaskNameValid(Tasks[i],Client,Sep,ID,Ext))
                 {
                     OutFile.width(16);
                     OutFile << Tasks[i] << "- invalid task name format" << endl;
