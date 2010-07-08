@@ -652,6 +652,7 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                 if (!task.IsTaskNameValid(Tasks[i],Client,Sep,ID,Ext))
                 {
                     OutFile.width(16);
+                    OutFile.setf(OutFile.left);
                     OutFile << Tasks[i] << "- invalid task name format" << endl;
                     if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
                 }
@@ -666,6 +667,7 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                     if (Settings.IsSIF(defect_index))
                     {
                         OutFile.width(16);
+                        OutFile.setf(OutFile.left);
                         OutFile << Tasks[i] << "- is Software Installation Form" << endl;
                         if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
                         continue;
@@ -673,6 +675,7 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                     if (Settings.IsHF(defect_index))
                     {
                         OutFile.width(16);
+                        OutFile.setf(OutFile.left);
                         OutFile << Tasks[i] << "- is Hotfix" << endl;
                         if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
                         continue;
@@ -699,6 +702,7 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                             case 'i': // information about task
                             case 'e': // check if task matches regular expression
                                 OutFile.width(16);
+                                OutFile.setf(OutFile.left);
                                 OutFile << Tasks[i] << "- is SoftTest defect" << endl;
                                 if ((type != 'i') && (type != 'e')) OutFile << endl;
                                 continue;
