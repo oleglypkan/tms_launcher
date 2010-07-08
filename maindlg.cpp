@@ -1614,6 +1614,30 @@ int CompareNoCaseCP1251(const char *string1, const char *string2)
     return StrCmp(str1, str2);
 }
 
+// returns true if string matches pattern
+bool MatchNoCase(const char *string, const char *pattern)
+{
+    CString what_to_match = string;
+    if (what_to_match.IsEmpty()) return false;
+    CString reg_exp = pattern;
+    if (reg_exp.IsEmpty()) return false;
+
+    RegEx expr; // regular expression object to be used to parse given string
+    try
+    {
+        expr.SetExpression(reg_exp,true);
+    }
+    catch (bad_expression)
+    {
+        return false;
+    }
+    if (expr.Match(what_to_match, match_all))
+    {
+        return true;
+    }
+    return false;
+}
+
 // This function converts lowercase characters to uppercase ones in passed string
 // For russian characters it works correctly with Cyrilic (Windows 1251) code page only
 void StringToUpperCase(CString &String)

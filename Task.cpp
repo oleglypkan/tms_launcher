@@ -27,6 +27,7 @@ using namespace boost;
 extern CSettings Settings;
 bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
+bool MatchNoCase(const char *string, const char *pattern);
 void RemoveSeparators(CString &string, const CString &separators, CString &sep);
 
 void TASK::FillupTaskID(CString &ID)
@@ -68,11 +69,12 @@ bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CStri
 
     // checking for hotfix (special type of defect with different format)
     // hotfix format: [HF][1.]%ID%[.%EXT%]
-    if ( (Settings.Separators.Find('.') == -1) && (sTaskName.Find('.') != -1) ) // possibly hotfix
+    CString temp = "";
+    temp.Format("HF([0-9]{1,%d})",Settings.MaxIDName);
+    if ( ((Settings.Separators.Find('.') == -1) && (sTaskName.Find('.') != -1)) || MatchNoCase(sTaskName, temp) ) // possibly hotfix
     {
         RegEx expr; // regular expression object to be used to parse possible hotfix
         RemoveSeparators(sTaskName,Settings.Separators,Sep);
-        CString temp = "";
         temp.Format("(HF)?(1\\.|\\.)?([0-9]{1,%d})([\\.]|[\\.][0-9]{1,%d})?",Settings.MaxIDName,(Settings.MaxExt>3)?Settings.MaxExt:3);
         try
         {
