@@ -1659,6 +1659,7 @@ public:
     CButton CopyButton;
     CButton DeleteButton;
     std::vector<defect> projects;
+    CMenu RestoreMenu;
     
     BEGIN_MSG_MAP(DefectsPage)
         MSG_WM_INITDIALOG(OnInitDialog)
@@ -1666,9 +1667,17 @@ public:
         COMMAND_ID_HANDLER_EX(IDC_DEFECT_EDIT,OnNewDefect)
         COMMAND_ID_HANDLER_EX(IDC_DEFECT_COPY,OnNewDefect)
         COMMAND_ID_HANDLER_EX(IDC_DEFECT_DELETE,OnDeleteDefect)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE,OnRestoreButton)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE_HF,OnRestoreHF)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE_SIF,OnRestoreSIF)
         COMMAND_ID_HANDLER_EX(IDC_DEFECTS_LIST,OnListNotify)
         REFLECT_NOTIFICATIONS()
     END_MSG_MAP()
+
+    ~DefectsPage()
+    {
+        DestroyMenu(RestoreMenu);
+    }
 
     void sort_defects()
     {
@@ -1718,6 +1727,10 @@ public:
         }
 
         DefectsList.SetCurSel(0);
+
+        RestoreMenu.CreatePopupMenu();
+        RestoreMenu.AppendMenu(MF_ENABLED,IDC_DEFECT_RESTORE_HF,"&HF");
+        RestoreMenu.AppendMenu(MF_ENABLED,IDC_DEFECT_RESTORE_SIF,"&SIF");
 
         return 0;
     }
@@ -1794,6 +1807,55 @@ public:
             projects.erase(projects.begin()+realpos);
         }
         DefectsList.SetCurSel(0);
+    }
+
+    void OnRestoreButton(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        RECT Rect;
+        ::GetWindowRect(GetDlgItem(IDC_DEFECT_RESTORE),&Rect);
+        RestoreMenu.TrackPopupMenu(TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_TOPALIGN,Rect.left,Rect.bottom,m_hWnd);
+    }
+
+    void OnRestoreHF(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        int index = GetPosByCaption("HF");
+        if (index == -1) // HF record does not exist
+        {
+            if (MyMessageBox(m_hWnd,"Would you like to create default HF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+            {
+                DefectsList.AddString("HF");
+                projects.push_back(defect("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll));
+            }
+        }
+        else // HF record exists and will be modified
+        {
+            if (MyMessageBox(m_hWnd,"Would you like to restore default values of existing HF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+            {
+                defect HF("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll);
+                projects[index] = HF;
+            }
+        }
+    }
+
+    void OnRestoreSIF(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        int index = GetPosByCaption("SIF");
+        if (index == -1) // SIF record does not exist
+        {
+            if (MyMessageBox(m_hWnd,"Would you like to create default SIF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+            {
+                DefectsList.AddString("SIF");
+                projects.push_back(defect("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink));
+            }
+        }
+        else // SIF record exists and will be modified
+        {
+            if (MyMessageBox(m_hWnd,"Would you like to restore default values of existing SIF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+            {
+                defect SIF("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink);
+                projects[index] = SIF;
+            }
+        }
     }
 
     void OnListNotify(UINT wNotifyCode, INT wID, HWND hWndCtl)

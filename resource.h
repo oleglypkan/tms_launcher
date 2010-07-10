@@ -108,6 +108,9 @@
 #define VIEW_RELATED_TASKS_HOTKEY       1094
 #define IDC_BUTTON_VIEW                 1095
 #define IDC_BUTTON_COPY                 1096
+#define IDC_DEFECT_RESTORE              1097
+#define IDC_DEFECT_RESTORE_HF           1098
+#define IDC_DEFECT_RESTORE_SIF          1099
 #define ID_MENU_UNDO                    32774
 #define ID_MENU_CUT                     32775
 #define ID_MENU_COPY                    32776
@@ -130,7 +133,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        221
 #define _APS_NEXT_COMMAND_VALUE         32789
-#define _APS_NEXT_CONTROL_VALUE         1097
+#define _APS_NEXT_CONTROL_VALUE         1100
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
