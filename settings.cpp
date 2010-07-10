@@ -119,8 +119,8 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     ParentDefectLink = "http://qa.isd.dp.ua/softtest/parent_defect/%PROJECT%/%ID%/";
     RelatedDefectsLink = "http://qa.isd.dp.ua/softtest/related_defects/%PROJECT%/%ID%/";
     SifLink = "http://se-web.softcomputer.com/SE_DB_ENGINE/tools/forms/sif/saveToDb.do?&shortcut=true&actionS=Edit&id=%ID%";
-    HfLinkActive = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_status[]=active&hotfixid=%ID%";
-    HfLinkAll = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=999&hotfixid=%ID%";
+    HfLinkActive = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=0&search_status[]=active&hotfixid=%ID%";
+    HfLinkAll = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=0&hotfixid=%ID%";
     HfLinkRevision = "http://se.softcomputer.com/CM/hotfix/HFinformation.php?HF_mainpage=1&hotfixID=%ID%";
     defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
     defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
