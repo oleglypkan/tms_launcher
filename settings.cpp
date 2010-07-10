@@ -710,11 +710,21 @@ void CSettings::AddingNewURLs()
         char HFflag[2] = ""; // this flag was added in 3.1
         if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"HF",REG_SZ,(LPBYTE)HFflag,1))
         {
-            if (!IsDefectInRegistry("HF;"))
+            CString value = "", value_name = "";
+            value.Format("%s;%s;%s;%s;%s;%s", "HF", "HF", HfLinkActive, HfLinkAll, HfLinkAll, HfLinkAll);
+            if (!IsDefectInRegistry("HF;", value_name)) // HF record does not exist yet, create it
             {
-                CString value = "";
-                value.Format("%s;%s;%s;%s;%s;%s", "HF", "HF", HfLinkActive, HfLinkAll, HfLinkAll, HfLinkAll);
                 Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+            }
+            else // there is user-defined HF record, asking the user to overwrite it
+            {
+                if (MyMessageBox(NULL,"New feature to open hotfixes was implemented in version 3.1.\nHowever, user-defined HF record was found in settings \
+and\nthe feature may not work because of this.\nIt is recommended to overwrite existing record with the default\nHF record.\n\nWould you like to overwrite \
+user-defined HF record with the default one?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+                {
+                    Reg.DeleteValue(RegistryKey+"\\"+DefectsSubKey,value_name);
+                    Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+                }
             }
             Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
         }
@@ -726,11 +736,21 @@ void CSettings::AddingNewURLs()
         char SIFflag[2] = ""; // this flag was added in 3.1
         if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(LPBYTE)SIFflag,1))
         {
-            if (!IsDefectInRegistry("SIF;"))
+            CString value = "", value_name = "";
+            value.Format("%s;%s;%s;%s;%s;%s", "SIF", "SIF", SifLink, SifLink, SifLink, SifLink);
+            if (!IsDefectInRegistry("SIF;",value_name)) // SIF record does not exist yet, create it
             {
-                CString value = "";
-                value.Format("%s;%s;%s;%s;%s;%s", "SIF", "SIF", SifLink, SifLink, SifLink, SifLink);
                 Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+            }
+            else // there is user-defined SIF record, asking the user to overwrite it
+            {
+                if (MyMessageBox(NULL,"New feature to open SIFs was implemented in version 3.1.\nHowever, user-defined SIF record was found in settings \
+and\nthe feature may work incorrectly because of this.\nIt is recommended to overwrite existing record with the default\nSIF record.\n\nWould you like to overwrite \
+user-defined SIF record with the default one?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+                {
+                    Reg.DeleteValue(RegistryKey+"\\"+DefectsSubKey,value_name);
+                    Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+                }
             }
             Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
         }
@@ -831,10 +851,10 @@ void CSettings::AddingNewURLs()
         // adding defect record for LMM defects
         if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
         {
-            if (!IsDefectInRegistry("LMM;"))
+            CString value = "", value_name = "";
+            value.Format("%s;%s;%s;%s;%s;%s", "LMM", "ST_LM_MAYO_SYNCH", DefectsLink, ChildDefectsLink, ParentDefectLink, RelatedDefectsLink);
+            if (!IsDefectInRegistry("LMM;",value_name))
             {
-                CString value = "";
-                value.Format("%s;%s;%s;%s;%s;%s", "LMM", "ST_LM_MAYO_SYNCH", DefectsLink, ChildDefectsLink, ParentDefectLink, RelatedDefectsLink);
                 Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"LMM",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
             }
         }
@@ -1253,8 +1273,9 @@ void CSettings::sort_links(std::vector<link> &links_to_sort)
 }
 
 // returns true if there is a value in RegistryKey\DefectsSubKey that begins with text specified in "Client" parameter
-bool CSettings::IsDefectInRegistry(const char *Client)
+bool CSettings::IsDefectInRegistry(const char *Client, CString &ValueName)
 {
+    ValueName = "";
     DWORD DWordSize=sizeof(DWORD);
     DWORD MaxValueNameLength = 255;
     DWORD MaxValueLength = 16000;
@@ -1277,6 +1298,7 @@ bool CSettings::IsDefectInRegistry(const char *Client)
             value.ReleaseBuffer();
             if (value.Find(Client)==0)
             {
+                ValueName = value_name;
                 return true;
             }
         }
