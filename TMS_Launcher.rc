@@ -398,12 +398,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "Designed and developed by Oleg Lypkan"
             VALUE "CompanyName", "Information Systems Development"
-            VALUE "FileDescription", "TMS_Launcher Module"
+            VALUE "FileDescription", "TMS Launcher executable file"
             VALUE "FileVersion", "3, 1, 0, 0"
             VALUE "InternalName", "TMS_Launcher"
             VALUE "LegalCopyright", "Copyright © 2005 - 2010 by Oleg Lypkan"
             VALUE "OriginalFilename", "TMS_Launcher.exe"
-            VALUE "ProductName", "TMS_Launcher Module"
+            VALUE "ProductName", "TMS Launcher"
             VALUE "ProductVersion", "3, 1, 0, 0"
         END
     END
