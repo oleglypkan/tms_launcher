@@ -8,7 +8,7 @@ Default topic=introduction.html
 Display compile progress=Yes
 Index file=TMS_Launcher.hhk
 Language=0x409 English (United States)
-Title=TMS Launcher 3.0 HTML help
+Title=TMS Launcher 3.1 HTML help
 
 
 [FILES]
@@ -30,6 +30,7 @@ Settings\other.html
 credits.html
 style.css
 Settings\history.html
+Features\open_hf_sif.html
 
 [INFOTYPES]
 

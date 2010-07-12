@@ -1,0 +1,37 @@
+<!-- @(#)$RCSfile: open_hf_sif.html,v $$Revision: $$Date: $ -->
+<HTML>
+<HEAD>
+  <TITLE> TMS Launcher HTML Help </TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+  <link rel="STYLESHEET" href="..\style.css" type="text/css">
+</HEAD>
+
+<BODY>
+<table border="0">
+<tr>
+   <td><IMG SRC="Pictures\logo.gif"></td>
+   <td class="caption"> Launcher</td>
+</tr>
+</table>
+
+<hr size="1" noshade>
+
+<H2 align="center" class="boldfont">Opening Software Installation Forms and Hotfixes</H2>
+<P align="justify" class="font">
+Software Installation Forms (SIF) and Hotfixes (HF) are considered by TMS Launcher as special types of SoftTest defects. 
+Special records "SIF" and "HF" are created on <a href="..\Settings\defects.html">Defects page</a> of settings window.<br>
+These records allow opening SIF and HF using special URLs different than regular defect records have. Additionally, special HF URLs
+allow to parse entered HF number using special rules different than those used for TMS tasks and regular SoftTest defects.
+However, it is still possible to open regular defects with client prefixes "SIF" and "HF" but URLs should be manually modified for this.
+Original "SIF" and "HF" records can then be restored with new button "Restore" added to <a href="..\Settings\defects.html">Defects page</a> of settings window.
+<br><br>Hotfixes can be opened in the following formats:
+<UL class="font">
+    <LI><b>Short format (without revision specified) - HF 1.3590</b>
+    <br>In this case, "View Task" button opens web-page with ACTIVE revisions of the hotfix.
+    <br>Other buttons "Children", "Parent" and "Related" open web-page with ALL revisions of the hotfix.
+    <LI><b>Full format (with revision specified) - HF 1.3590.8</b>
+    <br>In this case, web-page with detailed information about specified hotfix revision opens.
+</UL>
+</P>
+</BODY>
+</HTML>

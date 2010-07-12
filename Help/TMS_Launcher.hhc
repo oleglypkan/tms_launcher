@@ -30,6 +30,14 @@
 			<param name="Local" value="Features\opendefects.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Opening Software Installation Forms">
+			<param name="Local" value="Features\open_hf_sif.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Opening Hotfixes">
+			<param name="Local" value="Features\open_hf_sif.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Opening links">
 			<param name="Local" value="Features\openlinks.html">
 			</OBJECT>
