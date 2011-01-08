@@ -411,7 +411,7 @@ public:
             MyMessageBox(m_hWnd,"\"Tasks separators\" field must not be empty.\nPlease enter correct value",szWinName,MB_ICONERROR);
             return false;
         }
-        for (i=0; i<temp2.GetLength(); i++)
+        for (int i=0; i<temp2.GetLength(); i++)
         {
             if (((unsigned char)(temp2[i]) == '_') || (isalpha_cp1251((unsigned char)(temp2[i]))) || (isdigit((unsigned char)(temp2[i]))))
             {

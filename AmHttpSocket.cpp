@@ -29,11 +29,11 @@ wchar_t* wcsustr(wchar_t *source, wchar_t *s);
 
 char* strustr(char *source, char *s)
 {
-    //make an uppercase copy af source and s
-    char *csource = strdup(source);
-    char *cs = strdup(s);
-    strupr(csource);
-    strupr(cs);
+    //make an uppercase copy of source and s
+    char *csource = _strdup(source);
+    char *cs = _strdup(s);
+    _strupr(csource);
+    _strupr(cs);
     //find cs in csource...
     char *result = strstr(csource, cs);
     if (result != NULL)
@@ -52,10 +52,10 @@ char* strustr(char *source, char *s)
 wchar_t* wcsustr(wchar_t *source, wchar_t *s)
 {
     //make an uppercase copy af source and s
-    wchar_t *csource = wcsdup(source);
-    wchar_t *cs = wcsdup(s);
-    wcsupr(csource);
-    wcsupr(cs);
+    wchar_t *csource = _wcsdup(source);
+    wchar_t *cs = _wcsdup(s);
+    _wcsupr(csource);
+    _wcsupr(cs);
     //find cs in csource...
     wchar_t *result = wcsstr(csource, cs);
     if (result != NULL)
@@ -551,7 +551,7 @@ void CAmHttpSocket::Base64Encode(CString &string)
         while (ch > 0)
         {
             char c[2] = "";
-            temp.Insert(0,itoa(ch % 2,c,10));
+            temp.Insert(0,_itoa(ch % 2,c,10));
             ch = ch / 2;
         }
         while (temp.GetLength() < 8)
@@ -574,7 +574,7 @@ void CAmHttpSocket::Base64Encode(CString &string)
             break;
     }
     int count = Binary.GetLength() / 6 - PaddingChars;
-    for (i = 0; i < count; i++)
+    for (int i = 0; i < count; i++)
     {
         CString temp = "";
         temp = Binary.Left(6);
@@ -597,7 +597,7 @@ void CAmHttpSocket::Base64Encode(CString &string)
     {
         string += Base64Table[Base64Digits[j]];
     }
-    for (i = 0; i < PaddingChars; i++)
+    for (int i = 0; i < PaddingChars; i++)
     {
         string += '=';
     }
@@ -646,7 +646,7 @@ bool CAmHttpSocket::Base64Decode(CString &string)
         while (ch > 0)
         {
             char c[2] = "";
-            temp.Insert(0,itoa(ch % 2,c,10));
+            temp.Insert(0,_itoa(ch % 2,c,10));
             ch = ch / 2;
         }
         while (temp.GetLength() < 6)
@@ -657,7 +657,7 @@ bool CAmHttpSocket::Base64Decode(CString &string)
     }
     int count = Binary.GetLength() / 8;
     string = "";
-    for (i = 0; i < count; i++)
+    for (int i = 0; i < count; i++)
     {
         CString temp = "";
         temp = Binary.Left(8);

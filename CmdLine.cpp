@@ -11,8 +11,10 @@
 #include "MainDlg.h"
 #include "Task.h"
 #include "AmHttpSocket.h"
-#include <boost/regex.hpp>
+#include <boost/cregex.hpp>
+#include <boost/regex/pattern_except.hpp>
 using namespace boost;
+using namespace boost::regex_constants;
 
 #ifndef NO_VERID
  static char verid[]="@(#)$RCSfile: CmdLine.cpp,v $$Revision: 1.32 $$Date: 2009/04/09 14:54:26Z $"; 
@@ -224,7 +226,7 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
         ShowUsage();
         return;
     }
-    for (i = 1; i <= 4; i++)
+    for (int i = 1; i <= 4; i++)
     {
         if (!Parameters[i].IsEmpty())
         {

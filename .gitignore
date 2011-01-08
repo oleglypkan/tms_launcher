@@ -3,5 +3,6 @@ Release/
 TMS_Launcher.aps
 TMS_Launcher.ncb
 TMS_Launcher.suo
+TMS_Launcher.vcproj.*.user
 Help/TMS_Launcher.chm
 Help/TMS_Launcher.chw

@@ -20,8 +20,10 @@
 #include "Options.h"
 #include "Task.h"
 #include "AmHttpSocket.h"
-#include <boost/regex.hpp>
+#include <boost/cregex.hpp>
+#include <boost/regex/pattern_except.hpp>
 using namespace boost;
+using namespace boost::regex_constants;
 using Mortimer::COptionSheetDialogImpl;
 using Mortimer::COptionSelectionTreeCtrl;
 using namespace std;
@@ -140,12 +142,12 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
     // creation of RichEdit control context menu
     ContextMenu.CreatePopupMenu();
     ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_UNDO,"&Undo");
-    ContextMenu.AppendMenu(MF_SEPARATOR,0,"");
+    ContextMenu.AppendMenu(MF_SEPARATOR,0U,"");
     ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_CUT,"Cu&t");
     ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_COPY,"&Copy");
     ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_PASTE,"&Paste");
     ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_DELETE,"&Delete");
-    ContextMenu.AppendMenu(MF_SEPARATOR,0,"");
+    ContextMenu.AppendMenu(MF_SEPARATOR,0U,"");
     ContextMenu.AppendMenu(MF_ENABLED,ID_MENU_SELECT,"Select &All");
 
     if ((Settings.xPos < 0) && (Settings.yPos < 0))

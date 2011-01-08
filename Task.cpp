@@ -9,8 +9,10 @@
 #include "stdafx.h"
 #include "Task.h"
 #include "settings.h"
-#include <boost/regex.hpp>
+#include <boost/cregex.hpp>
+#include <boost/regex/pattern_except.hpp>
 using namespace boost;
+using namespace boost::regex_constants;
 
 #ifndef NO_VERID
  static char verid[]="@(#)$RCSfile: Task.cpp,v $$Revision: 1.25 $$Date: 2009/03/25 21:38:47Z $"; 
