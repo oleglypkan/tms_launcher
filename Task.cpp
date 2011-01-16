@@ -377,7 +377,7 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
     RegEx expr; // regular expression object used to find tasks in HTML page
     try
     {
-        expr.SetExpression("\"><A title='[ ]*Task:[^&]*&#13;CreateDate.+</td><td colspan=",true);      
+        expr.SetExpression("<A class='childLink'.+</a>",true);
     }
     catch (bad_expression)
     {
@@ -390,7 +390,7 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
     try
     {
         // regular expression used to find task's details (name, product, status)
-        expr.SetExpression("\"><A title='[ ]*Task:[^&]*&#13;.+Product:(.+)&#13;Status:(.+)&#13;.+'>(.+)</a>.+</td><td colspan=",true);
+        expr.SetExpression("<A class='childLink'.+Status:</b>(.+)<br>.+Product:</b>(.+)<br>.+\'>(.+)</a>",true);
     }
     catch (bad_expression)
     {
@@ -409,13 +409,13 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
             {
                 continue;
             }
-            Child.Product = expr.Matched(1) ? expr.What(1).c_str() : ""; 
-            Child.Product.TrimLeft();
-            Child.Product.TrimRight();
-
-            Child.Status = expr.Matched(2) ? expr.What(2).c_str() : ""; 
+            Child.Status = expr.Matched(1) ? expr.What(1).c_str() : ""; 
             Child.Status.TrimLeft();
             Child.Status.TrimRight();
+
+            Child.Product = expr.Matched(2) ? expr.What(2).c_str() : ""; 
+            Child.Product.TrimLeft();
+            Child.Product.TrimRight();
             
             Tasks.push_back(Child);
         }
@@ -438,7 +438,7 @@ int TASK::ParseHTMLForSPCtasks(const CString &HTML, std::vector<CHILD> &Tasks)
     RegEx expr; // regular expression object used to find tasks in HTML page
     try
     {
-        expr.SetExpression("(<ul type=disc>)*<li><div.+(&nbsp;?){5,}.+</td></tr>",true);
+        expr.SetExpression("(<ul type=disc>)*<li><div.+(&nbsp;?){5,}.*</td></tr>",true);
     }
     catch (bad_expression)
     {
@@ -448,18 +448,20 @@ int TASK::ParseHTMLForSPCtasks(const CString &HTML, std::vector<CHILD> &Tasks)
     temp.clear();
     expr.Grep(temp,HTML,match_any);
 
-    try
-    {
-        // regular expression object used to find task's details (level, name, product, status, MSP)
-        expr.SetExpression("((?:<ul type=disc>)*)<li><div.+\"><b>(.+)</b></a>.+</td><td (?:bgcolor=\"#[0-9A-F]+\" )?nowrap >([^<]+)</td><td (?:bgcolor=\"#[0-9A-F]+\" )?nowrap >([^<]+)</td><td (?:bgcolor=\"#[0-9A-F]+\" )? nowrap align.+(?:&nbsp;?){5,}(.+)</td></tr>",true);
-    }
-    catch (bad_expression)
-    {
-        return 1;
-    }
     for (unsigned long i = 0; i < temp.size(); i++)
     {
         CString task = temp[i].c_str();
+        task.Replace("&nbsp;","");
+        task.Replace("&nbsp","");
+        try
+        {
+            // regular expression object used to find task's details (level, name)
+            expr.SetExpression("((?:<ul type=disc>)*)<li><div.+\"><b>(.+)</b></a>.+</td></tr>",true);
+        }
+        catch (bad_expression)
+        {
+            return 1;
+        }
         if (expr.Search(task,match_any))
         {
             CHILD Child;
@@ -482,15 +484,43 @@ int TASK::ParseHTMLForSPCtasks(const CString &HTML, std::vector<CHILD> &Tasks)
             {
                 Child.level = 1;
             }
-            Child.Product = expr.Matched(3) ? expr.What(3).c_str() : "";
-            Child.Product.TrimLeft();
-            Child.Product.TrimRight();
-            Child.Status = expr.Matched(4) ? expr.What(4).c_str() : "";
-            Child.Status.TrimLeft();
-            Child.Status.TrimRight();
-            Child.MSP = expr.Matched(5) ? expr.What(5).c_str() : "";
-            Child.MSP.TrimLeft();
-            Child.MSP.TrimRight();
+            // parse remaining cells (product, status, MSP)
+            try
+            {
+                // regular expression object used to find task's details (product, status, MSP)
+                expr.SetExpression("<td[^>]*>([^<]*)</td>",true);
+            }
+            catch (bad_expression)
+            {
+                return 1;
+            }
+            std::vector<std::string> temp2;
+            temp2.clear();
+            expr.Grep(temp2,task,match_any);
+            if (temp2.size() < 10)
+            {
+                Tasks.push_back(Child);
+                return 1;
+            }
+            if (expr.Search(temp2[4],match_any))
+            {
+                Child.Product = expr.Matched(1) ? expr.What(1).c_str() : "";
+                Child.Product.TrimLeft();
+                Child.Product.TrimRight();
+            }
+            if (expr.Search(temp2[5],match_any))
+            {
+                Child.Status = expr.Matched(1) ? expr.What(1).c_str() : "";
+                Child.Status.TrimLeft();
+                Child.Status.TrimRight();
+            }
+            if (expr.Search(temp2[9],match_any))
+            {
+                Child.MSP = expr.Matched(1) ? expr.What(1).c_str() : "";
+                Child.MSP.TrimLeft();
+                Child.MSP.TrimRight();
+            }
+
             Tasks.push_back(Child);
         }
     }

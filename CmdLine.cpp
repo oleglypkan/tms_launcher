@@ -349,7 +349,7 @@ void CmdLine::GetInformationAboutTask(const CString &Message, const char *Origin
     RegEx expr; // regular expression object to be used to parse HTML
     try
     {
-        expr.SetExpression(": <a title=\"View Task\".+<b>"+Client+"-"+ID+"</b></a>.+\"Add Task To Timesheet\".+(<td[^>]*>[^<]*</td>){4}<td[^>]*>([^<]+)</td><td[^>]*>([^<]+)</td>(<td[^>]*>[^<]*</td>){3}<td[^>]*>(&nbsp;?){5}([^<]*)</td>",true);
+        expr.SetExpression(": <a title=\"View Task\".+<b>"+Client+"-"+ID+"</b></a>.+\"Add Task To Timesheet\".+(<td[^>]*>[^<]*</td>){4}<td[^>]*>([^<]+)</td><td[^>]*>([^<]+)</td>(<td[^>]*>[^<]*</td>){3}<td[^>]*>((&nbsp;?){5}[^<]*)</td>",true);
     }
     catch (bad_expression)
     {
@@ -366,7 +366,9 @@ void CmdLine::GetInformationAboutTask(const CString &Message, const char *Origin
         Task.Status.TrimLeft();
         Task.Status.TrimRight();
 
-        Task.MSP = expr.Matched(6) ? expr.What(6).c_str() : "";
+        Task.MSP = expr.Matched(5) ? expr.What(5).c_str() : "";
+        Task.MSP.Replace("&nbsp;","");
+        Task.MSP.Replace("&nbsp","");
         Task.MSP.TrimLeft();
         Task.MSP.TrimRight();
 
@@ -826,7 +828,7 @@ void CmdLine::PrintTask(ofstream &OutFile, CHILD &ChildTask, bool first)
 void CmdLine::PrintSPCtask(ofstream &OutFile, CHILD &ChildTask, bool OrigTask, bool first)
 {
     ChildTask.TaskName.Insert(0,"        ");
-    ChildTask.TaskName.Delete(0,2*(5-ChildTask.level));
+    ChildTask.TaskName.Delete(0,2*(6-ChildTask.level));
 
     CString line = "";
     if (first)

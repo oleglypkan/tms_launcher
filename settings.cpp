@@ -41,7 +41,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
                      iTMSviewTask("https://www.softcomputer.com:443/itms/gentaskdetails.php?Client=%s&ID=%s"),
                      iTMSviewChildTasks("https://www.softcomputer.com:443/itms/gentaskdetails.php?Client=%s&ID=%s"),
                      iTMSviewRelatedTasks("https://www.softcomputer.com:443/itms/showall.php?Client=%s&ID=%s"),
-                     iTMSviewTimesheets("https://www.softcomputer.com:443/itms/task_timesheets.php?Client=%s&ID=%s")
+                     iTMSviewTimesheets("https://www.softcomputer.com:443/itms/tsh_list.php?Client=%s&ID=%s")
 {
     AutoRun = false;
     Expand = false;
