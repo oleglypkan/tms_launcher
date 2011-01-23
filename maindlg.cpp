@@ -954,15 +954,11 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
     }
 
     // opening TMS task
-    if (lstrcmp(sClientName,"")==0)
-    {
-        MyMessageBox(m_hWnd,"Task without client name is entered.\nThere is no defect with empty client name defined.\nSo, the task cannot be opened.",szWinName,MB_ICONERROR);
-        return;
-    }
-
     CString tempID = sIDName;
-    if (Settings.FillID) TASK::FillupTaskID(tempID);
-
+    if (lstrcmp(sClientName,"")!=0) // fillup should be used only for tasks with non-empty client name
+    {
+        if (Settings.FillID) TASK::FillupTaskID(tempID);
+    }
     switch (wID)
     {
         case VIEW_TASK:
@@ -1001,6 +997,12 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
         case VIEW_PARENT_TASK:
         case VIEW_PARENT_TASK_HOTKEY:
         {
+            if (lstrcmp(sClientName,"")==0)
+            {
+                MyMessageBox(m_hWnd,"Task without client name is entered.\nParent task cannot be found in this case.",szWinName,MB_ICONERROR);
+                Request = "";
+                break;
+            }
             if (Settings.links[index].Login.IsEmpty() || Settings.links[index].Password.IsEmpty())
             {
                 MyMessageBox(m_hWnd,"Both Login and Password must be specified\nin settings window for \""+Settings.links[index].Caption+"\" URL\nto open parent task",szWinName,MB_ICONERROR);
@@ -1055,6 +1057,11 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
                 else
                 {
                     Request = Settings.links[index].TaskURL;
+                    if (!CheckClient(Request, CString(sClientName)))
+                    {
+                        Request = "";
+                        break;
+                    }
                     Request.Replace("%CLIENT%",sClientName);
                     Request.Replace("%ID%",tempID);
                     Message.Format(Settings.iTMSviewTask,sClientName,tempID);
@@ -1071,6 +1078,11 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
             if (!Settings.links[index].ChildTasksURL.IsEmpty())
             {
                 Request = Settings.links[index].ChildTasksURL;
+                if (!CheckClient(Request, CString(sClientName)))
+                {
+                    Request = "";
+                    break;
+                }
                 Request.Replace("%CLIENT%",sClientName);
                 Request.Replace("%ID%",tempID);
                 CString Message = "";
@@ -1087,6 +1099,11 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
             if (!Settings.links[index].RelatedTasksURL.IsEmpty())
             {
                 Request = Settings.links[index].RelatedTasksURL;
+                if (!CheckClient(Request, CString(sClientName)))
+                {
+                    Request = "";
+                    break;
+                }
                 Request.Replace("%CLIENT%",sClientName);
                 Request.Replace("%ID%",tempID);
                 CString Message = "";
@@ -1109,6 +1126,16 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
         Request.Insert(0,"\"");
         Request += "\"";
     }
+}
+
+bool CMainDlg::CheckClient(const CString &CLIENT_IN_URL, const CString &CLIENT_IN_TASK)
+{
+    if ( (CLIENT_IN_URL.Find("%CLIENT%") != -1) && CLIENT_IN_TASK.IsEmpty() )
+    {
+        MyMessageBox(m_hWnd,"URL requires %CLIENT% to be replaced with client name from entered task.\nEntered task does not have client name and therefore cannot be opened by this URL.",szWinName,MB_ICONERROR);
+        return false;
+    }
+    return true;
 }
 
 void CMainDlg::OpenTask(const char *Request, bool SingleTask)

@@ -466,6 +466,7 @@ public:
     UINT WinKey;
     bool IE;
     bool use_iexplore;
+    bool IsDefectWithEmptyClient;
 
     CEdit CaptionEdit;
     CEdit TaskURL;
@@ -478,7 +479,7 @@ public:
     CWindow ParentTaskHotkey;
     CWindow RelatedTasksHotkey;
 
-    URLEditPage(int action, link url, std::vector<link> *links, UINT *ForbiddenHotkey, UINT *uWinKey, bool use_DEF, bool use_IE):URL(url)
+    URLEditPage(int action, link url, std::vector<link> *links, UINT *ForbiddenHotkey, UINT *uWinKey, bool use_DEF, bool use_IE, bool DefectWithEmptyClient):URL(url)
     {
         Action = action;
         Links = links;
@@ -495,6 +496,7 @@ public:
         }
         IE = use_DEF;
         use_iexplore = use_IE;
+        IsDefectWithEmptyClient = DefectWithEmptyClient;
     }
 
     BEGIN_MSG_MAP(URLEditPage)
@@ -676,13 +678,21 @@ public:
             }
             RelatedTasksURL.GetWindowText(strRelatedTasksURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
             strRelatedTasksURL.ReleaseBuffer();
-/*
-            if (strRelatedTasksURL.IsEmpty())
+
+            // warn user if there is no %CLIENT% in URL and there is Defect record with empty "Client"
+            if ((
+                  ((strTaskURL.Find("%CLIENT%") == -1) && (strTaskURL.Find("%ID%") != -1)) ||
+                  ((strChildTasksURL.Find("%CLIENT%") == -1) && (strChildTasksURL.Find("%ID%") != -1)) ||
+                  ((strRelatedTasksURL.Find("%CLIENT%") == -1) && (strRelatedTasksURL.Find("%ID%") != -1))
+                ) && IsDefectWithEmptyClient)
             {
-                MyMessageBox(m_hWnd,"URL to view Related Tasks cannot be empty.\nPlease enter correct URL",szWinName,MB_ICONERROR);
-                return 0;
+                MyMessageBox(m_hWnd,"One or more URLs does not have %CLIENT% which means\n"
+                                    "you are going to use it to open tasks with empty client name.\n"
+                                    "The URL(s) will not work because there is defect record with\n"
+                                    "empty client that has higher priority.\n"
+                                    "You should remove that defect record on \"Defects\" page\n"
+                                    "to make the URL(s) working",szWinName,MB_ICONWARNING);
             }
-*/
             // reading login and password
             CString strLogin, strPassword;
             Login.GetWindowText(strLogin.GetBuffer(MaxStringLength+1),MaxStringLength+1);
@@ -949,6 +959,461 @@ public:
     }
 };
 
+//////////////////////////// DefectsEdit page ///////////////////////
+class DefectEditPage : public CDialogImpl<DefectEditPage>
+{
+public:
+    enum { IDD = DEFECT_EDIT_PAGE };
+    int Action; // 0 - new defect, 1 - edit defect, 2 - copy defect
+    defect DEFECT;
+    int MaxStringLength;
+    std::vector<defect> *Defects;
+
+    CEdit DefectEdit;
+    CEdit ProjectEdit;
+    CEdit Link;
+    CEdit ChildLink;
+    CEdit ParentLink;
+    CEdit RelatedLink;
+
+    DefectEditPage(int action, defect def, std::vector<defect> *defects):DEFECT(def)
+    {
+        Action = action;
+        Defects = defects;
+        MaxStringLength = 255;
+    }
+
+    BEGIN_MSG_MAP(DefectEditPage)
+        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
+        COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)
+    END_MSG_MAP()
+
+    LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+    {
+        CenterWindow();
+        DefectEdit.Attach(GetDlgItem(IDC_CLIENT_EDIT));
+        DefectEdit.LimitText(MaxStringLength);
+        ProjectEdit.Attach(GetDlgItem(IDC_DEFECT_PROJECT));
+        ProjectEdit.LimitText(MaxStringLength);
+     
+        Link.Attach(GetDlgItem(IDC_DEFECTS_LINK));
+        Link.LimitText(LINK_MAX);
+        ChildLink.Attach(GetDlgItem(IDC_DEFECTS_LINK2));
+        ChildLink.LimitText(LINK_MAX);
+        ParentLink.Attach(GetDlgItem(IDC_DEFECTS_LINK3));
+        ParentLink.LimitText(LINK_MAX);
+        RelatedLink.Attach(GetDlgItem(IDC_DEFECTS_LINK4));
+        RelatedLink.LimitText(LINK_MAX);
+
+        DefectEdit.SetWindowText(DEFECT.ClientID);
+        ProjectEdit.SetWindowText(DEFECT.STProject);
+        Link.SetWindowText(DEFECT.DefectURL);
+        ChildLink.SetWindowText(DEFECT.ChildDefectsURL);
+        ParentLink.SetWindowText(DEFECT.ParentDefectURL);
+        RelatedLink.SetWindowText(DEFECT.RelatedDefectsURL);
+
+        switch(Action)
+        {
+            case 0: // new
+                SetWindowText("New defect record");
+                DEFECT.ClientID = ";";
+                break;
+            case 1: // edit
+                SetWindowText("Edit defect record");
+                break;
+            case 2: // copy
+                SetWindowText("New defect record");
+                DEFECT.ClientID = ";";
+                break;
+        }
+        return 0;
+    }
+
+    int GetPosByCaption(const char *caption)
+    {
+        for (unsigned int i=0; i<(*Defects).size(); i++)
+        {
+            if (CompareNoCaseCP1251((*Defects)[i].ClientID,caption)==0)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+    {
+        if (wID == IDOK)
+        {
+            // checking for duplicates and non-empty Project
+            CString strDefect, strProject;
+            DefectEdit.GetWindowText(strDefect.GetBuffer(MaxStringLength+1),MaxStringLength+1);
+            strDefect.ReleaseBuffer();
+            ProjectEdit.GetWindowText(strProject.GetBuffer(MaxStringLength+1),MaxStringLength+1);
+            strProject.ReleaseBuffer();
+        
+            if (strDefect.IsEmpty())
+            {
+                MyMessageBox(m_hWnd,"Empty client name that you entered is allowed,\n"
+                                    "however, those URLs defined on \"URLs\" page that\n"
+                                    "do not have %CLIENT% will not work because this\n"
+                                    "defect record has higher priority",szWinName,MB_ICONWARNING);
+            }
+            else
+            {
+                if (!TASK::IsClientNameValid(strDefect))
+                {
+                    MyMessageBox(m_hWnd,"Client name contains invalid character(s)",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (GetPosByCaption(strDefect) != -1) // ClientID is not unique
+            {
+                if (CompareNoCaseCP1251(DEFECT.ClientID,strDefect) != 0)
+                {
+                    MyMessageBox(m_hWnd,"Entered client name is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (strProject.IsEmpty())
+            {
+                MyMessageBox(m_hWnd,"Project field must not be empty.",szWinName,MB_ICONERROR);
+                return 0;
+            }
+            if (strProject.Find(';') != -1)
+            {
+                MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of Project name",szWinName,MB_ICONERROR);
+                return 0;
+            }
+            CString DefectURL = "", ChildDefectsURL = "", ParentDefectURL = "", RelatedDefectsURL = "";
+            Link.GetWindowText(DefectURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
+            DefectURL.ReleaseBuffer();
+            ChildLink.GetWindowText(ChildDefectsURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
+            ChildDefectsURL.ReleaseBuffer();
+            ParentLink.GetWindowText(ParentDefectURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
+            ParentDefectURL.ReleaseBuffer();
+            RelatedLink.GetWindowText(RelatedDefectsURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
+            RelatedDefectsURL.ReleaseBuffer();
+            bool Default = false;
+            if (DefectURL.IsEmpty())
+            {
+                DefectURL = Settings.DefectsLink;
+                Default = true;
+            }
+            else
+            {
+                if (DefectURL.Find(';') != -1)
+                {
+                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL\nPlease correct \"URL to open defects\"",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (ChildDefectsURL.IsEmpty())
+            {
+                ChildDefectsURL = Settings.ChildDefectsLink;
+                Default = true;
+            }
+            else
+            {
+                if (ChildDefectsURL.Find(';') != -1)
+                {
+                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL\nPlease correct \"URL to open child defects\"",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (ParentDefectURL.IsEmpty())
+            {
+                ParentDefectURL = Settings.ParentDefectLink;
+                Default = true;
+            }
+            else
+            {
+                if (ParentDefectURL.Find(';') != -1)
+                {
+                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL.\nPlease correct \"URL to open parent defects\"",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (RelatedDefectsURL.IsEmpty())
+            {
+                RelatedDefectsURL = Settings.RelatedDefectsLink;
+                Default = true;
+            }
+            else
+            {
+                if (RelatedDefectsURL.Find(';') != -1)
+                {
+                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL.\nPlease correct \"URL to open related defects\"",szWinName,MB_ICONERROR);
+                    return 0;
+                }
+            }
+            if (Default)
+            {
+                MyMessageBox(m_hWnd,"Some URLs were not entered. Default values will be used",szWinName,MB_ICONINFORMATION);
+            }
+
+            DEFECT.ClientID = strDefect;
+            DEFECT.STProject = strProject;
+            DEFECT.DefectURL = DefectURL;
+            DEFECT.ChildDefectsURL = ChildDefectsURL;
+            DEFECT.ParentDefectURL = ParentDefectURL;
+            DEFECT.RelatedDefectsURL = RelatedDefectsURL;
+        }
+        EndDialog(wID);
+        return 0;
+    }
+};
+
+//////////////////////////// Defects page ///////////////////////
+class DefectsPage : public Mortimer::COptionPageImpl<DefectsPage,CPropPage>
+{
+public:
+    enum { IDD = DEFECTS_PAGE };
+
+    CListBox DefectsList;
+    CButton NewButton;
+    CButton EditButton;
+    CButton CopyButton;
+    CButton DeleteButton;
+    std::vector<defect> projects;
+    CMenu RestoreMenu;
+    
+    BEGIN_MSG_MAP(DefectsPage)
+        MSG_WM_INITDIALOG(OnInitDialog)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_NEW,OnNewDefect)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_EDIT,OnNewDefect)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_COPY,OnNewDefect)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_DELETE,OnDeleteDefect)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE,OnRestoreButton)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE_HF,OnRestoreHF)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE_SIF,OnRestoreSIF)
+        COMMAND_ID_HANDLER_EX(IDC_DEFECTS_LIST,OnListNotify)
+        REFLECT_NOTIFICATIONS()
+    END_MSG_MAP()
+
+    ~DefectsPage()
+    {
+        DestroyMenu(RestoreMenu);
+    }
+
+    void sort_defects()
+    {
+        for (unsigned int i=0; i<projects.size()-1; i++)
+        {
+            bool exchange = false;
+            for (unsigned int j=1; j<projects.size()-i; j++)
+            {
+                if (CompareNoCaseCP1251(projects[j-1].ClientID,projects[j].ClientID)>0)
+                {
+                    defect temp = projects[j-1];
+                    projects[j-1] = projects[j];
+                    projects[j] = temp;
+                    exchange = true;
+                }
+            }
+            if (!exchange) break;
+        }
+    }
+
+    int GetPosByCaption(const char *caption)
+    {
+        for (unsigned int i=0; i<projects.size(); i++)
+        {
+            if (CompareNoCaseCP1251(projects[i].ClientID,caption)==0)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // called once when options dialog is opened
+    LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
+    {
+        NewButton.Attach(GetDlgItem(IDC_DEFECT_NEW));
+        EditButton.Attach(GetDlgItem(IDC_DEFECT_EDIT));
+        CopyButton.Attach(GetDlgItem(IDC_DEFECT_COPY));
+        DeleteButton.Attach(GetDlgItem(IDC_DEFECT_DELETE));
+
+        DefectsList.Attach(GetDlgItem(IDC_DEFECTS_LIST));
+
+        for (unsigned int i=0; i<Settings.defects.size(); i++)
+        {
+            DefectsList.AddString(Settings.defects[i].ClientID);
+            projects.push_back(Settings.defects[i]);
+        }
+
+        DefectsList.SetCurSel(0);
+
+        RestoreMenu.CreatePopupMenu();
+        RestoreMenu.AppendMenu(MF_ENABLED,IDC_DEFECT_RESTORE_HF,"&HF");
+        RestoreMenu.AppendMenu(MF_ENABLED,IDC_DEFECT_RESTORE_SIF,"&SIF");
+
+        return 0;
+    }
+
+    void OnNewDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        int position, realpos;
+        DefectEditPage DefectEditDlg(0,defect("","","","","",""),&projects);
+
+        if ((wID == IDC_DEFECT_COPY) || (wID == IDC_DEFECT_EDIT))
+        {
+            position = DefectsList.GetCurSel();
+            if (position == LB_ERR)
+            {
+                return;
+            }
+            CString SelectedItem;
+            DefectsList.GetText(position,SelectedItem);
+            realpos = GetPosByCaption(SelectedItem);
+            DefectEditDlg.DEFECT = projects[realpos];
+            if (wID == IDC_DEFECT_COPY)
+            {
+                DefectEditDlg.Action = 2;
+            }
+            else // wID == IDC_DEFECT_EDIT
+            {
+                DefectEditDlg.Action = 1;
+            }
+        }
+
+        if (DefectEditDlg.DoModal() == IDOK)
+        {
+            if ((wID == IDC_DEFECT_NEW) || (wID == IDC_DEFECT_COPY))
+            {
+                DefectsList.AddString(DefectEditDlg.DEFECT.ClientID);
+                projects.push_back(DefectEditDlg.DEFECT);
+            }
+            else // wID == IDC_DEFECT_EDIT
+            {
+                DefectsList.DeleteString(position);
+                DefectsList.AddString(DefectEditDlg.DEFECT.ClientID);
+                int newpos = DefectsList.FindStringExact(-1,DefectEditDlg.DEFECT.ClientID);
+                if ((newpos == -1) && (DefectEditDlg.DEFECT.ClientID.IsEmpty()))
+                {
+                    newpos = 0;
+                }
+                DefectsList.SetCurSel(newpos);
+
+                projects[realpos] = DefectEditDlg.DEFECT;
+            }
+        }
+    }
+
+    void OnDeleteDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        int position = DefectsList.GetCurSel();
+        CString SelectedItem;
+        if (position == LB_ERR)
+        {
+            return;
+        }
+        else
+        {
+            DefectsList.GetText(position,SelectedItem);
+        }
+        if (MyMessageBox(m_hWnd,"Are you sure you want to delete selected record?",szWinName,MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES)
+        {
+            return;
+        }
+        int realpos = GetPosByCaption(SelectedItem);
+        if (realpos != -1)
+        {
+            DefectsList.DeleteString(position);
+            projects.erase(projects.begin()+realpos);
+        }
+        DefectsList.SetCurSel(0);
+    }
+
+    void OnRestoreButton(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        RECT Rect;
+        ::GetWindowRect(GetDlgItem(IDC_DEFECT_RESTORE),&Rect);
+        RestoreMenu.TrackPopupMenu(TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_TOPALIGN,Rect.left,Rect.bottom,m_hWnd);
+    }
+
+    void OnRestoreHF(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        int index = GetPosByCaption("HF");
+        if (index == -1) // HF record does not exist
+        {
+            if (MyMessageBox(m_hWnd,"Would you like to create default HF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+            {
+                DefectsList.AddString("HF");
+                projects.push_back(defect("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll));
+            }
+        }
+        else // HF record exists and will be modified
+        {
+            if (MyMessageBox(m_hWnd,"Would you like to restore default values of existing HF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+            {
+                defect HF("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll);
+                projects[index] = HF;
+            }
+        }
+    }
+
+    void OnRestoreSIF(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        int index = GetPosByCaption("SIF");
+        if (index == -1) // SIF record does not exist
+        {
+            if (MyMessageBox(m_hWnd,"Would you like to create default SIF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+            {
+                DefectsList.AddString("SIF");
+                projects.push_back(defect("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink));
+            }
+        }
+        else // SIF record exists and will be modified
+        {
+            if (MyMessageBox(m_hWnd,"Would you like to restore default values of existing SIF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+            {
+                defect SIF("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink);
+                projects[index] = SIF;
+            }
+        }
+    }
+
+    void OnListNotify(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        if (wNotifyCode == LBN_DBLCLK)
+        {
+            OnNewDefect(0, IDC_DEFECT_EDIT, hWndCtl);
+        }
+    }
+
+    bool OnSetActive(COptionItem *pItem)
+    {
+        return true;
+    }
+    
+    bool OnKillActive(COptionItem *pItem)
+    {
+        return true;
+    }
+
+    void OnOK()
+    {
+        // saving defects settings
+        sort_defects();
+        DefectsList.ResetContent();
+        Settings.defects.clear();
+        for (unsigned int i=0; i<projects.size(); i++)
+        {
+            Settings.defects.push_back(projects[i]);
+        }
+        projects.clear();
+
+        Settings.SaveDefectsSettings();
+    }
+
+    // called every time when whole sheet is closed by clicking on Cancel button
+    void OnCancel() {}
+};
+
+//////////////////////////// URLs page ///////////////////////
 class URLsPage : public Mortimer::COptionPageImpl<URLsPage,CPropPage>
 {
 public:
@@ -964,6 +1429,7 @@ public:
     UINT *uWinKey;
     CString *Browser;
     bool *CheckMark;
+    DefectsPage *DefectsPagePointer;
 
     BEGIN_MSG_MAP(URLsPage)
         MSG_WM_INITDIALOG(OnInitDialog)
@@ -982,6 +1448,7 @@ public:
         uWinKey = NULL;
         Browser = NULL;
         CheckMark = NULL;
+        DefectsPagePointer = NULL;
     }
 
     int GetPosByCaption(const char *caption)
@@ -1070,7 +1537,12 @@ public:
             tmp = *Browser;
             tmp.MakeUpper();
         }
-        URLEditPage URLEditDlg(0,link("","","","",0,0,0,0,false,"","",false),&temp_links,ForbiddenHotkey,uWinKey,(check || tmp.IsEmpty()), (tmp.Find("IEXPLORE")!=-1));
+        bool DefectWithEmptyClient = true;
+        if (DefectsPagePointer != NULL)
+        {
+            DefectWithEmptyClient = ( DefectsPagePointer->GetPosByCaption("") != -1 );
+        }
+        URLEditPage URLEditDlg(0,link("","","","",0,0,0,0,false,"","",false),&temp_links,ForbiddenHotkey,uWinKey,(check || tmp.IsEmpty()), (tmp.Find("IEXPLORE")!=-1), DefectWithEmptyClient);
 
         if ((wID == IDC_LINK_COPY) || (wID == IDC_LINK_EDIT))
         {
@@ -1324,204 +1796,7 @@ public:
     };
 };
 
-//////////////////////////// Defects options page ///////////////////////
-class DefectsPage;
-
-class DefectEditPage : public CDialogImpl<DefectEditPage>
-{
-public:
-    enum { IDD = DEFECT_EDIT_PAGE };
-    int Action; // 0 - new defect, 1 - edit defect, 2 - copy defect
-    defect DEFECT;
-    int MaxStringLength;
-    std::vector<defect> *Defects;
-
-    CEdit DefectEdit;
-    CEdit ProjectEdit;
-    CEdit Link;
-    CEdit ChildLink;
-    CEdit ParentLink;
-    CEdit RelatedLink;
-
-    DefectEditPage(int action, defect def, std::vector<defect> *defects):DEFECT(def)
-    {
-        Action = action;
-        Defects = defects;
-        MaxStringLength = 255;
-    }
-
-    BEGIN_MSG_MAP(DefectEditPage)
-        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-        COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
-        COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)
-    END_MSG_MAP()
-
-    LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-    {
-        CenterWindow();
-        DefectEdit.Attach(GetDlgItem(IDC_CLIENT_EDIT));
-        DefectEdit.LimitText(MaxStringLength);
-        ProjectEdit.Attach(GetDlgItem(IDC_DEFECT_PROJECT));
-        ProjectEdit.LimitText(MaxStringLength);
-     
-        Link.Attach(GetDlgItem(IDC_DEFECTS_LINK));
-        Link.LimitText(LINK_MAX);
-        ChildLink.Attach(GetDlgItem(IDC_DEFECTS_LINK2));
-        ChildLink.LimitText(LINK_MAX);
-        ParentLink.Attach(GetDlgItem(IDC_DEFECTS_LINK3));
-        ParentLink.LimitText(LINK_MAX);
-        RelatedLink.Attach(GetDlgItem(IDC_DEFECTS_LINK4));
-        RelatedLink.LimitText(LINK_MAX);
-
-        DefectEdit.SetWindowText(DEFECT.ClientID);
-        ProjectEdit.SetWindowText(DEFECT.STProject);
-        Link.SetWindowText(DEFECT.DefectURL);
-        ChildLink.SetWindowText(DEFECT.ChildDefectsURL);
-        ParentLink.SetWindowText(DEFECT.ParentDefectURL);
-        RelatedLink.SetWindowText(DEFECT.RelatedDefectsURL);
-
-        switch(Action)
-        {
-            case 0: // new
-                SetWindowText("New defect record");
-                DEFECT.ClientID = ";";
-                break;
-            case 1: // edit
-                SetWindowText("Edit defect record");
-                break;
-            case 2: // copy
-                SetWindowText("New defect record");
-                DEFECT.ClientID = ";";
-                break;
-        }
-        return 0;
-    }
-
-    int GetPosByCaption(const char *caption)
-    {
-        for (unsigned int i=0; i<(*Defects).size(); i++)
-        {
-            if (CompareNoCaseCP1251((*Defects)[i].ClientID,caption)==0)
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-    {
-        if (wID == IDOK)
-        {
-            // checking for duplicates and non-empty Project
-            CString strDefect, strProject;
-            DefectEdit.GetWindowText(strDefect.GetBuffer(MaxStringLength+1),MaxStringLength+1);
-            strDefect.ReleaseBuffer();
-            ProjectEdit.GetWindowText(strProject.GetBuffer(MaxStringLength+1),MaxStringLength+1);
-            strProject.ReleaseBuffer();
-        
-            if (!strDefect.IsEmpty() && !TASK::IsClientNameValid(strDefect))
-            {
-                MyMessageBox(m_hWnd,"Client name contains invalid character(s)",szWinName,MB_ICONERROR);
-                return 0;
-            }
-            if (GetPosByCaption(strDefect) != -1) // ClientID is not unique
-            {
-                if (CompareNoCaseCP1251(DEFECT.ClientID,strDefect) != 0)
-                {
-                    MyMessageBox(m_hWnd,"Entered client name is not unique.\nPlease use another one",szWinName,MB_ICONERROR);
-                    return 0;
-                }
-            }
-            if (strProject.IsEmpty())
-            {
-                MyMessageBox(m_hWnd,"Project field must not be empty.",szWinName,MB_ICONERROR);
-                return 0;
-            }
-            if (strProject.Find(';') != -1)
-            {
-                MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of Project name",szWinName,MB_ICONERROR);
-                return 0;
-            }
-            CString DefectURL = "", ChildDefectsURL = "", ParentDefectURL = "", RelatedDefectsURL = "";
-            Link.GetWindowText(DefectURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
-            DefectURL.ReleaseBuffer();
-            ChildLink.GetWindowText(ChildDefectsURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
-            ChildDefectsURL.ReleaseBuffer();
-            ParentLink.GetWindowText(ParentDefectURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
-            ParentDefectURL.ReleaseBuffer();
-            RelatedLink.GetWindowText(RelatedDefectsURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
-            RelatedDefectsURL.ReleaseBuffer();
-            bool Default = false;
-            if (DefectURL.IsEmpty())
-            {
-                DefectURL = Settings.DefectsLink;
-                Default = true;
-            }
-            else
-            {
-                if (DefectURL.Find(';') != -1)
-                {
-                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL\nPlease correct \"URL to open defects\"",szWinName,MB_ICONERROR);
-                    return 0;
-                }
-            }
-            if (ChildDefectsURL.IsEmpty())
-            {
-                ChildDefectsURL = Settings.ChildDefectsLink;
-                Default = true;
-            }
-            else
-            {
-                if (ChildDefectsURL.Find(';') != -1)
-                {
-                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL\nPlease correct \"URL to open child defects\"",szWinName,MB_ICONERROR);
-                    return 0;
-                }
-            }
-            if (ParentDefectURL.IsEmpty())
-            {
-                ParentDefectURL = Settings.ParentDefectLink;
-                Default = true;
-            }
-            else
-            {
-                if (ParentDefectURL.Find(';') != -1)
-                {
-                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL.\nPlease correct \"URL to open parent defects\"",szWinName,MB_ICONERROR);
-                    return 0;
-                }
-            }
-            if (RelatedDefectsURL.IsEmpty())
-            {
-                RelatedDefectsURL = Settings.RelatedDefectsLink;
-                Default = true;
-            }
-            else
-            {
-                if (RelatedDefectsURL.Find(';') != -1)
-                {
-                    MyMessageBox(m_hWnd,"Character \';\' cannot be used as a part of an URL.\nPlease correct \"URL to open related defects\"",szWinName,MB_ICONERROR);
-                    return 0;
-                }
-            }
-            if (Default)
-            {
-                MyMessageBox(m_hWnd,"Some URLs were not entered. Default values will be used",szWinName,MB_ICONINFORMATION);
-            }
-
-            DEFECT.ClientID = strDefect;
-            DEFECT.STProject = strProject;
-            DEFECT.DefectURL = DefectURL;
-            DEFECT.ChildDefectsURL = ChildDefectsURL;
-            DEFECT.ParentDefectURL = ParentDefectURL;
-            DEFECT.RelatedDefectsURL = RelatedDefectsURL;
-        }
-        EndDialog(wID);
-        return 0;
-    }
-};
-
+//////////////////////////// SoftTest options page ///////////////////////
 class SoftTestPage : public Mortimer::COptionPageImpl<SoftTestPage,CPropPage>
 {
 public:
@@ -1642,253 +1917,6 @@ public:
         Settings.SoftTestPassword.ReleaseBuffer();
 
         Settings.SaveSoftTestSettings();
-    }
-
-    // called every time when whole sheet is closed by clicking on Cancel button
-    void OnCancel() {}
-};
-
-class DefectsPage : public Mortimer::COptionPageImpl<DefectsPage,CPropPage>
-{
-public:
-    enum { IDD = DEFECTS_PAGE };
-
-    CListBox DefectsList;
-    CButton NewButton;
-    CButton EditButton;
-    CButton CopyButton;
-    CButton DeleteButton;
-    std::vector<defect> projects;
-    CMenu RestoreMenu;
-    
-    BEGIN_MSG_MAP(DefectsPage)
-        MSG_WM_INITDIALOG(OnInitDialog)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_NEW,OnNewDefect)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_EDIT,OnNewDefect)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_COPY,OnNewDefect)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_DELETE,OnDeleteDefect)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE,OnRestoreButton)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE_HF,OnRestoreHF)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECT_RESTORE_SIF,OnRestoreSIF)
-        COMMAND_ID_HANDLER_EX(IDC_DEFECTS_LIST,OnListNotify)
-        REFLECT_NOTIFICATIONS()
-    END_MSG_MAP()
-
-    ~DefectsPage()
-    {
-        DestroyMenu(RestoreMenu);
-    }
-
-    void sort_defects()
-    {
-        for (unsigned int i=0; i<projects.size()-1; i++)
-        {
-            bool exchange = false;
-            for (unsigned int j=1; j<projects.size()-i; j++)
-            {
-                if (CompareNoCaseCP1251(projects[j-1].ClientID,projects[j].ClientID)>0)
-                {
-                    defect temp = projects[j-1];
-                    projects[j-1] = projects[j];
-                    projects[j] = temp;
-                    exchange = true;
-                }
-            }
-            if (!exchange) break;
-        }
-    }
-
-    int GetPosByCaption(const char *caption)
-    {
-        for (unsigned int i=0; i<projects.size(); i++)
-        {
-            if (CompareNoCaseCP1251(projects[i].ClientID,caption)==0)
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    // called once when options dialog is opened
-    LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
-    {
-        NewButton.Attach(GetDlgItem(IDC_DEFECT_NEW));
-        EditButton.Attach(GetDlgItem(IDC_DEFECT_EDIT));
-        CopyButton.Attach(GetDlgItem(IDC_DEFECT_COPY));
-        DeleteButton.Attach(GetDlgItem(IDC_DEFECT_DELETE));
-
-        DefectsList.Attach(GetDlgItem(IDC_DEFECTS_LIST));
-
-        for (unsigned int i=0; i<Settings.defects.size(); i++)
-        {
-            DefectsList.AddString(Settings.defects[i].ClientID);
-            projects.push_back(Settings.defects[i]);
-        }
-
-        DefectsList.SetCurSel(0);
-
-        RestoreMenu.CreatePopupMenu();
-        RestoreMenu.AppendMenu(MF_ENABLED,IDC_DEFECT_RESTORE_HF,"&HF");
-        RestoreMenu.AppendMenu(MF_ENABLED,IDC_DEFECT_RESTORE_SIF,"&SIF");
-
-        return 0;
-    }
-
-    void OnNewDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        int position, realpos;
-        DefectEditPage DefectEditDlg(0,defect("","","","","",""),&projects);
-
-        if ((wID == IDC_DEFECT_COPY) || (wID == IDC_DEFECT_EDIT))
-        {
-            position = DefectsList.GetCurSel();
-            if (position == LB_ERR)
-            {
-                return;
-            }
-            CString SelectedItem;
-            DefectsList.GetText(position,SelectedItem);
-            realpos = GetPosByCaption(SelectedItem);
-            DefectEditDlg.DEFECT = projects[realpos];
-            if (wID == IDC_DEFECT_COPY)
-            {
-                DefectEditDlg.Action = 2;
-            }
-            else // wID == IDC_DEFECT_EDIT
-            {
-                DefectEditDlg.Action = 1;
-            }
-        }
-
-        if (DefectEditDlg.DoModal() == IDOK)
-        {
-            if ((wID == IDC_DEFECT_NEW) || (wID == IDC_DEFECT_COPY))
-            {
-                DefectsList.AddString(DefectEditDlg.DEFECT.ClientID);
-                projects.push_back(DefectEditDlg.DEFECT);
-            }
-            else // wID == IDC_DEFECT_EDIT
-            {
-                DefectsList.DeleteString(position);
-                DefectsList.AddString(DefectEditDlg.DEFECT.ClientID);
-                int newpos = DefectsList.FindStringExact(-1,DefectEditDlg.DEFECT.ClientID);
-                if ((newpos == -1) && (DefectEditDlg.DEFECT.ClientID.IsEmpty()))
-                {
-                    newpos = 0;
-                }
-                DefectsList.SetCurSel(newpos);
-
-                projects[realpos] = DefectEditDlg.DEFECT;
-            }
-        }
-    }
-
-    void OnDeleteDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        int position = DefectsList.GetCurSel();
-        CString SelectedItem;
-        if (position == LB_ERR)
-        {
-            return;
-        }
-        else
-        {
-            DefectsList.GetText(position,SelectedItem);
-        }
-        if (MyMessageBox(m_hWnd,"Are you sure you want to delete selected record?",szWinName,MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2) != IDYES)
-        {
-            return;
-        }
-        int realpos = GetPosByCaption(SelectedItem);
-        if (realpos != -1)
-        {
-            DefectsList.DeleteString(position);
-            projects.erase(projects.begin()+realpos);
-        }
-        DefectsList.SetCurSel(0);
-    }
-
-    void OnRestoreButton(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        RECT Rect;
-        ::GetWindowRect(GetDlgItem(IDC_DEFECT_RESTORE),&Rect);
-        RestoreMenu.TrackPopupMenu(TPM_LEFTBUTTON|TPM_LEFTALIGN|TPM_TOPALIGN,Rect.left,Rect.bottom,m_hWnd);
-    }
-
-    void OnRestoreHF(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        int index = GetPosByCaption("HF");
-        if (index == -1) // HF record does not exist
-        {
-            if (MyMessageBox(m_hWnd,"Would you like to create default HF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
-            {
-                DefectsList.AddString("HF");
-                projects.push_back(defect("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll));
-            }
-        }
-        else // HF record exists and will be modified
-        {
-            if (MyMessageBox(m_hWnd,"Would you like to restore default values of existing HF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
-            {
-                defect HF("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll);
-                projects[index] = HF;
-            }
-        }
-    }
-
-    void OnRestoreSIF(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        int index = GetPosByCaption("SIF");
-        if (index == -1) // SIF record does not exist
-        {
-            if (MyMessageBox(m_hWnd,"Would you like to create default SIF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
-            {
-                DefectsList.AddString("SIF");
-                projects.push_back(defect("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink));
-            }
-        }
-        else // SIF record exists and will be modified
-        {
-            if (MyMessageBox(m_hWnd,"Would you like to restore default values of existing SIF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
-            {
-                defect SIF("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink);
-                projects[index] = SIF;
-            }
-        }
-    }
-
-    void OnListNotify(UINT wNotifyCode, INT wID, HWND hWndCtl)
-    {
-        if (wNotifyCode == LBN_DBLCLK)
-        {
-            OnNewDefect(0, IDC_DEFECT_EDIT, hWndCtl);
-        }
-    }
-
-    bool OnSetActive(COptionItem *pItem)
-    {
-        return true;
-    }
-    
-    bool OnKillActive(COptionItem *pItem)
-    {
-        return true;
-    }
-
-    void OnOK()
-    {
-        // saving defects settings
-        sort_defects();
-        DefectsList.ResetContent();
-        Settings.defects.clear();
-        for (unsigned int i=0; i<projects.size(); i++)
-        {
-            Settings.defects.push_back(projects[i]);
-        }
-        projects.clear();
-
-        Settings.SaveDefectsSettings();
     }
 
     // called every time when whole sheet is closed by clicking on Cancel button
@@ -2453,6 +2481,7 @@ public:
             m_PageOther.Links = &(m_PageURLs.temp_links);
             m_PageURLs.ForbiddenHotkey = &(m_PageOther.HotKey);
             m_PageURLs.uWinKey = &(m_PageOther.WinKey);
+            m_PageURLs.DefectsPagePointer = &m_PageDefects;
         }
 
 #if (USE_ICONS != 0)

@@ -714,6 +714,15 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                     }
                     else // task is TMS task
                     {
+                        // if client name is not specified then skip the task
+                        if (Client.IsEmpty())
+                        {
+                            OutFile.width(16);
+                            OutFile.setf(OutFile.left);
+                            OutFile << Tasks[i] << "- client name is not specified, skipping the task" << endl;
+                            if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
+                            continue;
+                        }
                         // build URL to open request specific page for TMS tasks
                         TASK::FillupTaskID(ID); // Settings.FillID is ignored because GetPage() request will not be successfully completed for not complete ID
                         switch (type)

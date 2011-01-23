@@ -135,6 +135,7 @@ protected:
     void LoadHistory();
     void SaveHistory();
     void OpenDefectsInOneProject(const char *Project, const char *IDs, INT wID);
+    bool CheckClient(const CString &CLIENT_IN_URL, const CString &CLIENT_IN_TASK);
 };
 
 
