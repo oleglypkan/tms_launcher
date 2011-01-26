@@ -1256,7 +1256,7 @@ public:
     void OnNewDefect(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
         int position, realpos;
-        DefectEditPage DefectEditDlg(0,defect("","","","","",""),&projects);
+        DefectEditPage DefectEditDlg(0,defect("","","","","","","",""),&projects);
 
         if ((wID == IDC_DEFECT_COPY) || (wID == IDC_DEFECT_EDIT))
         {
@@ -1342,14 +1342,14 @@ public:
             if (MyMessageBox(m_hWnd,"Would you like to create default HF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
             {
                 DefectsList.AddString("HF");
-                projects.push_back(defect("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll));
+                projects.push_back(defect("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll, "", ""));
             }
         }
         else // HF record exists and will be modified
         {
             if (MyMessageBox(m_hWnd,"Would you like to restore default values of existing HF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
             {
-                defect HF("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll);
+                defect HF("HF","HF",Settings.HfLinkActive, Settings.HfLinkAll, Settings.HfLinkAll, Settings.HfLinkAll, "", "");
                 projects[index] = HF;
             }
         }
@@ -1363,14 +1363,14 @@ public:
             if (MyMessageBox(m_hWnd,"Would you like to create default SIF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
             {
                 DefectsList.AddString("SIF");
-                projects.push_back(defect("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink));
+                projects.push_back(defect("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink, "", ""));
             }
         }
         else // SIF record exists and will be modified
         {
             if (MyMessageBox(m_hWnd,"Would you like to restore default values of existing SIF record?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
             {
-                defect SIF("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink);
+                defect SIF("SIF","SIF",Settings.SifLink, Settings.SifLink, Settings.SifLink, Settings.SifLink, "", "");
                 projects[index] = SIF;
             }
         }
@@ -1542,7 +1542,7 @@ public:
         {
             DefectWithEmptyClient = ( DefectsPagePointer->GetPosByCaption("") != -1 );
         }
-        URLEditPage URLEditDlg(0,link("","","","",0,0,0,0,false,"","",false),&temp_links,ForbiddenHotkey,uWinKey,(check || tmp.IsEmpty()), (tmp.Find("IEXPLORE")!=-1), DefectWithEmptyClient);
+        URLEditPage URLEditDlg(0,link("","","","",0,0,0,0,false,"","",false,"",""),&temp_links,ForbiddenHotkey,uWinKey,(check || tmp.IsEmpty()), (tmp.Find("IEXPLORE")!=-1), DefectWithEmptyClient);
 
         if ((wID == IDC_LINK_COPY) || (wID == IDC_LINK_EDIT))
         {

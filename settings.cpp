@@ -9,6 +9,10 @@
 #include "settings.h"
 #include "About.h"
 #include "Tools.h"
+#include <boost/cregex.hpp>
+#include <boost/regex/pattern_except.hpp>
+using namespace boost;
+using namespace boost::regex_constants;
 
 #ifndef NO_VERID
  static char verid[]="@(#)$RCSfile: settings.cpp,v $$Revision: 1.58 $$Date: 2009/04/09 14:54:44Z $"; 
@@ -64,6 +68,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     AutoRunRegistryKey = AutoRunRegKey;
     AutoRunValueName = AutoRunValName;
     BrowserPath = "";
+    BrowserParameters = "";
     DefaultBrowser = false;
     FillID = true;
     EnableOpacity = true;
@@ -122,26 +127,26 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     HfLinkActive = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=0&search_status[]=active&hotfixid=%ID%";
     HfLinkAll = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=0&hotfixid=%ID%";
     HfLinkRevision = "http://se.softcomputer.com/CM/hotfix/HFinformation.php?HF_mainpage=1&hotfixID=%ID%";
-    defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("LAB","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("LABA","ST_LABASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("LABASC","ST_LABASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("LABQC","ST_LABQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("LABQCASC","ST_LABQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("LMM","ST_LM_MAYO_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("MIC","ST_MICGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("MICA","ST_MICASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("MICASC","ST_MICASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("MICQC","ST_MICQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("MICQCASC","ST_MICQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("SEC","ST_SECURITY",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("STO","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("STORE","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("SUP","ST_ISD_SUPPORT",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink));
-    defects.push_back(defect("SIF","SIF",SifLink, SifLink, SifLink, SifLink));
-    defects.push_back(defect("HF","HF",HfLinkActive, HfLinkAll, HfLinkAll, HfLinkAll));
+    defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("LAB","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("LABA","ST_LABASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("LABASC","ST_LABASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("LABQC","ST_LABQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("LABQCASC","ST_LABQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("LMM","ST_LM_MAYO_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("MIC","ST_MICGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("MICA","ST_MICASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("MICASC","ST_MICASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("MICQC","ST_MICQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("MICQCASC","ST_MICQCASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("SEC","ST_SECURITY",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("STO","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("STORE","ST_SOFTSTORE",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("SUP","ST_ISD_SUPPORT",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
+    defects.push_back(defect("SIF","SIF",SifLink, SifLink, SifLink, SifLink,"",""));
+    defects.push_back(defect("HF","HF",HfLinkActive, HfLinkAll, HfLinkAll, HfLinkAll,"",""));
 }
 
 const CString& CSettings::GetSoftTestCommandLine(const char *Project)
@@ -214,6 +219,11 @@ void CSettings::LoadSettings()
     BrowserPath.TrimLeft();
     BrowserPath.TrimRight();
 
+    Reg.ReadValue(RegistryKey,"BrowserParameters",REG_SZ,(LPBYTE)BrowserParameters.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+    BrowserParameters.ReleaseBuffer();
+    BrowserParameters.TrimLeft();
+    BrowserParameters.TrimRight();
+
     DWordSize=sizeof(DWORD);
     Reg.ReadValue(RegistryKey,"DefaultBrowser",REG_DWORD,(LPBYTE)&DWbuf,DWordSize);
     DefaultBrowser = (DWbuf != 0);
@@ -245,6 +255,8 @@ void CSettings::LoadSettings()
         CString TaskURL = "";
         CString ChildTasksURL = "";
         CString RelatedTasksURL = "";
+        CString Browser = "";
+        CString BrowserParams = "";
         CString Login = "";
         CString Password = "";
         DWORD Default = 0;
@@ -284,6 +296,18 @@ void CSettings::LoadSettings()
         Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"RelatedTasksURL",
                       REG_SZ,(LPBYTE)RelatedTasksURL.GetBuffer(ValueLength),ValueLength);
         RelatedTasksURL.ReleaseBuffer();
+
+        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"PathToBrowser",
+                      REG_SZ,(LPBYTE)Browser.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        Browser.ReleaseBuffer();
+        Browser.TrimLeft();
+        Browser.TrimRight();
+
+        Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"BrowserParameters",
+                      REG_SZ,(LPBYTE)BrowserParams.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        BrowserParams.ReleaseBuffer();
+        BrowserParams.TrimLeft();
+        BrowserParams.TrimRight();
 
         bool res = Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"Login",
                                  REG_SZ,(LPBYTE)Login.GetBuffer(ValueLength),ValueLength);
@@ -327,7 +351,7 @@ void CSettings::LoadSettings()
 
         links.push_back(link(SubKeyName,TaskURL,ChildTasksURL,RelatedTasksURL,ViewTaskHotKey,
                              ViewChildTasksHotKey,ViewParentTaskHotKey,ViewRelatedTasksHotKey,(Default == 1),
-                             Login, Password, (STDefects == 1)));
+                             Login, Password, (STDefects == 1), Browser, BrowserParams));
 
         SubKeyIndex++;
     }
@@ -336,11 +360,11 @@ void CSettings::LoadSettings()
         links.push_back(link("Alternative TMS","http://scc1.softcomputer.com/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
                              "http://scc1.softcomputer.com/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",
                              "http://scc1.softcomputer.com/~alttms/relatives.php?Client=%CLIENT%&ID=%ID%",
-                             0,0,0,0,false,"","",false));
+                             0,0,0,0,false,"","",false,"",""));
         links.push_back(link("iTMS","https://www.softcomputer.com/itms/gentaskdetails.php?Client=%CLIENT%&ID=%ID%",
                              "https://www.softcomputer.com/itms/tms_related.php?Client=%CLIENT%&ID=%ID%",
                              "https://www.softcomputer.com/itms/showall.php?Client=%CLIENT%&ID=%ID%",
-                             0,0,0,0,true,"","",false));
+                             0,0,0,0,true,"","",false,"",""));
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey,"iTMS",REG_SZ,(const BYTE*)LPCTSTR(""),0); // flag meaning 3.0 version or higher is used
     }
     else
@@ -366,7 +390,9 @@ void CSettings::LoadSettings()
         MaxValueLength++;
 
         DWORD type;
-        CString value_name = "", value = ""; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3;URL4";
+        CString value_name = "", value = ""; // value_name == "Item[i]"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3;URL4;PathToBrowser;BrowserParameters";
+        RegEx expr; // regular expression object to parse defects records from Registry
+        expr.SetExpression("([^;]*);?",true);
 
         for (int i=0; i<defects_number; i++)
         {
@@ -379,81 +405,54 @@ void CSettings::LoadSettings()
             {
                 Reg.ReadValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(LPBYTE)value.GetBuffer(ValueLength),ValueLength);
                 value.ReleaseBuffer();
-                CString Client = "";
-                CString Project = "";
-                CString URL = "";
-                CString ChildURL = "";
-                CString ParentURL = "";
-                CString RelatedURL = "";
+                defect DEFECT("","",DefectsLink,ChildDefectsLink,ParentDefectLink,RelatedDefectsLink,"","");
                 // parse string
-                int separator = value.Find(';');
-                if (separator != -1)
+                std::vector<std::string> temp;
+                std::string s = value;
+                unsigned int parts = expr.Split(temp, s, match_stop, 8);
+                if (parts < 2) continue;       // STProject must not be empty
+                if (temp[1].empty()) continue; // STProject must not be empty
+                switch (parts)
                 {
-                    Client = value.Left(separator);
-                    value.Delete(0,separator+1);
+                    case 8:
+                        if (temp[7].length() <= MAX_PATH)
+                        {
+                            DEFECT.BrowserParameters = temp[7].c_str();
+                            DEFECT.BrowserParameters.TrimLeft();
+                            DEFECT.BrowserParameters.TrimRight();
+                        }
+                    case 7:
+                        if (temp[6].length() <= MAX_PATH)
+                        {
+                            DEFECT.BrowserPath       = temp[6].c_str();
+                            DEFECT.BrowserPath.TrimLeft();
+                            DEFECT.BrowserPath.TrimRight();
+                        }
+                    case 6:
+                        if (!temp[5].empty())
+                        {
+                            DEFECT.RelatedDefectsURL = temp[5].c_str();
+                        }
+                    case 5:
+                        if (!temp[4].empty())
+                        {
+                            DEFECT.ParentDefectURL   = temp[4].c_str();
+                        }
+                    case 4:
+                        if (!temp[3].empty())
+                        {
+                            DEFECT.ChildDefectsURL   = temp[3].c_str();
+                        }
+                    case 3:
+                        if (!temp[2].empty())
+                        {
+                            DEFECT.DefectURL         = temp[2].c_str();
+                        }
+                    case 2:
+                        DEFECT.STProject             = temp[1].c_str();
+                        DEFECT.ClientID              = temp[0].c_str();
                 }
-                else
-                {
-                    continue;
-                }
-                separator = value.Find(';');
-                if (separator != -1)
-                {
-                    Project = value.Left(separator);
-                    value.Delete(0,separator+1);
-                }
-                else
-                {
-                    Project = value;
-                    defects.push_back(defect(Client,Project,DefectsLink,ChildDefectsLink,ParentDefectLink,RelatedDefectsLink));
-                    continue;
-                }
-                separator = value.Find(';');
-                if (separator != -1)
-                {
-                    URL = value.Left(separator);
-                    value.Delete(0,separator+1);
-                }
-                else
-                {
-                    URL = value;
-                    defects.push_back(defect(Client,Project,URL,ChildDefectsLink,ParentDefectLink,RelatedDefectsLink));
-                    continue;
-                }
-                separator = value.Find(';');
-                if (separator != -1)
-                {
-                    ChildURL = value.Left(separator);
-                    value.Delete(0,separator+1);
-                }
-                else
-                {
-                    ChildURL = value;
-                    defects.push_back(defect(Client,Project,URL,ChildURL,ParentDefectLink,RelatedDefectsLink));
-                    continue;
-                }
-                separator = value.Find(';');
-                if (separator != -1)
-                {
-                    ParentURL = value.Left(separator);
-                    value.Delete(0,separator+1);
-                }
-                else
-                {
-                    ParentURL = value;
-                    defects.push_back(defect(Client,Project,URL,ChildURL,ParentURL,RelatedDefectsLink));
-                    continue;
-                }
-                separator = value.Find(';');
-                if (separator != -1)
-                {
-                    RelatedURL = value.Left(separator);
-                }
-                else 
-                {
-                    RelatedURL = value;
-                }
-                defects.push_back(defect(Client,Project,URL,ChildURL,ParentURL,RelatedURL));
+                defects.push_back(DEFECT);
             }
         }
     }
@@ -676,6 +675,7 @@ void CSettings::SaveGeneralSettings(bool AfterImporting)
         buf = DefaultBrowser ? 1:0;
         Reg.AddValue(RegistryKey,"DefaultBrowser",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
         Reg.AddValue(RegistryKey,"PathToBrowser",REG_SZ,(const BYTE*)LPCTSTR(BrowserPath),BrowserPath.GetLength()+1);
+        Reg.AddValue(RegistryKey,"BrowserParameters",REG_SZ,(const BYTE*)LPCTSTR(BrowserParameters),BrowserParameters.GetLength()+1);
     }
 }
 
@@ -883,17 +883,19 @@ void CSettings::SaveLinksSettings()
         links.push_back(link("Alternative TMS","http://scc1.softcomputer.com/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
             "http://scc1.softcomputer.com/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",
             "http://scc1.softcomputer.com/~alttms/relatives.php?Client=%CLIENT%&ID=%ID%",
-            0,0,0,0,false,"","",false));
+            0,0,0,0,false,"","",false,"",""));
         links.push_back(link("iTMS","https://www.softcomputer.com/itms/gentaskdetails.php?Client=%CLIENT%&ID=%ID%",
             "https://www.softcomputer.com/itms/tms_related.php?Client=%CLIENT%&ID=%ID%",
             "https://www.softcomputer.com/itms/showall.php?Client=%CLIENT%&ID=%ID%",
-            0,0,0,0,true,"","",false));
+            0,0,0,0,true,"","",false,"",""));
     }
     for (unsigned int i=0; i<links.size(); i++)
     {
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"TaskURL",REG_SZ,(const BYTE*)LPCTSTR(links[i].TaskURL),links[i].TaskURL.GetLength()+1);
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ChildTasksURL",REG_SZ,(const BYTE*)LPCTSTR(links[i].ChildTasksURL),links[i].ChildTasksURL.GetLength()+1);
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"RelatedTasksURL",REG_SZ,(const BYTE*)LPCTSTR(links[i].RelatedTasksURL),links[i].RelatedTasksURL.GetLength()+1);
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"PathToBrowser",REG_SZ,(const BYTE*)LPCTSTR(links[i].BrowserPath),links[i].BrowserPath.GetLength()+1);
+        Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"BrowserParameters",REG_SZ,(const BYTE*)LPCTSTR(links[i].BrowserParameters),links[i].BrowserParameters.GetLength()+1);
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewTaskHotkey",REG_DWORD,(const BYTE*)&links[i].ViewTaskHotKey,sizeof(DWORD));
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewChildTasksHotkey",REG_DWORD,(const BYTE*)&links[i].ViewChildTasksHotKey,sizeof(DWORD));
         Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\"+links[i].Caption,"ViewParentTaskHotkey",REG_DWORD,(const BYTE*)&links[i].ViewParentTaskHotKey,sizeof(DWORD));
@@ -942,11 +944,12 @@ void CSettings::SaveDefectsSettings()
     Reg.DeleteKey(RegistryKey,DefectsSubKey);
    
     int defects_number = defects.size();
-    CString value_name, value; // value_name == "Item0"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3;URL4";
+    CString value_name, value; // value_name == "Item0"; value == "LAB;ST_LABGUI_SYNCH;URL1;URL2;URL3;URL4;BrowserPath;BrowserParameters";
     for (int i=0; i<defects_number; i++)
     {
         value_name.Format("Item%d",i);
-        value.Format("%s;%s;%s;%s;%s;%s",defects[i].ClientID,defects[i].STProject,defects[i].DefectURL,defects[i].ChildDefectsURL,defects[i].ParentDefectURL,defects[i].RelatedDefectsURL);
+        value.Format("%s;%s;%s;%s;%s;%s;%s;%s",defects[i].ClientID,defects[i].STProject,defects[i].DefectURL,defects[i].ChildDefectsURL,
+                                               defects[i].ParentDefectURL,defects[i].RelatedDefectsURL,defects[i].BrowserPath,defects[i].BrowserParameters);
         Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
     }
     Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1

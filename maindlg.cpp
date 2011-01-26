@@ -1141,23 +1141,9 @@ bool CMainDlg::CheckClient(const CString &CLIENT_IN_URL, const CString &CLIENT_I
 void CMainDlg::OpenTask(const char *Request, bool SingleTask)
 {
     DWORD Result = 0;
-    if (Settings.DefaultBrowser)
+    if (Settings.DefaultBrowser && SingleTask)
     {
-        if (SingleTask)
-        {
-            Result = OpenLink(szWinName,m_hWnd,"open",Request);
-        }
-        else
-        {
-            if (Settings.BrowserPath.IsEmpty())
-            {
-                Result = OpenLink(szWinName,m_hWnd,"open",Request);
-            }
-            else
-            {
-                Result = OpenLink(szWinName,m_hWnd,"open",Settings.BrowserPath,Request);
-            }
-        }
+        Result = OpenLink(szWinName,m_hWnd,"open",Request);
     }
     else
     {

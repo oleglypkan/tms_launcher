@@ -22,10 +22,11 @@ struct defect
     CString ClientID;
     CString STProject;
     CString DefectURL, ChildDefectsURL, ParentDefectURL, RelatedDefectsURL;
+    CString BrowserPath, BrowserParameters;
     
     defect(const CString& ID, const CString& Project, const CString& OpenDefectURL, 
            const CString& OpenChildDefectsURL, const CString& OpenParentDefectURL,
-           const CString& OpenRelatedDefectsURL)
+           const CString& OpenRelatedDefectsURL, const CString& OpenInBrowser, const CString& Parameters)
     {
         ClientID = ID;
         STProject = Project;
@@ -33,6 +34,8 @@ struct defect
         ChildDefectsURL = OpenChildDefectsURL;
         ParentDefectURL = OpenParentDefectURL;
         RelatedDefectsURL = OpenRelatedDefectsURL;
+        BrowserPath = OpenInBrowser;
+        BrowserParameters = Parameters;
     }
 
     const defect& operator=(const defect& def)
@@ -44,6 +47,8 @@ struct defect
         ChildDefectsURL = def.ChildDefectsURL;
         ParentDefectURL = def.ParentDefectURL;
         RelatedDefectsURL = def.RelatedDefectsURL;
+        BrowserPath = def.BrowserPath;
+        BrowserParameters = def.BrowserParameters;
         return *this;
     }
 };
@@ -62,9 +67,11 @@ struct link
     CString Password;
     bool Default;
     bool DefectsInSoftTest;
+    CString BrowserPath, BrowserParameters;
     link(const CString& caption, const CString& task_url, const CString& child_tasks_url, const CString& related_tasks_url,
          const UINT TaskHotKey, const UINT ChildTasksHotKey, const UINT ParentTaskHotKey, const UINT RelatedTasksHotKey,
-         bool UseByDefault, const CString& login, const CString& password, bool STDefects)
+         bool UseByDefault, const CString& login, const CString& password, bool STDefects,
+         const CString& OpenInBrowser, const CString& Parameters)
     {
         Caption = caption;
         TaskURL = task_url;
@@ -78,6 +85,8 @@ struct link
         Login = login;
         Password = password;
         DefectsInSoftTest = STDefects;
+        BrowserPath = OpenInBrowser;
+        BrowserParameters = Parameters;
     }
     const link& operator=(const link& Link)
     {
@@ -94,6 +103,8 @@ struct link
         Login = Link.Login;
         Password = Link.Password;
         DefectsInSoftTest = Link.DefectsInSoftTest;
+        BrowserPath = Link.BrowserPath;
+        BrowserParameters = Link.BrowserParameters;
         return *this;
     }
 };
@@ -135,7 +146,8 @@ public:
     CString HfLinkActive;         // URL to show only active hotfixes
     CString HfLinkAll;            // URL to show all hotfixes
     CString HfLinkRevision;       // URL to show specific revision of a HF
-    CString BrowserPath;
+    CString BrowserPath;          // path to browser that is used to open URL, system default browser is used if empty
+    CString BrowserParameters;    // parameters that are passed to browser if it is defined
     bool DefaultBrowser;
     bool EnableOpacity;
     BYTE InactiveOpacity;         // 0 - fully transparent; 100 - opaque
