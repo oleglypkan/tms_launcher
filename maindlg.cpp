@@ -763,19 +763,25 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
         }
         else
         {
+            CString Browser = "", Parameters = "";
             // request for HF in full format (with revision) should be created differently
             if ( (Tasks[i].Client.CompareNoCase("HF") == 0) && (Tasks[i].Ext.GetLength() > 1) )
             {
                 CreateRequestForHF(Tasks[i].ID, Tasks[i].Ext, Request);
+                if (defect_index != -1)
+                {
+                    Browser = Settings.defects[defect_index].BrowserPath;
+                    Parameters = Settings.defects[defect_index].BrowserParameters;
+                }
             }
             else
             {
                 // request for tasks/defects/SIFs
-                CreateRequest(Tasks[i].Client, Tasks[i].ID, Request, wID);
+                CreateRequest(Tasks[i].Client, Tasks[i].ID, Request, Browser, Parameters, wID);
             }
             if (!Request.IsEmpty())
             {
-                OpenTask(Request, (Tasks.size() == 1));
+                OpenTask(Request, (Tasks.size() == 1), Browser, Parameters);
                 if (Settings.IsHF(defect_index)) // history for HF is written differently
                 {
                     AddToHistory(Tasks[i].Client+Tasks[i].Separator+"1."+Tasks[i].ID+Tasks[i].Ext);
@@ -904,11 +910,11 @@ void CMainDlg::CreateRequestForHF(const char *sIDName, const char *Ext, CString 
     return;
 }
 
-void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID)
+void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CString &Request, CString &Browser, CString &Parameters, INT wID)
 {
     int index = -1;
 
-    Request = "";
+    Request = ""; Browser = ""; Parameters = "";
 
     // opening defect
     if (Settings.IsDefect(sClientName, NULL, &index) || Settings.IsSIF(index) || Settings.IsHF(index))
@@ -950,6 +956,10 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
         }
         Request.Replace("%PROJECT%",Settings.defects[index].STProject);
         Request.Replace("%ID%",sIDName);
+        Request.Insert(0,"\"");
+        Request += "\"";
+        Browser = Settings.defects[index].BrowserPath;
+        Parameters = Settings.defects[index].BrowserParameters;
         return;
     }
 
@@ -1126,6 +1136,11 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
         Request.Insert(0,"\"");
         Request += "\"";
     }
+    if (index != -1)
+    {
+        Browser = Settings.links[index].BrowserPath;
+        Parameters = Settings.links[index].BrowserParameters;
+    }
 }
 
 bool CMainDlg::CheckClient(const CString &CLIENT_IN_URL, const CString &CLIENT_IN_TASK)
@@ -1138,27 +1153,42 @@ bool CMainDlg::CheckClient(const CString &CLIENT_IN_URL, const CString &CLIENT_I
     return true;
 }
 
-void CMainDlg::OpenTask(const char *Request, bool SingleTask)
+void CMainDlg::OpenTask(const char *Request, bool SingleTask, const CString &Browser, const CString &Parameters)
 {
     DWORD Result = 0;
-    if (Settings.DefaultBrowser && SingleTask)
+
+    // use custom browser settings defined in URL or defect records
+    if (!Browser.IsEmpty())
     {
-        Result = OpenLink(szWinName,m_hWnd,"open",Request);
+        Result = OpenLink(szWinName,m_hWnd,"open",Browser,Parameters+' '+Request);
     }
     else
     {
-        if (Settings.BrowserPath.IsEmpty())
+        // use global browser settings defined on General page
+        if (Settings.DefaultBrowser && SingleTask)
         {
             Result = OpenLink(szWinName,m_hWnd,"open",Request);
         }
         else
         {
-            Result = OpenLink(szWinName,m_hWnd,"open",Settings.BrowserPath,Request);
+            if (Settings.BrowserPath.IsEmpty())
+            {
+                Result = OpenLink(szWinName,m_hWnd,"open",Request);
+            }
+            else
+            {
+                Result = OpenLink(szWinName,m_hWnd,"open",Settings.BrowserPath,Settings.BrowserParameters+' '+Request);
+            }
         }
     }
     if ((Result == ERROR_FILE_NOT_FOUND) || (Result == CO_E_APPNOTFOUND))
     {
-        MyMessageBox(m_hWnd,"System could not find browser you are using to open task(s).\n\nPlease make sure default browser is correctly defined in your system\nor specify \"Path to browser\" explicitly on General page of Settings window",
+        MyMessageBox(m_hWnd,"System could not find browser you are using to open task(s).\n\n"
+                            "If you are using default browser please make sure it is correctly\n"
+                            "defined in your system.\n"
+                            "If you are using explicitely defined browser please make sure you\n"
+                            "specified it correctly in \"Path to browser\" field on General page\n"
+                            "of Settings window or in corresponding URL or defect record",
                      szWinName, MB_OK | MB_ICONERROR);
     }
 }

@@ -111,7 +111,7 @@ public:
     void OnClose(UINT wNotifyCode, INT wID, HWND hWndCtl);
     CRichEditCtrl TaskNameControl;
     CComboBox TaskNameCombo;
-    void OpenTask(const char *Request, bool SingleTask);
+    void OpenTask(const char *Request, bool SingleTask, const CString &Browser, const CString &Parameters);
     void OpenDefects(const std::vector<TASKNAME> &Defects, INT wID);
     static DWORD OsMajorVer(void);
 protected:
@@ -128,7 +128,7 @@ protected:
     void SwitchControls();
     bool GetTaskNameFromRichEdit(CString &sTasks);
     bool GetTaskNameFromClipboard(CString &sTasks);
-    void CreateRequest(const char *sClientName, const char *sIDName, CString &Request, INT wID);
+    void CreateRequest(const char *sClientName, const char *sIDName, CString &Request, CString &Browser, CString &Parameters, INT wID);
     void CreateRequestForHF(const char *sIDName, const char *Ext, CString &Request);
     void Replace_AA_ID(CString &Request, CString &Message, int index);
     void AddToHistory(const char *item);

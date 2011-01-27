@@ -948,8 +948,12 @@ void CSettings::SaveDefectsSettings()
     for (int i=0; i<defects_number; i++)
     {
         value_name.Format("Item%d",i);
-        value.Format("%s;%s;%s;%s;%s;%s;%s;%s",defects[i].ClientID,defects[i].STProject,defects[i].DefectURL,defects[i].ChildDefectsURL,
-                                               defects[i].ParentDefectURL,defects[i].RelatedDefectsURL,defects[i].BrowserPath,defects[i].BrowserParameters);
+        value.Format("%s;%s;%s;%s;%s;%s",defects[i].ClientID,defects[i].STProject,defects[i].DefectURL,defects[i].ChildDefectsURL,
+                                         defects[i].ParentDefectURL,defects[i].RelatedDefectsURL);
+        CString temp = "";
+        temp.Format("%s;%s",defects[i].BrowserPath,defects[i].BrowserParameters);
+        temp.TrimRight(';');
+        if (!temp.IsEmpty()) value += ';'+temp;
         Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,value_name,REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
     }
     Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
