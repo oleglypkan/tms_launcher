@@ -35,6 +35,7 @@
 #include "About.h"
 #include "htmlhelp.h"
 #include "controls.h"
+#include "BrowserDialog.h"
 
 #ifdef _DEBUG
 #include <crtdbg.h>
@@ -65,6 +66,7 @@ public:
     bool SingleClick;
     CEdit PathToBrowser;
     CString sBrowser;
+    CString sParameters;
     bool sCheckMark;
 
     BEGIN_MSG_MAP(GeneralPage)
@@ -119,22 +121,33 @@ public:
         sCheckMark = Settings.DefaultBrowser;
         sBrowser = Settings.BrowserPath;
         PathToBrowser.Attach(GetDlgItem(IDC_BROWSER_PATH));
-        PathToBrowser.LimitText(MAX_PATH);
+        PathToBrowser.LimitText(MAX_PATH-1);
         PathToBrowser.SetWindowText(Settings.BrowserPath);
+        sParameters = Settings.BrowserParameters;
         return 0;
     }
 
     void OnBrowse(UINT wNotifyCode, INT wID, HWND hWndCtl)
     {
-        CFileDialog Browser(TRUE,NULL,NULL,OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_LONGNAMES|OFN_PATHMUSTEXIST,
-                            "Programs\0*.exe");
-        CString temp = szWinName;
-        temp += " - Select browser";
-        Browser.m_ofn.lpstrTitle = temp;
-        Browser.DoModal();
-        if (lstrcmp(Browser.m_szFileName,"")!=0)
+        // set initial filename to the one entered previously by user
+        CString InitialFileName = "";
+        PathToBrowser.GetWindowText(InitialFileName.GetBuffer(MAX_PATH),MAX_PATH);
+        InitialFileName.ReleaseBuffer();
+        CBrowserDialog Browser(TRUE,NULL,InitialFileName,OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_LONGNAMES|OFN_PATHMUSTEXIST,"Programs\0*.exe");
+
+        // set dialog title
+        Browser.SetTitle(szWinName + " - Select browser and parameters");
+
+        // set parameters
+        Browser.Parameters = sParameters;
+
+        // call dialog
+        if (Browser.DoModal() == IDOK)
         {
             PathToBrowser.SetWindowText(Browser.m_szFileName);
+            sParameters = Browser.Parameters;
+            sParameters.TrimLeft();
+            sParameters.TrimRight();
         }
     }
 
@@ -185,7 +198,7 @@ public:
     bool OnKillActive(COptionItem *pItem)
     {
         sCheckMark = (SendDlgItemMessage(IDC_DEFAULT_BROWSER,BM_GETCHECK,0,0)==BST_CHECKED);
-        PathToBrowser.GetWindowText(sBrowser.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        PathToBrowser.GetWindowText(sBrowser.GetBuffer(MAX_PATH+1),MAX_PATH);
         sBrowser.ReleaseBuffer();
         return true;
     }
@@ -201,11 +214,12 @@ public:
         Settings.RightClickAction = RightClickAction;
         Settings.RightClickAction2 = RightClickAction2;        
         Settings.SingleClick = SingleClick;
-        PathToBrowser.GetWindowText(Settings.BrowserPath.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        PathToBrowser.GetWindowText(Settings.BrowserPath.GetBuffer(MAX_PATH+1),MAX_PATH);
         Settings.BrowserPath.ReleaseBuffer();
         Settings.BrowserPath.TrimLeft();
         Settings.BrowserPath.TrimRight();
         Settings.SaveGeneralSettings();
+        Settings.BrowserParameters = sParameters;
     }
 
     // called every time when whole sheet is closed by clicking on Cancel button
@@ -474,6 +488,8 @@ public:
     CEdit RelatedTasksURL;
     CEdit Login;
     CEdit Password;
+    CEdit PathToBrowser;
+    CString sParameters;
     CWindow TaskHotkey;
     CWindow ChildTasksHotkey;
     CWindow ParentTaskHotkey;
@@ -501,6 +517,7 @@ public:
 
     BEGIN_MSG_MAP(URLEditPage)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        COMMAND_ID_HANDLER_EX(IDC_BROWSE,OnBrowse)
         COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
         COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)
     END_MSG_MAP()
@@ -520,6 +537,8 @@ public:
         Login.LimitText(MaxStringLength);
         Password.Attach(GetDlgItem(IDC_PASSWORD));
         Password.LimitText(MaxStringLength);
+        PathToBrowser.Attach(GetDlgItem(IDC_BROWSER_PATH));
+        PathToBrowser.LimitText(MAX_PATH-1);
         TaskHotkey.Attach(GetDlgItem(VIEW_TASK_HOTKEY));
         ChildTasksHotkey.Attach(GetDlgItem(VIEW_CHILD_TASKS_HOTKEY));
         ParentTaskHotkey.Attach(GetDlgItem(VIEW_PARENT_TASK_HOTKEY));
@@ -531,6 +550,8 @@ public:
         RelatedTasksURL.SetWindowText(URL.RelatedTasksURL);
         Login.SetWindowText(URL.Login);
         Password.SetWindowText(URL.Password);
+        PathToBrowser.SetWindowText(URL.BrowserPath);
+        sParameters = URL.BrowserParameters;
         TaskHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewTaskHotKey,0);
         ChildTasksHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewChildTasksHotKey,0);
         ParentTaskHotkey.SendMessage(HKM_SETHOTKEY,URL.ViewParentTaskHotKey,0);
@@ -638,6 +659,30 @@ public:
         }
     }
 
+    void OnBrowse(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        // set initial filename to the one entered previously by user
+        CString InitialFileName = "";
+        PathToBrowser.GetWindowText(InitialFileName.GetBuffer(MAX_PATH),MAX_PATH);
+        InitialFileName.ReleaseBuffer();
+        CBrowserDialog Browser(TRUE,NULL,InitialFileName,OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_LONGNAMES|OFN_PATHMUSTEXIST,"Programs\0*.exe");
+
+        // set dialog title
+        Browser.SetTitle(szWinName + " - Select browser and parameters");
+
+        // set parameters
+        Browser.Parameters = sParameters;
+
+        // call dialog
+        if (Browser.DoModal() == IDOK)
+        {
+            PathToBrowser.SetWindowText(Browser.m_szFileName);
+            sParameters = Browser.Parameters;
+            sParameters.TrimLeft();
+            sParameters.TrimRight();
+        }
+    }
+
     LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
     {
         if (wID == IDOK)
@@ -699,6 +744,12 @@ public:
             strLogin.ReleaseBuffer();
             Password.GetWindowText(strPassword.GetBuffer(MaxStringLength+1),MaxStringLength+1);
             strPassword.ReleaseBuffer();
+            // reading browser path
+            CString strBrowser;
+            PathToBrowser.GetWindowText(strBrowser.GetBuffer(MAX_PATH),MAX_PATH);
+            strBrowser.ReleaseBuffer();
+            strBrowser.TrimLeft();
+            strBrowser.TrimRight();
             // checking hotkeys
             UINT Hotkey1 = (UINT)TaskHotkey.SendMessage(HKM_GETHOTKEY,0,0);
             UINT Hotkey2 = (UINT)ChildTasksHotkey.SendMessage(HKM_GETHOTKEY,0,0);
@@ -827,6 +878,8 @@ public:
             URL.RelatedTasksURL = strRelatedTasksURL;
             URL.Login = strLogin;
             URL.Password = strPassword;
+            URL.BrowserPath = strBrowser;
+            URL.BrowserParameters = sParameters;
             URL.ViewTaskHotKey = Hotkey1;
             URL.ViewChildTasksHotKey = Hotkey2;
             URL.ViewParentTaskHotKey = Hotkey3;
@@ -835,30 +888,42 @@ public:
              // enabling FEATURE_HTTP_USERNAME_PASSWORD_DISABLE if needed
             if (!URL.Login.IsEmpty() && !URL.Password.IsEmpty())
             {
-                if ((IExploreDefaultBrowser() && IE) || use_iexplore) // (Internet Explorer is default browser AND it is used to open tasks) OR Internet Explorer is used although it is not default
+                // first, check if URL has custom browser defined and if it is NOT IE,
+                // in this case no warning should be shown
+                strBrowser.MakeUpper();
+                bool CustomBrowserIE    = ( !strBrowser.IsEmpty() && (strBrowser.Find("IEXPLORE") != -1) );
+                bool CustomBrowserNotIE = ( !strBrowser.IsEmpty() && (strBrowser.Find("IEXPLORE") == -1) );
+                if (!CustomBrowserNotIE)
                 {
-                    // checking if FEATURE_HTTP_USERNAME_PASSWORD_DISABLE is disabled 
-                    DWORD iexplore = 1; // assume that it is disabled
-                    DWORD iexplore2 = 1; // assume that it is disabled
-                    DWORD DWordSize = sizeof(DWORD);
-                    Registry HTTP_USERNAME2(HKEY_CURRENT_USER);
-                    bool r = HTTP_USERNAME2.ReadValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
-                                             "iexplore.exe",REG_DWORD,(LPBYTE)&iexplore2,DWordSize);
-                    if (iexplore2 == 1) // either key is absent or "iexplore.exe" is equal to 1
+                    // either Internet Explorer is custom browser OR (Internet Explorer is default browser AND it is used to open tasks) OR Internet Explorer is used although it is not default
+                    if (CustomBrowserIE || (IExploreDefaultBrowser() && IE) || use_iexplore)
                     {
-                        DWordSize = sizeof(DWORD);
-                        Registry HTTP_USERNAME(HKEY_LOCAL_MACHINE);
-                        HTTP_USERNAME.ReadValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
-                                                "iexplore.exe",REG_DWORD,(LPBYTE)&iexplore,DWordSize);
-                        if ((iexplore == 1) || ((iexplore == 0) && r)) // either key is absent or "iexplore.exe" is equal to 1
+                        // checking if FEATURE_HTTP_USERNAME_PASSWORD_DISABLE is disabled 
+                        DWORD iexplore = 1; // assume that it is disabled
+                        DWORD iexplore2 = 1; // assume that it is disabled
+                        DWORD DWordSize = sizeof(DWORD);
+                        Registry HTTP_USERNAME2(HKEY_CURRENT_USER);
+                        bool r = HTTP_USERNAME2.ReadValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
+                                                 "iexplore.exe",REG_DWORD,(LPBYTE)&iexplore2,DWordSize);
+                        if (iexplore2 == 1) // either key is absent or "iexplore.exe" is equal to 1
                         {
-                            if (MyMessageBox(m_hWnd,"You have entered login and password to automatically login to the site,\nhowever, autologin feature is currently disabled for your browser.\n\nWould you like to enable autologin feature?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+                            DWordSize = sizeof(DWORD);
+                            Registry HTTP_USERNAME(HKEY_LOCAL_MACHINE);
+                            HTTP_USERNAME.ReadValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
+                                                    "iexplore.exe",REG_DWORD,(LPBYTE)&iexplore,DWordSize);
+                            if ((iexplore == 1) || ((iexplore == 0) && r)) // either key is absent or "iexplore.exe" is equal to 1
                             {
-                                DWORD buf = 0;
-                                HTTP_USERNAME2.AddValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
-                                                       "iexplore.exe",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
-                                HTTP_USERNAME2.AddValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
-                                                       "explorer.exe",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
+                                if (MyMessageBox(m_hWnd,"You have entered login and password to automatically use them\n"
+                                                        "for the URL. However, autologin feature is currently disabled\n"
+                                                        "for Internet Explorer that will be used to open the URL.\n\n"
+                                                        "Would you like to enable autologin feature?",szWinName,MB_YESNO|MB_ICONQUESTION)==IDYES)
+                                {
+                                    DWORD buf = 0;
+                                    HTTP_USERNAME2.AddValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
+                                                           "iexplore.exe",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
+                                    HTTP_USERNAME2.AddValue("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE",
+                                                           "explorer.exe",REG_DWORD,(const BYTE*)&buf,sizeof(DWORD));
+                                }
                             }
                         }
                     }
@@ -975,6 +1040,8 @@ public:
     CEdit ChildLink;
     CEdit ParentLink;
     CEdit RelatedLink;
+    CEdit PathToBrowser;
+    CString sParameters;
 
     DefectEditPage(int action, defect def, std::vector<defect> *defects):DEFECT(def)
     {
@@ -985,6 +1052,7 @@ public:
 
     BEGIN_MSG_MAP(DefectEditPage)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        COMMAND_ID_HANDLER_EX(IDC_BROWSE,OnBrowse)
         COMMAND_ID_HANDLER(IDOK, OnCloseCmd)
         COMMAND_ID_HANDLER(IDCANCEL, OnCloseCmd)
     END_MSG_MAP()
@@ -1005,6 +1073,8 @@ public:
         ParentLink.LimitText(LINK_MAX);
         RelatedLink.Attach(GetDlgItem(IDC_DEFECTS_LINK4));
         RelatedLink.LimitText(LINK_MAX);
+        PathToBrowser.Attach(GetDlgItem(IDC_BROWSER_PATH));
+        PathToBrowser.LimitText(MAX_PATH-1);
 
         DefectEdit.SetWindowText(DEFECT.ClientID);
         ProjectEdit.SetWindowText(DEFECT.STProject);
@@ -1012,6 +1082,8 @@ public:
         ChildLink.SetWindowText(DEFECT.ChildDefectsURL);
         ParentLink.SetWindowText(DEFECT.ParentDefectURL);
         RelatedLink.SetWindowText(DEFECT.RelatedDefectsURL);
+        PathToBrowser.SetWindowText(DEFECT.BrowserPath);
+        sParameters = DEFECT.BrowserParameters;
 
         switch(Action)
         {
@@ -1040,6 +1112,30 @@ public:
             }
         }
         return -1;
+    }
+
+    void OnBrowse(UINT wNotifyCode, INT wID, HWND hWndCtl)
+    {
+        // set initial filename to the one entered previously by user
+        CString InitialFileName = "";
+        PathToBrowser.GetWindowText(InitialFileName.GetBuffer(MAX_PATH),MAX_PATH);
+        InitialFileName.ReleaseBuffer();
+        CBrowserDialog Browser(TRUE,NULL,InitialFileName,OFN_FILEMUSTEXIST|OFN_HIDEREADONLY|OFN_LONGNAMES|OFN_PATHMUSTEXIST,"Programs\0*.exe");
+
+        // set dialog title
+        Browser.SetTitle(szWinName + " - Select browser and parameters");
+
+        // set parameters
+        Browser.Parameters = sParameters;
+
+        // call dialog
+        if (Browser.DoModal() == IDOK)
+        {
+            PathToBrowser.SetWindowText(Browser.m_szFileName);
+            sParameters = Browser.Parameters;
+            sParameters.TrimLeft();
+            sParameters.TrimRight();
+        }
     }
 
     LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
@@ -1095,6 +1191,13 @@ public:
             ParentDefectURL.ReleaseBuffer();
             RelatedLink.GetWindowText(RelatedDefectsURL.GetBuffer(LINK_MAX+1),LINK_MAX+1);
             RelatedDefectsURL.ReleaseBuffer();
+            // reading browser path
+            CString strBrowser;
+            PathToBrowser.GetWindowText(strBrowser.GetBuffer(MAX_PATH),MAX_PATH);
+            strBrowser.ReleaseBuffer();
+            strBrowser.TrimLeft();
+            strBrowser.TrimRight();
+
             bool Default = false;
             if (DefectURL.IsEmpty())
             {
@@ -1159,6 +1262,8 @@ public:
             DEFECT.ChildDefectsURL = ChildDefectsURL;
             DEFECT.ParentDefectURL = ParentDefectURL;
             DEFECT.RelatedDefectsURL = RelatedDefectsURL;
+            DEFECT.BrowserPath = strBrowser;
+            DEFECT.BrowserParameters = sParameters;
         }
         EndDialog(wID);
         return 0;
@@ -1816,11 +1921,11 @@ public:
     LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
     {
         SoftTestPath.Attach(GetDlgItem(IDC_SOFTTEST_PATH));
-        SoftTestPath.LimitText(MAX_PATH);
+        SoftTestPath.LimitText(MAX_PATH-1);
         SoftTestPath.SetWindowText(Settings.SoftTestPath);
 
         SoftTestFilter.Attach(GetDlgItem(IDC_SOFTTEST_FILTER));
-        SoftTestFilter.LimitText(MAX_PATH);
+        SoftTestFilter.LimitText(MAX_PATH-1);
         SoftTestFilter.SetWindowText(Settings.SoftTestFilterName);
 
         SoftTestLogin.Attach(GetDlgItem(IDC_SOFTTEST_LOGIN));
@@ -1857,7 +1962,7 @@ public:
     {
         CString temp = "";
         // checking for correct Path to SoftTest value
-        SoftTestPath.GetWindowText(temp.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        SoftTestPath.GetWindowText(temp.GetBuffer(MAX_PATH+1),MAX_PATH);
         temp.ReleaseBuffer();
         temp.TrimLeft();
         temp.TrimRight();
@@ -1902,7 +2007,7 @@ public:
     void OnOK()
     {
         // saving SoftTest settings
-        SoftTestPath.GetWindowText(Settings.SoftTestPath.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+        SoftTestPath.GetWindowText(Settings.SoftTestPath.GetBuffer(MAX_PATH+1),MAX_PATH);
         Settings.SoftTestPath.ReleaseBuffer();
         Settings.SoftTestPath.TrimLeft();
         Settings.SoftTestPath.TrimRight();

@@ -214,12 +214,12 @@ void CSettings::LoadSettings()
         yPos = -1;
     }
 
-    Reg.ReadValue(RegistryKey,"PathToBrowser",REG_SZ,(LPBYTE)BrowserPath.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+    Reg.ReadValue(RegistryKey,"PathToBrowser",REG_SZ,(LPBYTE)BrowserPath.GetBuffer(MAX_PATH+1),MAX_PATH);
     BrowserPath.ReleaseBuffer();
     BrowserPath.TrimLeft();
     BrowserPath.TrimRight();
 
-    Reg.ReadValue(RegistryKey,"BrowserParameters",REG_SZ,(LPBYTE)BrowserParameters.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+    Reg.ReadValue(RegistryKey,"BrowserParameters",REG_SZ,(LPBYTE)BrowserParameters.GetBuffer(MAX_PATH+1),MAX_PATH);
     BrowserParameters.ReleaseBuffer();
     BrowserParameters.TrimLeft();
     BrowserParameters.TrimRight();
@@ -298,13 +298,13 @@ void CSettings::LoadSettings()
         RelatedTasksURL.ReleaseBuffer();
 
         Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"PathToBrowser",
-                      REG_SZ,(LPBYTE)Browser.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+                      REG_SZ,(LPBYTE)Browser.GetBuffer(MAX_PATH+1),MAX_PATH);
         Browser.ReleaseBuffer();
         Browser.TrimLeft();
         Browser.TrimRight();
 
         Reg.ReadValue(RegistryKey+"\\"+LinksSubKey+"\\"+SubKeyName,"BrowserParameters",
-                      REG_SZ,(LPBYTE)BrowserParams.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+                      REG_SZ,(LPBYTE)BrowserParams.GetBuffer(MAX_PATH+1),MAX_PATH);
         BrowserParams.ReleaseBuffer();
         BrowserParams.TrimLeft();
         BrowserParams.TrimRight();
@@ -459,14 +459,14 @@ void CSettings::LoadSettings()
 
     // reading SoftTest settings
     CString temp = "";
-    Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPath",REG_SZ,(LPBYTE)temp.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+    Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestPath",REG_SZ,(LPBYTE)temp.GetBuffer(MAX_PATH+1),MAX_PATH);
     temp.ReleaseBuffer();
     temp.TrimLeft();
     temp.TrimRight();
     if (!temp.IsEmpty()) SoftTestPath = temp;
 
     temp = "";
-    Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestFilter",REG_SZ,(LPBYTE)temp.GetBuffer(MAX_PATH+1),MAX_PATH+1);
+    Reg.ReadValue(RegistryKey+"\\"+SoftTestSubKey,"SoftTestFilter",REG_SZ,(LPBYTE)temp.GetBuffer(MAX_PATH+1),MAX_PATH);
     temp.ReleaseBuffer();
     if (!temp.IsEmpty()) SoftTestFilterName = temp;
     if (SoftTestFilterName.Find("%PROJECT%") == -1)

@@ -18,6 +18,7 @@
 #define HISTORY_PAGE                    217
 #define OTHER_PAGE                      218
 #define IDI_SETTINGS                    220
+#define IDD_PARAMETERS                  221
 #define IDC_TASKNAME                    1000
 #define VIEW_TASK                       1001
 #define IDC_EXPAND                      1002
@@ -50,7 +51,6 @@
 #define IDC_BROWSER_PATH                1034
 #define IDC_MAX_EXT                     1035
 #define IDC_DEFECTS_LINK                1035
-#define IDC_BROWSE                      1036
 #define IDC_DEFECTS_LINK2               1036
 #define IDC_LINK_NEW                    1037
 #define IDC_DEFECTS_LINK3               1037
@@ -111,6 +111,8 @@
 #define IDC_DEFECT_RESTORE              1097
 #define IDC_DEFECT_RESTORE_HF           1098
 #define IDC_DEFECT_RESTORE_SIF          1099
+#define IDC_PARAMETERS                  1100
+#define IDC_BROWSE                      1101
 #define ID_MENU_UNDO                    32774
 #define ID_MENU_CUT                     32775
 #define ID_MENU_COPY                    32776
@@ -131,9 +133,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        221
+#define _APS_NEXT_RESOURCE_VALUE        222
 #define _APS_NEXT_COMMAND_VALUE         32789
-#define _APS_NEXT_CONTROL_VALUE         1100
+#define _APS_NEXT_CONTROL_VALUE         1102
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

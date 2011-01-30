@@ -551,6 +551,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\BrowserDialog.h"
+				>
+			</File>
+			<File
 				RelativePath="CmdLine.h"
 				>
 			</File>
