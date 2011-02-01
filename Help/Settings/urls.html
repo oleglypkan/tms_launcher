@@ -61,8 +61,9 @@ on ISD QA site or in SoftTest application
 <tr bgcolor="#DDDDDD">
   <td colspan="2">
 <P align="justify" class="font">
-There is a useful feature that allows to enter login and password that will be passed to the browser when you open a site if required.<br>
-To use this feature you can enter your login and password to an URL in the following form:
+There is a useful feature that allows to pass login and password automatically to the browser when you open a site, if required.<br>
+To use this feature you can enter your login and password to corresponding fields listed above.<br>
+You can also enter your login and password to URL directly in the following form:
 </P>
 <P align="center" class="font">
 http://<font color="blue">login:password@</font>url
@@ -72,7 +73,18 @@ If login and password are entered in URL in the format above they will be used
 instead of login and password entered in "Login" and "Password" fields.
 </P>
 <P align="justify" class="font">
-Note that Microsoft Internet Explorer does not allow to use this feature by default. TMS Launcher will activate the feature automatically asking confirmation from user.
+Please note that:
+<UL class="font">
+<LI>Recent versions of Microsoft Internet Explorer have this feature DISABLED by default (see <font color="blue">http://support.microsoft.com/kb/834489</font>). TMS Launcher will activate the feature automatically asking for confirmation from user.
+<LI>Microsoft Internet Explorer 9.0 has this feature DISABLED and TMS Launcher cannot enable it.
+<LI>Mozilla Firefox asks for confirmation from user every time it opens URL in format above.<br>
+To disable this confirmation you can do the following:
+<UL>
+<LI>Type "about:config" in the location bar and press Enter
+<LI>Right-click in the empty space and select New|Integer
+<LI>Input "network.http.phishy-userpass-length" as the name and "1024" as the value
+</UL>
+</UL>
 </P>
 </td></tr>
 </table>

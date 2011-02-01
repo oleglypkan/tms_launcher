@@ -16,7 +16,22 @@
 
 <hr size="1" noshade>
 
-<H2 align="center" class="boldfont">What's new in this release?</H2>
+<H2 align="center" class="boldfont">What's new in this version?</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Added ability to open <a class="font" href="Features\opentcs.html">SoftTest test cases</a> on ISD QA site
+  <LI>Added ability to define which browser to use for which URL 
+      (<a class="font" href="Settings\urls.html">tasks</a>, <a class="font" href="Settings\defects.html">defects</a>, 
+      <a class="font" href="Features\opentcs.html">test cases</a>, <a class="font" href="Settings\defects.html">HF</a>, <a class="font" href="Settings\defects.html">SIF</a>)
+  <LI>Added ability to define explicitly how to open URLs (new window or new tab) for browsers that support it: Mozilla Firefox, Google Chrome, Opera
+  <LI>Fixed bugs in <a class="font" href="Features\commandline.html">command line interface</a> features caused by changes in iTMS 2.1.0.3
+  <LI>Updated HTML help
+</UL>
+</H4>
+<br>
+<br>
+<H2 align="center" class="boldfont">History of changes in previous versions</H2>
+<H2 align="center" class="boldfont">Version 3.1</H2>
 <H4 align="justify" class="font">
 <UL>
   <LI>Added ability to open <a class="font" href="Features\open_hf_sif.html">Software Installation Forms</a>
@@ -32,6 +47,130 @@
   <LI>Allow saving characters with ASCII code > 127 in "Separators" and "Tasks Separators" fields
   <LI>Added new default separators: No-Brake Space, En Dash, Em Dash. This will allow to open tasks with these separators
   <LI>Several bugs fixed
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 3.0</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Tasks that have digits in client name like MAR2A-00045, DEV1-00001 can be opened now
+  <LI>Added support for MS Windows Vista and Internet Explorer 8
+  <LI>Added new "Related tasks" button to main window
+  <LI>Added "Other" page to Settings window with:
+    <UL>
+      <LI>Ability to customize transparency of main window
+      <LI>Hotkey for fast window activation
+      <LI>Flag to set focus to "Task Name" field when window is activated
+      <LI>Flag to highlight text in "Task Name" field when window is activated
+    </UL>
+  <LI>"Autologin" feature can be automatically enabled in IE after user enters "Login"/"Password" for an URL
+  <LI>Added ability to reassign already used hotkeys in URLs
+  <LI>Added ability to open and copy tasks from History page of Settings window
+  <LI>Small user interface changes
+  <LI>Command line syntax has been extended (see <a class="font" href="Features\commandline.html">Command line interface</a> for more details):
+     <UL>
+         <LI>Added option that allows to view SPC linked tasks for the list of given ones:<br>
+             <b>TMS_Launcher -spc -name "<i>NAME</i>" -prod "<i>PROD</i>" -stat "<i>STAT</i>" -msp "<i>MSP</i>" <i>input_file output_file</i></b>
+         <LI>Added option that allows to view PRODUCT, STATUS, MS PROJECT for the list of given tasks:<br>
+             <b>TMS_Launcher -inf -name "<i>NAME</i>" -prod "<i>PROD</i>" -stat "<i>STAT</i>" -msp "<i>MSP</i>" input_file output_file</b>
+         <LI>Added option that allows to find tasks that match or do not match the given regular expression<br>
+             <b>TMS_Launcher -exp "<i>EXPRESSION</i>" <i>input_file output_file</i></b>
+         <LI>Negative search logic can be turned on by adding "!" before an expression in all filters
+     </UL>
+  <LI>Several bugs fixed
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 2.7</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Command line syntax has been extended (see <a class="font" href="Features\commandline.html">Command line interface</a> for more details):
+     <UL>
+         <LI>Added option that allows to view timesheets for the list of tasks<br>
+             <b>TMS_Launcher.exe -t [-name "<i>NAME</i>"] <i>input_file output_file</i></b>
+         <LI>Added new parameter <b>[-stat "<i>STAT</i>"]</b> to filter child tasks by status<br>
+             <b>TMS_Launcher.exe -c [-name "<i>NAME</i>"] [-prod "<i>PROD</i>"] [-stat "<i>STAT</i>"] <i>input_file output_file</i></b>
+         <LI>Added new parameter <b>[-name "<i>NAME</i>"]</b> to filter parent tasks by names<br>
+             <b>TMS_Launcher.exe -p [-name "<i>NAME</i>"] <i>input_file output_file</i></b>
+         <LI>Now parameters <b>-name</b>, <b>-prod</b>, <b>-stat</b> are regular expressions, not simple masks
+     </UL>
+  <LI>Several bugs fixed
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 2.6</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>New predefined URL "SPC linked tasks" has been added to URLs page to open tasks in SPC system
+  <LI>New parameter %AA_ID% is now handled in URLs to open tasks in SPC system
+  <LI>Fixed bug when help file cannot be opened sometimes if it is called by &lt;F1&gt; from the program
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 2.5</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Getting requirements numbers from QC actions for a list of tasks
+  <LI>Getting QR actions in addition to QB ones for a list of tasks
+  <LI>Improved list controls usability in Settings window
+  <LI>Fixed bug with opening defects in SoftTest 1.5.1
+  <LI>Fixed bug with sorting of context menu items for View Task button
+  <LI>Updated HTML help
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 2.4</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Getting information about QB/QC actions presence for a list of tasks
+  <LI>Keeping the history of opened tasks in Windows Registry
+  <LI><a href="Settings\History.html">History page</a> was added to settings window to manage history
+  <LI>Possibility to enable/disable filling up Task ID with starting '0' to 5-character length was added to <a href="Settings\Format.html">Format page</a>
+  <LI>Fixed bug with incorrect reading of child tasks/defects for a list of given ones
+  <LI>Updated HTML help
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 2.3</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Context menu is added to main window buttons that allows to choose URL to open tasks/defects. Look at second picture <a href="Features\opentasks.html">here</a>
+  <LI>SoftTest and TMS passwords are encrypted before saving to Windows Registry
+  <LI>Small bug fixes
+  <LI>Updated HTML help
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 2.2</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Ability to open defects directly in SoftTest application
+  <LI>Ability to display product version for child tasks when searching for them using command line interface
+  <LI>Extended command line interface with ability to filter child tasks by both name and/or product version
+  <LI>Some new commands in system tray menu
+  <LI>Small bug fixes
+  <LI>Updated HTML help
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 2.1</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Parent task for the given one can be opened
+  <LI>Parent and child defect(s) for the given one can be opened on ISD QA site
+  <LI>Ability to define different URLs for defects from different SoftTest projects
+  <LI>Ability to open defects in format "ST_LABGUI_SYNCH-12345", not just "LAB-12345"
+  <LI>Ability to choose "Task Name" field control: RichEdit or ComboBox with history of opened tasks
+  <LI>Command line interface support with:
+      <UL>
+        <LI>Ability to get the list of parent tasks for a list of the given ones
+        <LI>Ability to get the list of child tasks for a list of the given ones
+      </UL>
+  <LI>Improvements to product usability including redesigned options interface
+  <LI>Small bug fixes
+</UL>
+</H4>
+<H2 align="center" class="boldfont">Version 2.0</H2>
+<H4 align="justify" class="font">
+<UL>
+  <LI>Several tasks entered simultaneously can be recognized and opened
+  <LI>Ability to open SoftTest defects on ISD QA site
+  <LI>Ability to define browser to open tasks
+  <LI>Ability to define URLs to open tasks
+  <LI>Ability to define format of tasks
+  <LI>Created HTML help
 </UL>
 </H4>
 </BODY>
