@@ -1,0 +1,80 @@
+<!-- @(#)$RCSfile: opentcs.html,v $$Revision: $$Date: $ -->
+<HTML>
+<HEAD>
+  <TITLE> TMS Launcher HTML Help </TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+  <link rel="STYLESHEET" href="..\style.css" type="text/css">
+</HEAD>
+
+<BODY>
+<table border="0">
+<tr>
+   <td><IMG SRC="Pictures\logo.gif"></td>
+   <td class="caption"> Launcher</td>
+</tr>
+</table>
+
+<hr size="1" noshade>
+
+<H2 align="center" class="boldfont">Opening SoftTest test cases</H2>
+<P align="justify" class="font">
+There are 2 common approaches to open SoftTest test cases using TMS Launcher on ISD QA site.
+<br>Although there are also other approaches to open test cases, they require entering of test case ID with client prefix which is not convenient.
+<br>Both approaches described on this page allow opening test cases by ID without any client prefix.
+The first approach is possible starting from v2.0, the second one is possible starting from v3.2. However, they cannot be used simultaneously. 
+<br>The first approach is enabled by default. Defect record with empty client name used in the first approach has higher priority than URLs without %CLIENT% keyword used in the second approach, so user needs to remove the defect record (which exists by default) to make the second approach works.
+
+</P>
+<P align="justify" class="font">
+1) The <b>first approach</b> is more suitable when user works mostly with one SoftTest project. It uses <b>defect record</b> with <b>empty client</b> name and defined SoftTest project.
+<br>
+<br><IMG SRC="Pictures\opentcs-defect-record.png">
+
+<br><br>
+With this setting test case can be opened by “Related task” button/hotkey, while defects/child/parent still can be opened by corresponding buttons/hotkeys.
+<br>
+<br><IMG SRC="Pictures\opentcs-main-window.png">
+
+<br><br>
+The <b>advantage</b> of this approach is that there is no need to remember additional hotkeys, existing hotkeys defined on “URLs” page are used.
+<br>
+The <b>disadvantages</b> are: it can be used only with one SoftTest project, it uses “Related defects” URL to open test cases which makes related defects inaccessible by this URL.
+
+</P>
+<br>
+<P align="justify" class="font">
+2) The <b>second approach</b> can be used when user works with several SoftTest projects and needs to open test cases/defects in them.
+It uses <b>URL records</b> with URLs that do not contain %CLIENT% keyword. 
+These URL records allow opening tasks without client name by defined links. 
+User needs to create separate URL record for each SoftTest project he works with and define hotkeys if needed.
+<br>
+<br><IMG SRC="Pictures\opentcs-urls-page.png">
+<br><br>Each URL record should have links similar to those defined in the first approach:
+<br><br><IMG SRC="Pictures\opentcs-url1-record.png">
+<IMG SRC="Pictures\opentcs-url2-record.png">
+</P>
+<P align="left" class="font">
+To open defect: <font color="blue">http://qa.isd.dp.ua/softtest/defect/ST_LABGUI_SYNCH/%ID%/</font>
+<br>To open child defect(s): <font color="blue">http://qa.isd.dp.ua/softtest/child_defects/ST_LABGUI_SYNCH/%ID%/</font>
+<br>To open test case (<u>entered to Related tasks</u>): <font color="blue">http://qa.isd.dp.ua/softtest/testcase/info/S/ST_LABGUI_SYNCH/%ID%/</font>
+</P>
+<P align="justify" class="font">
+With those settings a test case can be opened by context menu item of “Related task” button as shown in picture below or by hotkey, while defects/child defects can be opened by context menu items of corresponding buttons or by hotkeys.
+<br><br><IMG SRC="Pictures\opentcs-main-window2.png">
+</P>
+<P align="justify" class="font">
+The <b>advantage</b> of this approach is that test cases can be opened in several SoftTest projects.
+<br>
+The <b>disadvantages</b> are: user needs to remember additional hotkeys or use 
+context menu commands which is less convenient than using buttons directly, 
+it uses “Related tasks” URL to open test cases which makes related tasks inaccessible 
+by this URL, parent task cannot be determined for task without client name and 
+therefore “Parent task” button does not work for URLs without %CLIENT%.
+</P>
+<P align="justify" class="font">
+Despite all disadvantages, both approaches allow opening test cases much faster 
+than when using SoftTest directly in case if user just needs to view a test case, 
+not to edit or run it.
+</P>
+</BODY>
+</HTML>

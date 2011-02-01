@@ -8,7 +8,7 @@ Default topic=introduction.html
 Display compile progress=Yes
 Index file=TMS_Launcher.hhk
 Language=0x409 English (United States)
-Title=TMS Launcher 3.1 HTML help
+Title=TMS Launcher 3.2 HTML help
 
 
 [FILES]
@@ -16,6 +16,7 @@ introduction.html
 whats_new.html
 mainfeatures.html
 Features\opendefects.html
+Features\opentcs.html
 Features\openlinks.html
 Features\opentasks.html
 Features\commandline.html
