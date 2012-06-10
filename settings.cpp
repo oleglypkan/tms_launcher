@@ -124,8 +124,8 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     ParentDefectLink = "http://qa.isd.dp.ua/softtest/parent_defect/%PROJECT%/%ID%/";
     RelatedDefectsLink = "http://qa.isd.dp.ua/softtest/related_defects/%PROJECT%/%ID%/";
     SifLink = "http://se-web.softcomputer.com/SE_DB_ENGINE/tools/forms/sif/saveToDb.do?&shortcut=true&actionS=Edit&id=%ID%";
-    HfLinkActive = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=0&search_status[]=active&hotfixid=%ID%";
-    HfLinkAll = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&search_product=all&search_limits=0&hotfixid=%ID%";
+    HfLinkActive = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&ProductList=all&search_status[]=active&hotfixid=%ID%";
+    HfLinkAll = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&ProductList=all&hotfixid=%ID%";
     HfLinkRevision = "http://se.softcomputer.com/CM/hotfix/HFinformation.php?HF_mainpage=1&hotfixID=%ID%";
     defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
     defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
@@ -708,11 +708,11 @@ void CSettings::AddingNewURLs()
     if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
     {
         char HFflag[2] = ""; // this flag was added in 3.1
+        CString value = "", value_name = "", old_value = "";
+        value.Format("%s;%s;%s;%s;%s;%s", "HF", "HF", HfLinkActive, HfLinkAll, HfLinkAll, HfLinkAll);
         if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"HF",REG_SZ,(LPBYTE)HFflag,1))
         {
-            CString value = "", value_name = "";
-            value.Format("%s;%s;%s;%s;%s;%s", "HF", "HF", HfLinkActive, HfLinkAll, HfLinkAll, HfLinkAll);
-            if (!IsDefectInRegistry("HF;", value_name)) // HF record does not exist yet, create it
+            if (!IsDefectInRegistry("HF;", value_name, old_value)) // HF record does not exist yet, create it
             {
                 Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
             }
@@ -728,6 +728,25 @@ user-defined HF record with the default one?",szWinName,MB_YESNO|MB_ICONQUESTION
             }
             Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.1
         }
+        else // "HF" flag already exists that means that "HF" record was previously saved to Registry
+        {
+            // check whether "HF2" flag exists that would mean that "HF" record was corrected by 3.3 version
+            if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"HF2",REG_SZ,(LPBYTE)HFflag,1))
+            {
+                if (IsDefectInRegistry("HF;", value_name, old_value))
+                {
+                    RegEx expr;
+                    expr.SetExpression("HF;HF;[^;]*;[^;]*;[^;]*;[^;]*(;.+)", true);
+                    if (expr.Search(old_value, match_stop) && expr.Matched(1))
+                    {
+                        value += expr.What(1).c_str();
+                    }
+                    Reg.DeleteValue(RegistryKey+"\\"+DefectsSubKey,value_name);
+                    Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"HF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
+                }
+            }
+        }
+        Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"HF2",REG_SZ,(const BYTE*)LPCTSTR(""),0); // this flag was added in 3.3
     }
 
     // adding SIF record to defects records list
@@ -736,9 +755,9 @@ user-defined HF record with the default one?",szWinName,MB_YESNO|MB_ICONQUESTION
         char SIFflag[2] = ""; // this flag was added in 3.1
         if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"SIF",REG_SZ,(LPBYTE)SIFflag,1))
         {
-            CString value = "", value_name = "";
+            CString value = "", value_name = "", old_value = "";
             value.Format("%s;%s;%s;%s;%s;%s", "SIF", "SIF", SifLink, SifLink, SifLink, SifLink);
-            if (!IsDefectInRegistry("SIF;",value_name)) // SIF record does not exist yet, create it
+            if (!IsDefectInRegistry("SIF;", value_name, old_value)) // SIF record does not exist yet, create it
             {
                 Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"SIF",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
             }
@@ -768,7 +787,7 @@ user-defined SIF record with the default one?",szWinName,MB_YESNO|MB_ICONQUESTIO
             SEPARATORS.Insert(0," —–");
             Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"Separators",REG_SZ,(const BYTE*)LPCTSTR(SEPARATORS),SEPARATORS.GetLength()+1);
             Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"NewSeparators",REG_SZ,(const BYTE*)LPCTSTR(""),0);
-        }       
+        }
     }
     
     //  if links sub-key does not exist, default URLs should be restored
@@ -851,9 +870,9 @@ user-defined SIF record with the default one?",szWinName,MB_YESNO|MB_ICONQUESTIO
         // adding defect record for LMM defects
         if (Reg.KeyPresent(RegistryKey+"\\"+DefectsSubKey))
         {
-            CString value = "", value_name = "";
+            CString value = "", value_name = "", old_value = "";
             value.Format("%s;%s;%s;%s;%s;%s", "LMM", "ST_LM_MAYO_SYNCH", DefectsLink, ChildDefectsLink, ParentDefectLink, RelatedDefectsLink);
-            if (!IsDefectInRegistry("LMM;",value_name))
+            if (!IsDefectInRegistry("LMM;", value_name, old_value))
             {
                 Reg.AddValue(RegistryKey+"\\"+DefectsSubKey,"LMM",REG_SZ,(const BYTE*)LPCTSTR(value),value.GetLength()+1);
             }
@@ -1280,9 +1299,10 @@ void CSettings::sort_links(std::vector<link> &links_to_sort)
 }
 
 // returns true if there is a value in RegistryKey\DefectsSubKey that begins with text specified in "Client" parameter
-bool CSettings::IsDefectInRegistry(const char *Client, CString &ValueName)
+bool CSettings::IsDefectInRegistry(const char *Client, CString &ValueName, CString &DataValue)
 {
     ValueName = "";
+    DataValue = "";
     DWORD DWordSize=sizeof(DWORD);
     DWORD MaxValueNameLength = 255;
     DWORD MaxValueLength = 16000;
@@ -1306,6 +1326,7 @@ bool CSettings::IsDefectInRegistry(const char *Client, CString &ValueName)
             if (value.Find(Client)==0)
             {
                 ValueName = value_name;
+                DataValue = value;
                 return true;
             }
         }

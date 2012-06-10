@@ -199,7 +199,7 @@ public:
     int GetDefaultUrlIndex();
     bool IsDefect(const char *Client, CString *Project, int *index);
     bool OpenDefectsInSoftTest(INT wID);
-    bool IsDefectInRegistry(const char *Client, CString &ValueName);
+    bool IsDefectInRegistry(const char *Client, CString &ValueName, CString &DataValue);
     bool IsSIF(int index);
     bool IsHF(int index);
 protected:
