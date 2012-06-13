@@ -128,7 +128,7 @@ protected:
     void SwitchControls();
     bool GetTaskNameFromRichEdit(CString &sTasks);
     bool GetTaskNameFromClipboard(CString &sTasks);
-    void CreateRequest(const char *sClientName, const char *sIDName, CString &Request, CString &Browser, CString &Parameters, INT wID);
+    void CreateRequest(const char *sClientName, const char *sIDName, const char *sExt, CString &Request, CString &Browser, CString &Parameters, INT wID);
     void CreateRequestForHF(const char *sIDName, const char *Ext, CString &Request);
     void Replace_AA_ID(CString &Request, CString &Message, int index);
     void AddToHistory(const char *item);

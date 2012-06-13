@@ -776,19 +776,27 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
             }
             else
             {
-                // request for tasks/defects/SIFs
-                CreateRequest(Tasks[i].Client, Tasks[i].ID, Request, Browser, Parameters, wID);
+                // request for tasks/defects/SIFs/issues
+                CreateRequest(Tasks[i].Client, Tasks[i].ID, Tasks[i].Ext, Request, Browser, Parameters, wID);
             }
             if (!Request.IsEmpty())
             {
                 OpenTask(Request, (Tasks.size() == 1), Browser, Parameters);
-                if (Settings.IsHF(defect_index)) // history for HF is written differently
+                if (Settings.IsIssue(Tasks[i].Client+Tasks[i].Separator+Tasks[i].ID+Tasks[i].Separator+Tasks[i].Ext))
                 {
-                    AddToHistory(Tasks[i].Client+Tasks[i].Separator+"1."+Tasks[i].ID+Tasks[i].Ext);
+                    // history for SD issue is written differently
+                    AddToHistory(Tasks[i].Client+Tasks[i].Separator+Tasks[i].ID+Tasks[i].Separator+Tasks[i].Ext);
                 }
                 else
                 {
-                    AddToHistory(Tasks[i].Client+Tasks[i].Separator+Tasks[i].ID);
+                    if (Settings.IsHF(defect_index)) // history for HF is written differently
+                    {
+                        AddToHistory(Tasks[i].Client+Tasks[i].Separator+"1."+Tasks[i].ID+Tasks[i].Ext);
+                    }
+                    else
+                    {
+                        AddToHistory(Tasks[i].Client+Tasks[i].Separator+Tasks[i].ID);
+                    }
                 }
             }
         }
@@ -812,19 +820,19 @@ void CMainDlg::OnViewTask(UINT wNotifyCode, INT wID, HWND hWndCtl)
             {
                 MyMessageBox(m_hWnd,ErrorString,szWinName,MB_ICONERROR);
             }
-    	    break;
+            break;
         case 1:
             if (!correct)
             {
                 MyMessageBox(m_hWnd,ErrorString,szWinName,MB_ICONERROR);
             }
-    	    break;
+            break;
         default:
             if (!correct)
             {
                 MyMessageBox(m_hWnd,"Some tasks were not opened because of incorrect format",szWinName,MB_ICONWARNING);
             }
-    	    break;
+            break;
     }
 
     busy = false;
@@ -910,7 +918,7 @@ void CMainDlg::CreateRequestForHF(const char *sIDName, const char *Ext, CString 
     return;
 }
 
-void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CString &Request, CString &Browser, CString &Parameters, INT wID)
+void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, const char *sExt, CString &Request, CString &Browser, CString &Parameters, INT wID)
 {
     int index = -1;
 
@@ -963,12 +971,7 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
         return;
     }
 
-    // opening TMS task
-    CString tempID = sIDName;
-    if (lstrcmp(sClientName,"")!=0) // fillup should be used only for tasks with non-empty client name
-    {
-        if (Settings.FillID) TASK::FillupTaskID(tempID);
-    }
+    // determining URL to use for SD issue or TMS task
     switch (wID)
     {
         case VIEW_TASK:
@@ -1002,6 +1005,31 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, CStri
             }
     }
 
+    CString Sep = "-";
+    if (!Settings.Separators.IsEmpty()) Sep = Settings.Separators[0];
+    if (Settings.IsIssue(CString(sClientName) + Sep + CString(sIDName) + Sep + sExt))
+    {
+        Request = Settings.SDissueLink;
+        Request.Replace("%CLIENT%",sClientName);
+        Request.Replace("%ID%",sIDName);
+        Request.Replace("%EXT%",sExt);
+        Request.Insert(0,"\"");
+        Request += "\"";
+        if (index != -1)
+        {
+            Browser = Settings.links[index].BrowserPath;
+            Parameters = Settings.links[index].BrowserParameters;
+        }
+        return;
+    }
+
+    CString tempID = sIDName;
+    if (lstrcmp(sClientName,"") != 0) // fillup should be used only for tasks with non-empty client name
+    {
+        if (Settings.FillID) TASK::FillupTaskID(tempID);
+    }
+
+    // opening TMS task
     switch (wID)
     {
         case VIEW_PARENT_TASK:

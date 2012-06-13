@@ -32,6 +32,7 @@ UINT LINK_MAX = 1024;
 bool isalpha_cp1251(unsigned char ch);
 int CompareNoCaseCP1251(const char *string1, const char *string2);
 void StringToUpperCase(CString &String);
+void RemoveSeparators(CString &string, const CString &separators, CString &sep);
 
 bool GetVersionInfo(CString &string, WORD Language, WORD CodePage,
                     const char* StringName = "ProductVersion", UINT VersionDigits = 2,
@@ -117,7 +118,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     MinIDName = 1;
     MaxIDName = 6;
     MinExt = 0;
-    MaxExt = 1;
+    MaxExt = 10;
     TaskNameControlType = 1; // ComboBox control
     DefectsLink = "http://qa.isd.dp.ua/softtest/defect/%PROJECT%/%ID%/";
     ChildDefectsLink = "http://qa.isd.dp.ua/softtest/child_defects/%PROJECT%/%ID%/";
@@ -127,6 +128,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     HfLinkActive = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&ProductList=all&search_status[]=active&hotfixid=%ID%";
     HfLinkAll = "http://se.softcomputer.com/CM/index.php?script=hotfix/index.php&ProductList=all&hotfixid=%ID%";
     HfLinkRevision = "http://se.softcomputer.com/CM/hotfix/HFinformation.php?HF_mainpage=1&hotfixID=%ID%";
+    SDissueLink = "http://softdevtest.softcomputer.com:8081/Issue/View?ufi=%CLIENT%-%ID%-%EXT%";
     defects.push_back(defect("","ST_LABGUI_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
     defects.push_back(defect("CMN","ST_COMMONPROD_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
     defects.push_back(defect("CMNA","ST_COMMONASCII_SYNCH",DefectsLink, ChildDefectsLink, ParentDefectLink,RelatedDefectsLink,"",""));
@@ -789,7 +791,20 @@ user-defined SIF record with the default one?",szWinName,MB_YESNO|MB_ICONQUESTIO
             Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"NewSeparators",REG_SZ,(const BYTE*)LPCTSTR(""),0);
         }
     }
-    
+
+    char IssueFlag[2] = {0}; // this flag was added in 3.3 to mean that MaxExt was increased to allow opening SoftDev issues
+    if (!Reg.ReadValue(RegistryKey+"\\"+FlagsSubKey,"Issues",REG_SZ,(LPBYTE)IssueFlag,1))
+    {
+        int TempMaxExt = 0;
+        DWORD DWordSize=sizeof(DWORD);
+        Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"MaxExt",REG_DWORD,(LPBYTE)&TempMaxExt,DWordSize);
+        if (MaxExt > TempMaxExt)
+        {
+            Reg.AddValue(RegistryKey+"\\"+FormatSubKey,"MaxExt",REG_DWORD,(const BYTE*)&MaxExt,sizeof(DWORD));
+        }
+        Reg.AddValue(RegistryKey+"\\"+FlagsSubKey,"Issues",REG_SZ,(const BYTE*)LPCTSTR(""),0);
+    }
+
     //  if links sub-key does not exist, default URLs should be restored
     if (!Reg.KeyPresent(RegistryKey+"\\"+LinksSubKey))
     {
@@ -1205,6 +1220,34 @@ bool CSettings::IsHF(int index)
         }
     }
     return result;
+}
+
+bool CSettings::IsIssue(const char *OriginalTask, CString *sClientName, CString *Sep, CString *sIDName, CString *Ext)
+{
+    RegEx expr;
+    CString str;
+    str.Format("([A-Za-z]{1,%d})([^A-Za-z]+)([A-Za-z]{1,%d})([^A-Za-z0-9]+)([A-Za-z0-9]{1,%d})", MaxClientName, MaxIDName, MaxExt);
+    expr.SetExpression(str, true);
+
+    if (expr.Match(OriginalTask, match_all))
+    {
+        // checking separators
+        CString Sep1, Sep2;
+        Sep1 = expr.Matched(2) ? expr.What(2).c_str() : "";
+        RemoveSeparators(Sep1, Separators, Sep2);
+        if (!Sep1.IsEmpty()) return false;
+        Sep1 = expr.Matched(4) ? expr.What(4).c_str() : "";
+        RemoveSeparators(Sep1, Separators, Sep2);
+        if (!Sep1.IsEmpty()) return false;
+        if (Sep != NULL) *Sep = Sep2;
+
+        // getting matched issue components
+        if (sClientName != NULL) *sClientName = expr.Matched(1) ? expr.What(1).c_str() : "";
+        if (sIDName != NULL) *sIDName = expr.Matched(3) ? expr.What(3).c_str() : "";
+        if (Ext != NULL) *Ext = expr.Matched(5) ? expr.What(5).c_str() : "";
+        return true;
+    }
+    return false;
 }
 
 bool CSettings::OpenDefectsInSoftTest(INT wID)

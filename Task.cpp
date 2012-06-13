@@ -69,6 +69,13 @@ bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CStri
     if (sTaskName.IsEmpty()) return false;
     sClientName = Sep = sIDName = Ext = "";
 
+    // checking for SoftDev issue,
+    // its format: %CLIENT%%SEP%%ID%%SEP%%EXT%
+    if (Settings.IsIssue(OriginalTask, &sClientName, &Sep, &sIDName, &Ext))
+    {
+        return true;
+    }
+
     // checking for hotfix (special type of defect with different format)
     // hotfix format: [HF][1.]%ID%[.%EXT%]
     CString temp = "";
@@ -231,7 +238,7 @@ bool TASK::ComplexParseTasks(const char *strTasks, std::vector<TASKNAME> &Tasks,
         sTasks.Delete(0,pos);
         sTasks.TrimLeft(Settings.TasksSeparators);
     }
-    
+
     sort_defects(Defects);
 
     return AllTasksValid;

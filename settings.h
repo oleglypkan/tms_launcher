@@ -146,6 +146,7 @@ public:
     CString HfLinkActive;         // URL to show only active hotfixes
     CString HfLinkAll;            // URL to show all hotfixes
     CString HfLinkRevision;       // URL to show specific revision of a HF
+    CString SDissueLink;          // URL to show SoftDev issue
     CString BrowserPath;          // path to browser that is used to open URL, system default browser is used if empty
     CString BrowserParameters;    // parameters that are passed to browser if it is defined
     bool DefaultBrowser;
@@ -202,6 +203,7 @@ public:
     bool IsDefectInRegistry(const char *Client, CString &ValueName, CString &DataValue);
     bool IsSIF(int index);
     bool IsHF(int index);
+    bool IsIssue(const char *OriginalTask, CString *sClientName = NULL, CString *Sep = NULL, CString *sIDName = NULL, CString *Ext = NULL);
 protected:
     BYTE x;
     Registry Reg;

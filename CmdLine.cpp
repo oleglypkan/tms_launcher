@@ -666,6 +666,15 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                     bool IsDefect = false;
                     int defect_index = -1;
 
+                    // checking if a task is SoftDev issue
+                    if (Settings.IsIssue(Tasks[i]))
+                    {
+                        OutFile.width(16);
+                        OutFile.setf(OutFile.left);
+                        OutFile << Tasks[i] << "- is SoftDev issue" << endl;
+                        if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
+                        continue;
+                    }
                     // checking if a task is SoftTest defect or SIF
                     IsDefect = Settings.IsDefect(Client,NULL,&defect_index);
                     if (Settings.IsSIF(defect_index))
@@ -676,6 +685,7 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                         if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;
                         continue;
                     }
+                    // checking if a task is HF
                     if (Settings.IsHF(defect_index))
                     {
                         OutFile.width(16);
