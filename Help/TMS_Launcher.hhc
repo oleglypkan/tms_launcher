@@ -26,6 +26,10 @@
 			<param name="Local" value="Features\opentasks.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Opening SoftDev issues">
+			<param name="Local" value="Features\openissues.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Opening SoftTest defects">
 			<param name="Local" value="Features\opendefects.html">
 			</OBJECT>
