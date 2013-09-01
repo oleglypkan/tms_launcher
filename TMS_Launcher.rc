@@ -59,44 +59,32 @@ STYLE DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CAPTION
 FONT 8, "MS Sans Serif"
 BEGIN
     GROUPBOX        "Common",IDC_STATIC,3,0,177,35
-    CONTROL         "&Minimize at startup",IDC_MINIMIZE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,10,71,8
-    CONTROL         "&Expand at startup",IDC_EXPANDED,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,100,10,72,8
-    CONTROL         "&Single click to highlight",IDC_SINGLE_CLICK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,22,85,8
-    CONTROL         "Start with &Windows",IDC_AUTORUN,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,100,22,74,8
+    CONTROL         "&Minimize at startup",IDC_MINIMIZE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,10,71,8
+    CONTROL         "&Expand at startup",IDC_EXPANDED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,100,10,72,8
+    CONTROL         "&Single click to highlight",IDC_SINGLE_CLICK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,22,85,8
+    CONTROL         "Start with &Windows",IDC_AUTORUN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,100,22,74,8
     LTEXT           """&Task Name"" field control:",IDC_STATIC,4,36,86,8
-    COMBOBOX        IDC_TASK_NAME_CONTROL,3,47,90,12,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_TASK_NAME_CONTROL,3,47,90,12,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "&Right-click action:",IDC_STATIC,98,36,59,9
-    COMBOBOX        IDC_RIGHT_CLICK,97,47,83,12,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_RIGHT_CLICK,97,47,83,12,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "",IDC_STATIC,3,59,177,45
-    CONTROL         "&Use system default browser to open single task",
-                    IDC_DEFAULT_BROWSER,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,9,67,160,8
-    LTEXT           "&Path to browser (blank for system default browser):",
-                    IDC_STATIC,9,78,159,8
+    CONTROL         "&Use system default browser to open single task",IDC_DEFAULT_BROWSER,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,67,160,8
+    LTEXT           "&Path to browser (blank for system default browser):",IDC_STATIC,9,78,159,8
     EDITTEXT        IDC_BROWSER_PATH,9,88,148,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE,160,88,16,13
 END
 
 IDD_ABOUTBOX DIALOG  0, 0, 173, 62
-STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,62,45,50,14
     ICON            IDI_SYSTRAY_ICON,IDC_STATIC,7,7,20,20,SS_CENTERIMAGE
-    CTEXT           "TMS Launcher version",IDC_ABOUT_VERSION,35,7,103,8,
-                    SS_CENTERIMAGE
-    CTEXT           "Copyright © by Oleg Lypkan",IDC_COPYRIGHT,31,19,133,8,
-                    SS_CENTERIMAGE
-    CTEXT           "Information Systems Development",IDC_COMPANY,26,29,121,
-                    8
+    CTEXT           "TMS Launcher version",IDC_ABOUT_VERSION,35,7,103,8,SS_CENTERIMAGE
+    CTEXT           "Copyright © by Oleg Lypkan",IDC_COPYRIGHT,31,19,133,8,SS_CENTERIMAGE
+    CTEXT           "Information Systems Development",IDC_COMPANY,26,29,121,8
 END
 
 URL_EDIT_PAGE DIALOGEX 0, 0, 206, 244
@@ -116,25 +104,19 @@ BEGIN
     EDITTEXT        IDC_LOGIN,27,105,64,12,ES_AUTOHSCROLL
     LTEXT           "P&assword:",IDC_STATIC,97,106,33,8
     EDITTEXT        IDC_PASSWORD,133,105,70,12,ES_PASSWORD | ES_AUTOHSCROLL
-    LTEXT           "Path to &browser (blank for browser settings on General page):",
-                    IDC_STATIC,5,121,193,8
+    LTEXT           "Path to &browser (blank for browser settings on General page):",IDC_STATIC,5,121,193,8
     EDITTEXT        IDC_BROWSER_PATH,4,131,180,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE,186,131,16,13
     GROUPBOX        "Hotkeys to view:",IDC_STATIC,4,146,199,64
     LTEXT           "&Task:",IDC_STATIC,10,157,37,8
-    CONTROL         "HotKey1",VIEW_TASK_HOTKEY,"msctls_hotkey32",WS_BORDER | 
-                    WS_TABSTOP,9,166,93,13
+    CONTROL         "HotKey1",VIEW_TASK_HOTKEY,"msctls_hotkey32",WS_BORDER | WS_TABSTOP,9,166,93,13
     LTEXT           "&Child Tasks:",IDC_STATIC,106,157,41,8
-    CONTROL         "HotKey2",VIEW_CHILD_TASKS_HOTKEY,"msctls_hotkey32",
-                    WS_BORDER | WS_TABSTOP,105,166,93,13
+    CONTROL         "HotKey2",VIEW_CHILD_TASKS_HOTKEY,"msctls_hotkey32",WS_BORDER | WS_TABSTOP,105,166,93,13
     LTEXT           "&Parent Task:",IDC_STATIC,10,183,42,8
-    CONTROL         "HotKey3",VIEW_PARENT_TASK_HOTKEY,"msctls_hotkey32",
-                    WS_BORDER | WS_TABSTOP,9,192,94,13
+    CONTROL         "HotKey3",VIEW_PARENT_TASK_HOTKEY,"msctls_hotkey32",WS_BORDER | WS_TABSTOP,9,192,94,13
     LTEXT           "&Related Tasks:",IDC_STATIC,106,183,49,8
-    CONTROL         "",VIEW_RELATED_TASKS_HOTKEY,"msctls_hotkey32",WS_BORDER | 
-                    WS_TABSTOP,105,192,93,13
-    CONTROL         "Open defects in &SoftTest",IDC_ST_DEFECTS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,4,213,96,8
+    CONTROL         "",VIEW_RELATED_TASKS_HOTKEY,"msctls_hotkey32",WS_BORDER | WS_TABSTOP,105,192,93,13
+    CONTROL         "Open defects in &SoftTest",IDC_ST_DEFECTS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,4,213,96,8
     DEFPUSHBUTTON   "OK",IDOK,51,227,48,14
     PUSHBUTTON      "Cancel",IDCANCEL,107,227,48,14
 END
@@ -144,10 +126,8 @@ STYLE DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CAPTION
 CAPTION "Dialog"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
-    GROUPBOX        "&Tasks that are treated as defects",IDC_STATIC,3,0,177,
-                    104
-    LISTBOX         IDC_DEFECTS_LIST,8,9,125,90,LBS_SORT | 
-                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "&Tasks that are treated as defects",IDC_STATIC,3,0,177,104
+    LISTBOX         IDC_DEFECTS_LIST,8,9,125,90,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&New",IDC_DEFECT_NEW,137,9,38,13
     PUSHBUTTON      "&Edit",IDC_DEFECT_EDIT,137,25,38,13
     PUSHBUTTON      "&Copy",IDC_DEFECT_COPY,137,41,38,13
@@ -156,17 +136,14 @@ BEGIN
 END
 
 IDD_MYOPTIONSHEET DIALOG  0, 0, 239, 141
-STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Dialog"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,59,123,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,122,123,50,14
     PUSHBUTTON      "Help  >>",IDC_HELP_BUTTON,184,123,51,14
-    CONTROL         "Tree1",ATL_IDC_TAB_CONTROL,"SysTreeView32",
-                    TVS_SHOWSELALWAYS | TVS_FULLROWSELECT | WS_BORDER | 
-                    WS_TABSTOP,3,1,51,117
+    CONTROL         "Tree1",ATL_IDC_TAB_CONTROL,"SysTreeView32",TVS_SHOWSELALWAYS | TVS_FULLROWSELECT | WS_BORDER | WS_TABSTOP,3,1,51,117
     LTEXT           "Page caption",IDC_PAGE_CAPTION,58,2,178,10
 END
 
@@ -177,16 +154,13 @@ FONT 8, "MS Sans Serif"
 BEGIN
     GROUPBOX        "Task name format",IDC_STATIC,3,0,177,104
     LTEXT           "[%CLIENT%-]%ID%[-%EXT%]",IDC_STATIC,45,10,93,8
-    EDITTEXT        IDC_MIN_CLIENT,31,20,30,12,ES_AUTOHSCROLL | ES_READONLY | 
-                    ES_NUMBER
+    EDITTEXT        IDC_MIN_CLIENT,31,20,30,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER
     LTEXT           "<= %CLIENT% <=",IDC_STATIC,63,21,57,8
     EDITTEXT        IDC_MAX_CLIENT,124,20,30,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_MIN_ID,31,35,30,12,ES_AUTOHSCROLL | ES_READONLY | 
-                    ES_NUMBER
+    EDITTEXT        IDC_MIN_ID,31,35,30,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER
     LTEXT           "<=     %ID%     <=",IDC_STATIC,64,35,55,8
     EDITTEXT        IDC_MAX_ID,124,35,30,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_MIN_EXT,31,50,30,12,ES_AUTOHSCROLL | ES_READONLY | 
-                    ES_NUMBER
+    EDITTEXT        IDC_MIN_EXT,31,50,30,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER
     LTEXT           "<=   %EXT%    <=",IDC_STATIC,63,51,56,8
     EDITTEXT        IDC_MAX_EXT,124,49,30,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "&Fill up %ID% with starting '0' to 5 chars",IDC_FILL_ID,
@@ -203,17 +177,13 @@ CAPTION "Dialog"
 FONT 8, "MS Sans Serif"
 BEGIN
     GROUPBOX        "&Available URLs",IDC_STATIC,3,0,177,73
-    LISTBOX         IDC_URLS_LIST,8,9,125,60,LBS_SORT | LBS_NOINTEGRALHEIGHT | 
-                    WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_URLS_LIST,8,9,125,60,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&New",IDC_LINK_NEW,137,9,38,13
     PUSHBUTTON      "&Edit",IDC_LINK_EDIT,137,25,38,13
     PUSHBUTTON      "&Copy",IDC_LINK_COPY,137,41,38,13
     PUSHBUTTON      "&Delete",IDC_LINK_DELETE,137,57,38,13
-    GROUPBOX        "&By default open tasks in:",IDC_STATIC,3,77,177,27,
-                    WS_GROUP
-    COMBOBOX        IDC_URL_DEFAULT,8,87,168,73,CBS_DROPDOWNLIST | 
-                    CBS_AUTOHSCROLL | CBS_SORT | CBS_NOINTEGRALHEIGHT | 
-                    WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "&By default open tasks in:",IDC_STATIC,3,77,177,27,WS_GROUP
+    COMBOBOX        IDC_URL_DEFAULT,8,87,168,73,CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | CBS_SORT | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 END
 
 DEFECT_EDIT_PAGE DIALOGEX 0, 0, 226, 193
@@ -233,8 +203,7 @@ BEGIN
     EDITTEXT        IDC_DEFECTS_LINK3,4,101,219,12,ES_AUTOHSCROLL
     LTEXT           "URL to open &related defects:",IDC_STATIC,6,117,96,8
     EDITTEXT        IDC_DEFECTS_LINK4,3,127,220,12,ES_AUTOHSCROLL
-    LTEXT           "Path to &browser (blank for browser settings on General page):",
-                    IDC_STATIC,5,144,197,8
+    LTEXT           "Path to &browser (blank for browser settings on General page):",IDC_STATIC,5,144,197,8
     EDITTEXT        IDC_BROWSER_PATH,3,154,200,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BROWSE,206,154,16,13
     DEFPUSHBUTTON   "OK",IDOK,60,175,49,14
@@ -255,27 +224,22 @@ BEGIN
     LTEXT           "&Login:",IDC_STATIC,8,82,21,8
     EDITTEXT        IDC_SOFTTEST_LOGIN,30,80,53,12,ES_AUTOHSCROLL
     LTEXT           "&Password:",IDC_STATIC,88,82,33,8
-    EDITTEXT        IDC_SOFTTEST_PASSWORD,124,80,50,12,ES_PASSWORD | 
-                    ES_AUTOHSCROLL
+    EDITTEXT        IDC_SOFTTEST_PASSWORD,124,80,50,12,ES_PASSWORD | ES_AUTOHSCROLL
 END
 
 TMS_LAUNCHER_DIALOG DIALOGEX 0, 0, 144, 38
-STYLE DS_SETFONT | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_CAPTION | 
-    WS_SYSMENU
+STYLE DS_SETFONT | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOOLWINDOW
 FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_TASKNAME,"RichEdit20A",ES_AUTOHSCROLL | WS_BORDER | 
-                    WS_TABSTOP,2,3,78,14
-    COMBOBOX        IDC_TASKNAME_COMBO,2,3,78,77,CBS_DROPDOWN | 
-                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",IDC_TASKNAME,"RichEdit20A",ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP,2,3,78,14
+    COMBOBOX        IDC_TASKNAME_COMBO,2,3,78,77,CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
     DEFPUSHBUTTON   "&View Task",VIEW_TASK,83,3,42,14
     PUSHBUTTON      ">>",IDC_EXPAND,128,3,13,14,BS_CENTER | BS_VCENTER
     PUSHBUTTON      "&Children",VIEW_CHILD_TASKS,2,21,37,14
     PUSHBUTTON      "&Parent",VIEW_PARENT_TASK,41,21,39,14
     PUSHBUTTON      "&Related",VIEW_RELATED_TASKS,83,21,38,14
-    PUSHBUTTON      "&Settings",IDC_SETTINGS,124,21,17,14,BS_ICON | 
-                    BS_CENTER | BS_VCENTER
+    PUSHBUTTON      "&Settings",IDC_SETTINGS,124,21,17,14,BS_ICON | BS_CENTER | BS_VCENTER
 END
 
 HISTORY_PAGE DIALOGEX 55, 15, 183, 106
@@ -284,45 +248,33 @@ CAPTION "Dialog"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     GROUPBOX        "&Saved tasks",IDC_STATIC,3,0,177,104
-    LISTBOX         IDC_HISTORY_LIST,8,9,125,90,LBS_NOINTEGRALHEIGHT | 
-                    LBS_EXTENDEDSEL | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_HISTORY_LIST,8,9,125,90,LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&View",IDC_BUTTON_VIEW,137,9,38,13
     PUSHBUTTON      "C&opy",IDC_BUTTON_COPY,137,25,38,13
     PUSHBUTTON      "&Delete",IDC_BUTTON_DELETE,137,41,38,13
     PUSHBUTTON      "&Clear",IDC_BUTTON_CLEAR,137,57,38,13
     LTEXT           "&Max items:",IDC_STATIC,138,76,39,8
-    EDITTEXT        IDC_MAX_HISTORY,138,86,36,12,ES_AUTOHSCROLL | 
-                    ES_READONLY | ES_NUMBER
-    CONTROL         "Spin1",IDC_MAX_SPIN,"msctls_updown32",UDS_WRAP | 
-                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | 
-                    UDS_ARROWKEYS | UDS_NOTHOUSANDS,171,87,9,13
+    EDITTEXT        IDC_MAX_HISTORY,138,86,36,12,ES_AUTOHSCROLL | ES_READONLY | ES_NUMBER
+    CONTROL         "Spin1",IDC_MAX_SPIN,"msctls_updown32",UDS_WRAP | UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS,171,87,9,13
 END
 
 OTHER_PAGE DIALOG  55, 15, 183, 106
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CAPTION
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Transparency options (Windows 2000/XP+)",IDC_STATIC,3,0,
-                    177,48
-    CONTROL         "&Enable opacity",IDC_ENABLE_OPACITY,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,9,10,154,8
+    GROUPBOX        "Transparency options (Windows 2000/XP+)",IDC_STATIC,3,0,177,48
+    CONTROL         "&Enable opacity",IDC_ENABLE_OPACITY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,10,154,8
     LTEXT           "&Inactive opacity:",IDC_INACTIVE_STATIC,10,22,56,8
-    CONTROL         "Slider1",IDC_INACTIVE_SLIDER,"msctls_trackbar32",
-                    TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,67,21,80,12
+    CONTROL         "Slider1",IDC_INACTIVE_SLIDER,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,67,21,80,12
     LTEXT           "100%",IDC_INOP_PER,153,22,21,8
     LTEXT           "&Active opacity:",IDC_ACTIVE_STATIC,10,35,55,8
-    CONTROL         "Slider1",IDC_ACTIVE_SLIDER,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,67,34,80,12
+    CONTROL         "Slider1",IDC_ACTIVE_SLIDER,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,67,34,80,12
     LTEXT           "100%",IDC_AOP_PER,153,35,21,8
-    GROUPBOX        "&Hotkey for fast window activation:",IDC_STATIC,3,49,
-                    177,55
-    CONTROL         "HotKey2",IDC_HOTKEY,"msctls_hotkey32",WS_BORDER | 
-                    WS_TABSTOP,8,61,75,13
-    CONTROL         "+ &WinKey",IDC_WINKEY,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,86,63,48,10
-    CONTROL         "&Set focus to ""Task Name"" field when activated",
-                    IDC_SETFOCUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,79,
-                    164,8
+    GROUPBOX        "&Hotkey for fast window activation:",IDC_STATIC,3,49,177,55
+    CONTROL         "HotKey2",IDC_HOTKEY,"msctls_hotkey32",WS_BORDER | WS_TABSTOP,8,61,75,13
+    CONTROL         "+ &WinKey",IDC_WINKEY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,86,63,48,10
+    CONTROL         "&Set focus to ""Task Name"" field when activated",IDC_SETFOCUS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,9,79,164,8
     CONTROL         "Highlight &text in ""Task Name"" field",IDC_HIGHLIGHT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,91,150,8
 END
@@ -333,10 +285,8 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT           "&Parameters:*",IDC_STATIC,6,3,44,8
     EDITTEXT        IDC_PARAMETERS,54,2,156,12,ES_AUTOHSCROLL
-    LTEXT           "*By specifying parameters you may define how URLs will be opened: in new window or in new tab, if browser supports it.",
-                    IDC_STATIC,6,17,202,18
-    LTEXT           "Mozilla Firefox and Google Chrome support both options:\nUse ""-new-window"" or ""-new-tab"" for Mozilla FireFox\nand ""--new-window"" or ""--new-tab-page"" for Google Chrome",
-                    IDC_STATIC,6,36,202,25
+    LTEXT           "*By specifying parameters you may define how URLs will be opened: in new window or in new tab, if browser supports it.",IDC_STATIC,6,17,202,18
+    LTEXT           "Mozilla Firefox and Google Chrome support both options:\nUse ""-new-window"" or ""-new-tab"" for Mozilla FireFox\nand ""--new-window"" or ""--new-tab-page"" for Google Chrome",IDC_STATIC,6,36,202,25
 END
 
 
@@ -388,8 +338,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,3,0,0
- PRODUCTVERSION 3,3,0,0
+ FILEVERSION 3,4,0,0
+ PRODUCTVERSION 3,4,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -407,12 +357,12 @@ BEGIN
             VALUE "Comments", "Designed and developed by Oleg Lypkan"
             VALUE "CompanyName", "SCC SoftComputer"
             VALUE "FileDescription", "TMS Launcher executable file"
-            VALUE "FileVersion", "3, 3, 0, 0"
+            VALUE "FileVersion", "3, 4, 0, 0"
             VALUE "InternalName", "TMS_Launcher"
-            VALUE "LegalCopyright", "Copyright © 2005 - 2012 by Oleg Lypkan"
+            VALUE "LegalCopyright", "Copyright © 2005 - 2013 by Oleg Lypkan"
             VALUE "OriginalFilename", "TMS_Launcher.exe"
             VALUE "ProductName", "TMS Launcher"
-            VALUE "ProductVersion", "3, 3, 0, 0"
+            VALUE "ProductVersion", "3, 4, 0, 0"
         END
     END
     BLOCK "VarFileInfo"
