@@ -1160,7 +1160,7 @@ public:
             {
                 if (!TASK::IsClientNameValid(strDefect))
                 {
-                    MyMessageBox(m_hWnd,"Client name contains invalid character(s)",szWinName,MB_ICONERROR);
+                    MyMessageBox(m_hWnd,"Client name contains invalid character(s)\nor its length is outside of allowed range",szWinName,MB_ICONERROR);
                     return 0;
                 }
             }

@@ -45,7 +45,11 @@ void TASK::FillupTaskID(CString &ID)
 
 bool TASK::IsClientNameValid(const CString &ClientName)
 {
-    // checking for correct Client name
+    if (ClientName.IsEmpty()) return true; // empty client name is allowed
+    if ((ClientName.GetLength() < Settings.MinClientName) || (ClientName.GetLength() > Settings.MaxClientName))
+    {
+        return false;
+    }
     // the first character in Client Name can not be a digit, the rest ones can be either alpha characters, '_' or numbers
     // [_A-Za-z]
     if (isdigit((unsigned char)(ClientName[0])))
@@ -53,7 +57,7 @@ bool TASK::IsClientNameValid(const CString &ClientName)
         return false;
     }
     // [_A-Za-z0-9]
-    for (int i=0; i<ClientName.GetLength(); i++)
+    for (int i=1; i<ClientName.GetLength(); i++)
     {
         if (((unsigned char)(ClientName[i]) != '_') && (!isalpha_cp1251((unsigned char)(ClientName[i]))) && (!isdigit((unsigned char)(ClientName[i]))))
         {
@@ -61,6 +65,20 @@ bool TASK::IsClientNameValid(const CString &ClientName)
         }
     }
     return true;
+}
+
+bool TASK::IsIDValid(const CString &sClientName , const CString &sIDName)
+{
+    CString expr;
+    if (sClientName.IsEmpty())
+    {
+        expr.Format("[0-9]{%d,%d}", Settings.MinIDName, Settings.MaxIDName);
+    }
+    else
+    {
+        expr.Format("[A-Z0-9]{%d,%d}", Settings.MinIDName, Settings.MaxIDName);
+    }
+    return MatchNoCase(sIDName, expr);
 }
 
 bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CString &Sep, CString &sIDName, CString &Ext)
@@ -135,32 +153,13 @@ bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CStri
             return false;
         }
 
-    if ((sClientName.GetLength() < Settings.MinClientName) || 
-        (sClientName.GetLength() > Settings.MaxClientName))
-    {
-        return false;
-    }
-    else
-    {
-        if (!sClientName.IsEmpty())
-        {
-            if (!IsClientNameValid(sClientName)) return false;
-        }
-    }
+    // checking for correct client name
+    if (!IsClientNameValid(sClientName)) return false;
 
-    if ((sIDName.GetLength() < Settings.MinIDName) || (sIDName.GetLength() > Settings.MaxIDName))
-    {
-        return false;
-    }
-    else
-    {
-        // checking for correct ID
-        for (int i=0; i<sIDName.GetLength(); i++)
-        {
-            if (!isdigit((unsigned char)(sIDName[i]))) return false;
-        }
-    }
-    
+    // checking for correct ID
+    if (!IsIDValid(sClientName, sIDName)) return false;
+
+    // checking for correct ext
     if ((Ext.GetLength() < Settings.MinExt) || (Ext.GetLength() > Settings.MaxExt))
     {
         return false;

@@ -1226,7 +1226,7 @@ bool CSettings::IsIssue(const char *OriginalTask, CString *sClientName, CString 
 {
     RegEx expr;
     CString str;
-    str.Format("([A-Za-z]{1,%d})([^A-Za-z]+)([A-Za-z]{1,%d})([^A-Za-z0-9]+)([A-Za-z0-9]{1,%d})", MaxClientName, MaxIDName, MaxExt);
+    str.Format("([A-Z]{1,%d})([^A-Z]+)([A-Z]{1,%d})([^A-Z0-9]+)([A-Z0-9]{2,%d})", MaxClientName, MaxIDName, MaxExt);
     expr.SetExpression(str, true);
 
     if (expr.Match(OriginalTask, match_all))

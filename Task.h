@@ -67,6 +67,7 @@ class TASK
 {
 public:
     bool IsTaskNameValid(const char *OriginalTask, CString &sClientName, CString &Sep, CString &sIDName, CString &Ext);
+    bool IsIDValid(const CString &sClientName , const CString &sIDName);
     static bool IsClientNameValid(const CString &ClientName);
     static void FillupTaskID(CString &ID);
     void SimpleParseTasks(const char *strTasks, std::vector<CString> &Tasks);
