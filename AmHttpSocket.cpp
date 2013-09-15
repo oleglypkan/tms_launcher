@@ -1,209 +1,107 @@
 /*
-    File name: CmdLine.cpp
+    File name: AmHttpSocket.cpp
     Purpose:   This module is a part of TMS Launcher source code
     Author:    Oleg Lypkan
     Copyright: Information Systems Development
-    Date of last modification: September 5, 2006
 */
 
 #include "StdAfx.h"
 #include "AmHttpSocket.h"
-#include <atlbase.h>
-#include <limits.h>
 #include <vector>
+#include <string>
+#include <algorithm>
 
 #ifndef NO_VERID
  static char verid[]="@(#)$RCSfile: AmHttpSocket.cpp,v $$Revision: 1.3 $$Date: 2008/09/28 17:16:48Z $"; 
 #endif
 
-#define AgentName _T("Mozilla/4.0")
-
-//case insensitive search functions...
-#ifdef UNICODE
-#define _tcsustr wcsustr
-#else
-#define _tcsustr strustr
-#endif
-char* strustr(char *source, char *s);
-wchar_t* wcsustr(wchar_t *source, wchar_t *s);
-
-char* strustr(char *source, char *s)
-{
-    //make an uppercase copy of source and s
-    char *csource = _strdup(source);
-    char *cs = _strdup(s);
-    _strupr(csource);
-    _strupr(cs);
-    //find cs in csource...
-    char *result = strstr(csource, cs);
-    if (result != NULL)
-    {
-        //cs is somewhere in csource
-        int pos = result - csource;
-        result = source;
-        result += pos;
-    }
-    //clean up
-    free(csource);
-    free(cs);
-    return result;
-}
-
-wchar_t* wcsustr(wchar_t *source, wchar_t *s)
-{
-    //make an uppercase copy af source and s
-    wchar_t *csource = _wcsdup(source);
-    wchar_t *cs = _wcsdup(s);
-    _wcsupr(csource);
-    _wcsupr(cs);
-    //find cs in csource...
-    wchar_t *result = wcsstr(csource, cs);
-    if (result != NULL)
-    {
-        //cs is somewhere in csource
-        int pos = result - csource;
-        result = source;
-        result += pos;
-    }
-    //clean up
-    free(csource);
-    free(cs);
-    return result;
-}
-
-// find 'ch' character in 'buffer' and returns its index
-DWORD strnpos(const char *buffer, const char ch, DWORD size)
-{
-    for (DWORD i=0; i<size-1; i++)
-    {
-        if (buffer[i] == ch)
-        {
-            return i;
-        }
-    }
-    return -1;
-}
+const char * const CAmHttpSocket::FormBoundary = "---------------------------TMS_Launcher";
 
 CAmHttpSocket::CAmHttpSocket()
 {
-#ifdef DEBUG
-    OutFile = NULL; // only for DEBUG
-#endif
-    LastError = 0;
-    ReceivedData = NULL;
-    Headers = NULL;
-    hIO = NULL;
-    hIS = NULL;
-    hCO = NULL;
-    hIO = InternetOpen(AgentName, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+    hInternet = NULL;
+    hRequest = NULL;
+    hConnection = NULL;
+    hInternet = InternetOpen(_T("Mozilla/4.0 (compatible; MSIE 9.0)"), INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 
     // set new options if necessary
     DWORD dwSize = sizeof(DWORD);
     DWORD Timeout = 0;
-    InternetQueryOption(hIO,INTERNET_OPTION_CONNECT_TIMEOUT,&Timeout,&dwSize);
+    InternetQueryOption(hInternet,INTERNET_OPTION_CONNECT_TIMEOUT,&Timeout,&dwSize);
     if (Timeout < 300000) // timeout is less than 5 minutes
     {
         Timeout = 300000;
-        InternetSetOption(hIO,INTERNET_OPTION_CONNECT_TIMEOUT,&Timeout,dwSize);
+        InternetSetOption(hInternet,INTERNET_OPTION_CONNECT_TIMEOUT,&Timeout,dwSize);
     }
     Timeout = 0;
-    InternetQueryOption(hIO,INTERNET_OPTION_RECEIVE_TIMEOUT,&Timeout,&dwSize);
+    InternetQueryOption(hInternet,INTERNET_OPTION_RECEIVE_TIMEOUT,&Timeout,&dwSize);
     if (Timeout < 300000) // timeout is less than 5 minutes
     {
         Timeout = 300000;
-        InternetSetOption(hIO,INTERNET_OPTION_RECEIVE_TIMEOUT,&Timeout,dwSize);
+        InternetSetOption(hInternet,INTERNET_OPTION_RECEIVE_TIMEOUT,&Timeout,dwSize);
     }
 }
 
 CAmHttpSocket::~CAmHttpSocket()
 {
-    if (ReceivedData != NULL) free(ReceivedData);
-    if (Headers != NULL) free(Headers);
-    if (hIO != NULL) InternetCloseHandle(hIO);
-    if (hIS != NULL) InternetCloseHandle(hIS);
-    if (hCO != NULL) InternetCloseHandle(hCO);
+    if (hInternet != NULL) InternetCloseHandle(hInternet);
+    if (hRequest != NULL) InternetCloseHandle(hRequest);
+    if (hConnection != NULL) InternetCloseHandle(hConnection);
 }
 
-bool CAmHttpSocket::OpenUrl(const TCHAR *url)
+void CAmHttpSocket::DownloadHtmlPage(const char *url, CString &HTML, const char* Login, const char* Password)
 {
-    if (hIS != NULL)
+    if (PerformRequest(url, HTML) != 200)
     {
-        InternetCloseHandle(hIS);
-        hIS = NULL;
+        HTML.Empty();
+        return;
     }
 
-    CString protocol, host, request, port, login, password;
-    ParseURL(url,protocol,login,password,host,request,port);
-    CString headers = "";
-    headers = GetHeaderLine("WWW-Authenticate");
-    if (!headers.IsEmpty() && !login.IsEmpty() && !password.IsEmpty())
+    // check if this is iTMS login page
+    if (HTML.Find("/itms/login/login.php?r=") == -1) return;
+
+    // download iTMS page
+    CString UserName = Login;
+    CString DomainName;
+    // Login can be in formats: UserName@DomainName or DomainName\UserName or UserName
+    int pos = -1;
+    if ((pos = UserName.Find('\\')) != -1 && pos < (UserName.GetLength()-1))
     {
-        CString AuthString = login + ":" + password;
-        Base64Encode(AuthString);
-        headers.Replace("WWW-Authenticate","Authorization");
-        headers.Insert(headers.Find("realm"),AuthString+" ");
-        headers += "\r\n";
+        DomainName = UserName.Left(pos);
+        UserName = UserName.Mid(pos + 1);
     }
-    else
+    if ((pos = UserName.Find('@')) != -1 && pos < (UserName.GetLength()-1))
     {
-        headers = "";
+        DomainName = UserName.Mid(pos + 1);
+        UserName = UserName.Left(pos);
+    }
+    CString FormData = GetPostFormData(DomainName, UserName, Password);
+    CString FormHeaders = GetPostFormHeaders(FormData);
+    if (PerformRequest("https://www.softcomputer.com/itms/login/login.php", HTML, FormHeaders, FormData) != 200)
+    {
+        HTML.Empty();
+        return;
     }
 
-#ifdef DEBUG
-if (OutFile != NULL) *OutFile << "    InternetOpenUrl started...";
-#endif
-
-    hIS = InternetOpenUrl(hIO, protocol+"://"+host+":"+port+request, headers, -1L, INTERNET_FLAG_RAW_DATA, 0);
-
-    if (hIS != NULL)
+    if (PerformRequest(url, HTML) != 200 || HTML.Find("/itms/login/login.php?r=") != -1)
     {
-#ifdef DEBUG
-if (OutFile != NULL) *OutFile << "finished successfully" << endl;
-#endif
-        return true;
-    }
-    else
-    {
-        LastError = GetLastError();
-#ifdef DEBUG
-if (OutFile != NULL) *OutFile << "finished with error - " << LastError << endl;
-#endif
-        return false;
+        HTML.Empty();
+        return;
     }
 }
 
-bool CAmHttpSocket::PostUrl(const TCHAR *url, const char *PostData, int PostDataLength)
+int CAmHttpSocket::PerformRequest(const char *url, CString &HTML, const char *PostHeaders, const char *PostData)
 {
-    //check length of postdata
-    if (PostDataLength == -1)
-        PostDataLength = strlen(PostData);
-    //some variable that we need...
-    URL_COMPONENTS uc;
-    //let's split the url...
-    uc.dwStructSize = sizeof(uc);
-    uc.lpszScheme = NULL;
-    uc.dwSchemeLength = 0;
-    uc.lpszHostName = NULL;
-    uc.dwHostNameLength = 1;
-    uc.nPort = 0;
-    uc.lpszUserName = NULL;
-    uc.dwUserNameLength = 0;
-    uc.lpszPassword = NULL;
-    uc.dwPasswordLength = 0;
-    uc.lpszUrlPath = NULL;
-    uc.dwUrlPathLength = 1;
-    uc.lpszExtraInfo = NULL;
-    uc.dwExtraInfoLength = 0;
-    InternetCrackUrl(url, _tcslen(url), 0, &uc);
-    //post the data...
-    if (hCO != NULL) InternetCloseHandle(hCO);
-    TCHAR *HostName = _tcsdup(uc.lpszHostName);
-    HostName[uc.dwHostNameLength] = '\0';
-    TCHAR *FileName = _tcsdup(uc.lpszUrlPath);
-    FileName[uc.dwUrlPathLength] = '\0';
-    if (hIS != NULL) InternetCloseHandle(hIS); //if open, close the handle to the connection
-    DWORD flags;
-    if (uc.nPort == 80)
+    // close previous connection if it was not closed
+    if (hRequest != NULL) InternetCloseHandle(hRequest);
+    if (hConnection != NULL) InternetCloseHandle(hConnection);
+
+    CString protocol, login, password, host, request;
+    INTERNET_PORT iPort = 80;
+    ParseURL(url, protocol, login, password, host, iPort, request);
+
+    DWORD flags = 0;
+    if (protocol == "http")
     {
         //we are talking plain http
         flags = INTERNET_FLAG_NO_CACHE_WRITE;
@@ -211,275 +109,178 @@ bool CAmHttpSocket::PostUrl(const TCHAR *url, const char *PostData, int PostData
     else
     {
         //we are talking secure https
-        flags = INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_SECURE |
-            INTERNET_FLAG_IGNORE_CERT_CN_INVALID | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
+        flags = INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_SECURE | INTERNET_FLAG_IGNORE_CERT_CN_INVALID | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
     }
-    TCHAR headers[] = _T("Content-Type: application/x-www-form-urlencoded"); //content type for post...
-    TCHAR szAccept[] = _T("*/*"); //we accept everything...
-    LPTSTR AcceptTypes[2]={0};
-    AcceptTypes[0]=szAccept;
-    hCO = InternetConnect(hIO, HostName, uc.nPort, _T(""), _T(""), INTERNET_SERVICE_HTTP, INTERNET_FLAG_NO_CACHE_WRITE, 0);
-    hIS = HttpOpenRequest(hCO, _T("POST"), FileName, NULL, NULL, (LPCTSTR*)AcceptTypes, flags, 0);
-    if (!HttpSendRequest(hIS, headers, _tcslen(headers), (TCHAR*)PostData, PostDataLength))
+
+    // connect to the server
+    hConnection = InternetConnect(hInternet, host, iPort, NULL, NULL, INTERNET_SERVICE_HTTP, INTERNET_FLAG_NO_CACHE_WRITE, 0);
+    LPCTSTR AcceptTypes[] = {_T("*/*"), NULL};
+
+    // prepare request to be sent to the server
+    CString Method = (PostHeaders == NULL) ? _T("GET") : _T("POST");
+    hRequest = HttpOpenRequest(hConnection, Method, request, NULL, NULL, AcceptTypes, flags, 0);
+
+    // send the request to the server and get the response
+    if (!HttpSendRequest(hRequest, PostHeaders, lstrlen(PostHeaders), (LPVOID)PostData, lstrlen(PostData)))
     {
-        LastError = GetLastError();
-        free(HostName);
-        free(FileName);
-        return false;
+        HTML.Empty();
+        return 0;
     }
-    free(HostName);
-    free(FileName);
-    return true;
+    // response is received, read HTTP headers and returned data (usually HTML page)
+    int RetCode = atoi(ReadHeaderLine(HTTP_QUERY_STATUS_CODE));
+    ReadData(HTML);
+
+    // process cookies received from the server
+    ProcessCookies(url);
+
+    // close connection
+    InternetCloseHandle(hRequest);
+    InternetCloseHandle(hConnection);
+
+    return RetCode;
 }
 
-TCHAR* CAmHttpSocket::GetHeaders(const TCHAR *url)
+void CAmHttpSocket::ProcessCookies(const char *url)
 {
-    //did we get an url?
-    if (url == NULL)
+    // set cookies received from the server to be used in the next session
+    CString AllCookies = ReadHeaderLine(HTTP_QUERY_SET_COOKIE);
+    if (!AllCookies.IsEmpty())
     {
-        LastError = -1;
-        return NULL;
+        AllCookies.Replace("\r\n", "; ");
+        InternetSetCookie(url, NULL, AllCookies);
     }
-    //open the url...
-    if (!OpenUrl(url)) return NULL;
-    //delete old headers...
-    if (Headers != NULL) free(Headers);
-    Headers = (TCHAR*)calloc(1, sizeof(TCHAR));
-    //get the size headers
-    DWORD d = 1, d2 = 0;
-    int i = HttpQueryInfo(hIS, HTTP_QUERY_RAW_HEADERS, Headers, &d, &d2);
-    //alloc some space for the headers
-    Headers = (TCHAR*)realloc(Headers, d * sizeof(TCHAR));
-    if (!HttpQueryInfo(hIS, HTTP_QUERY_RAW_HEADERS, Headers, &d, &d2)) return NULL;
-    return Headers;
 }
 
-char* CAmHttpSocket::GetPage(const TCHAR *url, bool Post, const char *PostData, int PostDataLength)
+CString CAmHttpSocket::GetPostFormData(const char *DomainName, const char *UserName, const char *Password)
 {
-    // did we get an url?
-    if (url == NULL)
-    {
-        LastError = -1;
-        return NULL;
-    }
-    // get the page and store it in ReceivedData...
-    if (Post)
-    {
-        // use http post...
-        if (!PostUrl(url, PostData, PostDataLength)) return NULL;
-    }
-    else
-    {
-        // use http get
-        //if (!OpenUrl(url)) return NULL; // OpenUrl() function was already called in GetHeaders() and no need to call it again
-    }
-    // initializing variables
-    char *mr = NULL;    
-    DWORD rd = 0;
-    DWORD curpos = 0;
-    DWORD dwNumberOfBytesAvailable = 0;
-    if (ReceivedData != NULL)
-    {
-        free(ReceivedData); ReceivedData = NULL; 
-    }
+    CString FormData = CString("--") + CAmHttpSocket::FormBoundary;
+    FormData += "\r\n";
+    FormData += "Content-Disposition: form-data; name=\"login\"";
+    FormData += "\r\n\r\n";
+    FormData += UserName;
+    FormData += "\r\n";
 
-#ifdef DEBUG
-if (OutFile != NULL) *OutFile << "    InternetQueryDataAvailable started" << endl;
-#endif
+    FormData += CString("--") + CAmHttpSocket::FormBoundary;
+    FormData += "\r\n";
+    FormData += "Content-Disposition: form-data; name=\"provider\"";
+    FormData += "\r\n\r\n";
+    FormData += DomainName;
+    FormData += "\r\n";
 
-    // get amount of available data
-    if (!InternetQueryDataAvailable(hIS, &dwNumberOfBytesAvailable, 0, 0))
-    {
-        LastError = GetLastError();
-        return NULL;
-    }
-    if (dwNumberOfBytesAvailable != 0)
-    {
-        mr = new char[dwNumberOfBytesAvailable];
-    }
-    else
-    {
-        return NULL;
-    }
-    // receiving data...
-#ifdef DEBUG
-if (OutFile != NULL) *OutFile << "    InternetReadFile started in loop";
-#endif
+    FormData += CString("--") + CAmHttpSocket::FormBoundary;
+    FormData += "\r\n";
+    FormData += "Content-Disposition: form-data; name=\"password\"";
+    FormData += "\r\n\r\n";
+    FormData += Password;
+    FormData += "\r\n";
 
-    while (InternetReadFile(hIS, mr, dwNumberOfBytesAvailable, &rd))
-    {
+    FormData += CString("--") + CAmHttpSocket::FormBoundary;
+    FormData += "--\r\n";
 
-#ifdef DEBUG
-if (OutFile != NULL)
-{
-    *OutFile << ".";
-    OutFile->flush();
+    return FormData;
 }
-#endif
 
-        if (rd == 0) break;
-        ReceivedData = (char*)realloc(ReceivedData, curpos + rd + 1);
-        memcpy(ReceivedData+curpos, mr, rd);
-        curpos += rd;
-        if (mr != NULL) 
+CString CAmHttpSocket::GetPostFormHeaders(const CString &FormData)
+{
+    CString FormHeader = "Content-Type: multipart/form-data; boundary=";
+    FormHeader += CAmHttpSocket::FormBoundary;
+    FormHeader += "\r\n";
+
+    CString FormDataSize;
+    FormDataSize.Format("%d", FormData.GetLength());
+    FormHeader += "Content-Length: " + FormDataSize+ "\r\n";
+
+    return FormHeader;
+}
+
+CString CAmHttpSocket::ReadHeaderLine(DWORD QueryInfoFlag)
+{
+    CString HeaderLine;
+    CString AllHeaderLines;
+    DWORD dwIndex = 0;
+    DWORD LastError = 0;
+
+    while (LastError != ERROR_HTTP_HEADER_NOT_FOUND)
+    {
+        DWORD dwSizeOfHeaderLine = 512;
+        if (HttpQueryInfo(hRequest, QueryInfoFlag, HeaderLine.GetBufferSetLength(dwSizeOfHeaderLine), &dwSizeOfHeaderLine, &dwIndex))
         {
-            delete [] mr; 
-            mr = NULL;
+            HeaderLine.ReleaseBuffer();
+            AllHeaderLines += (AllHeaderLines.IsEmpty() ? HeaderLine : "\r\n" + HeaderLine);
+            if (dwIndex == 0) dwIndex++;
         }
-        dwNumberOfBytesAvailable = 0;
-        if (!InternetQueryDataAvailable(hIS, &dwNumberOfBytesAvailable, 0, 0))
+        else
         {
             LastError = GetLastError();
-            return NULL;
-        }
-        if (dwNumberOfBytesAvailable != 0)
-        {
-            mr = new char[dwNumberOfBytesAvailable];
-        }
-        else
-        {
-            break;
-        }
-
-    }
-#ifdef DEBUG
-if (OutFile != NULL) *OutFile << endl << "    InternetReadFile finished" << endl;
-#endif
-
-    if (mr != NULL)
-    {
-        delete [] mr;
-    }
-    // replacing '\0' character in received data with ' ' character
-    if (ReceivedData != NULL)
-    {
-        ReceivedData[curpos] = '\0';
-        DWORD pos = -1;
-        while ((pos = strnpos(ReceivedData,'\0',curpos)) != -1)
-        {
-            ReceivedData[pos] = ' ';
+            HeaderLine.ReleaseBuffer();
+            if (LastError == ERROR_INSUFFICIENT_BUFFER)
+            {
+                if (HttpQueryInfo(hRequest, QueryInfoFlag, HeaderLine.GetBufferSetLength(dwSizeOfHeaderLine), &dwSizeOfHeaderLine, &dwIndex))
+                {
+                    HeaderLine.ReleaseBuffer();
+                    AllHeaderLines += (AllHeaderLines.IsEmpty() ? HeaderLine : "\r\n" + HeaderLine);
+                    if (dwIndex == 0) dwIndex++;
+                }
+                else
+                {
+                    LastError = GetLastError();
+                    HeaderLine.ReleaseBuffer();
+                }
+            }
         }
     }
-    return ReceivedData;
+    return AllHeaderLines;
 }
 
-TCHAR* CAmHttpSocket::GetHeaderLine(TCHAR *s)
+void CAmHttpSocket::ReadData(CString &HTML)
 {
-    //find a line in the headers that contains s, and return a pointer to the line...
-    if (Headers == NULL) return NULL;
-    TCHAR *ts = Headers;
-    if (_tcsustr(ts, s) != NULL) return ts;
-    while (1)
+    HTML.Empty();
+    std::string buffer;
+    DWORD dwNumberOfBytesAvailable = 0;
+    while (InternetQueryDataAvailable(hRequest, &dwNumberOfBytesAvailable, 0, 0))
     {
-        if (*ts == '\0' && ts[1] == '\0') break;
-        if (*ts == '\0')
+        if (dwNumberOfBytesAvailable == 0) return;
+        buffer.resize(dwNumberOfBytesAvailable + 1);
+        DWORD dwNumberOfBytesRead = 0;
+        if (!InternetReadFile(hRequest, &buffer[0], dwNumberOfBytesAvailable, &dwNumberOfBytesRead) || dwNumberOfBytesRead == 0)
         {
-            ts++;
-            if (_tcsustr(ts, s) != NULL) return ts;
+            HTML.Empty();
+            return;
         }
-        else ts++;
+        std::string portion(buffer.c_str(), dwNumberOfBytesRead);
+        std::replace(portion.begin(), portion.end(), '\0', ' ');
+        HTML += portion.c_str();
+        dwNumberOfBytesAvailable = 0;
     }
-    return NULL;
 }
 
-int CAmHttpSocket::GetPageStatusCode()
+//  Used to break apart an URL such as
+//  http://login:password@www.localhost.com:80/TestPost.htm
+//  into protocol, login, password, host, port and request
+void CAmHttpSocket::ParseURL(const char *url, CString &protocol, CString &login, CString &password, CString &host, INTERNET_PORT &port, CString &request)
 {
-    //get the correct header line
-    TCHAR *s = GetHeaderLine(_T("http"));
-    if (s == NULL) return 0; //no headers
-    //find the 3 digit code...
-    if (_tcslen(s) < 3) return 0; //some error,  the string is too short...
-    while (!(isdigit(s[0]) && isdigit(s[1]) && isdigit(s[2])))
-    {
-        if (s[3] == '\0') return 0; //we have reached the end of the string, without finding the number...
-        s++;
-    }
-    //make a copy of s, and return the code
-    TCHAR *code = _tcsdup(s);
-    code[3] = '\0'; //remove all text after the 3 digit response code
-    int result = _ttoi(code);
-    free(code);
-    return result;
-}
+    URL_COMPONENTS uc = {0};
+    uc.dwStructSize = sizeof(uc);
+    uc.dwSchemeLength = 1;
+    uc.dwHostNameLength = 1;
+    uc.dwUserNameLength = 1;
+    uc.dwPasswordLength = 1;
+    uc.dwUrlPathLength = 1;
+    uc.dwExtraInfoLength = 1;
 
-//  Used to break apart an URL such as 
-//  http://login:password@www.localhost.com:80/TestPost.htm 
-//  into protocol, login, password, port, host and request
-void CAmHttpSocket::ParseURL(const char *url, CString &protocol, CString &login, CString &password,
-                             CString &host, CString &request, CString &port)
-{
     CString URL = url;
+    if (!InternetCrackUrl(URL, URL.GetLength(), 0, &uc))
+    {
+        return;
+    }
 
-    // find protocol
-    int pos = URL.Find("://");
-    if (pos != -1)
-    {
-        protocol = URL.Left(pos);
-        protocol.MakeUpper();
-        URL.Delete(0,pos+3);
-    }
-    else
-    {
-        protocol = "HTTP";
-    }
-    // find login and password
-    pos = URL.Find("@");
-    if (pos != -1)
-    {
-        password = URL.Left(pos);
-        URL.Delete(0,pos+1);
-        pos = password.Find(":");
-        if (pos != -1)
-        {
-            login = password.Left(pos);
-            password.Delete(0,pos+1);
-        }
-        else
-        {
-            login = "";
-            password = "";
-        }
-    }
-    else
-    {
-        login = "";
-        password = "";
-    }
-    // find port, host, request
-    port = "80";
-    pos = URL.Find(":");
-    if (pos != -1)
-    {
-        host = URL.Left(pos);
-        URL.Delete(0,pos+1);
-        pos = URL.Find("/");
-        if (pos != -1)
-        {
-            port = URL.Left(pos);
-            URL.Delete(0,pos);
-            request = URL;
-        }
-        else
-        {
-            port = URL;
-            request = "";
-        }
-    }
-    else
-    {
-        pos = URL.Find("/");
-        if (pos != -1)
-        {
-            host = URL.Left(pos);
-            URL.Delete(0,pos);
-            request = URL;
-        }
-        else
-        {
-            host = URL;
-            request = "";
-        }
-    }
+    protocol = CString(uc.lpszScheme, uc.dwSchemeLength);
+    login = CString(uc.lpszUserName, uc.dwUserNameLength);
+    password = CString(uc.lpszPassword, uc.dwPasswordLength);
+    host = CString(uc.lpszHostName, uc.dwHostNameLength);
+    port= uc.nPort;
+    request = CString(uc.lpszUrlPath, uc.dwUrlPathLength);
+    request += CString(uc.lpszExtraInfo, uc.dwExtraInfoLength);
 }
 
 bool CAmHttpSocket::FindLoginPassword(const char * url)

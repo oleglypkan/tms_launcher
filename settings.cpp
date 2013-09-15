@@ -43,10 +43,10 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
                      const char* LinksSubKeyName, const char* SoftTestSubKeyName,
                      const char* HistorySubKeyName, const char* OtherSubKeyName,
                      const char* FlagsSubKeyName):Reg(HKEY_CURRENT_USER),x(138),GlobalHotkeyID(0xBFFF),
-                     iTMSviewTask("https://www.softcomputer.com:443/itms/gentaskdetails.php?Client=%s&ID=%s"),
-                     iTMSviewChildTasks("https://www.softcomputer.com:443/itms/gentaskdetails.php?Client=%s&ID=%s"),
-                     iTMSviewRelatedTasks("https://www.softcomputer.com:443/itms/showall.php?Client=%s&ID=%s"),
-                     iTMSviewTimesheets("https://www.softcomputer.com:443/itms/tsh_list.php?Client=%s&ID=%s")
+                     iTMSviewTask("https://www.softcomputer.com/itms/gentaskdetails.php?Client=%s&ID=%s"),
+                     iTMSviewChildTasks("https://www.softcomputer.com/itms/gentaskdetails.php?Client=%s&ID=%s"),
+                     iTMSviewRelatedTasks("https://www.softcomputer.com/itms/showall.php?Client=%s&ID=%s"),
+                     iTMSviewTimesheets("https://www.softcomputer.com/itms/tsh_list.php?Client=%s&ID=%s")
 {
     AutoRun = false;
     Expand = false;
@@ -108,7 +108,7 @@ CSettings::CSettings(const char* RegKey, const char* AutoRunRegKey, const char* 
     iTMSRtmRegEx = "(Requirement[^?]*[:#])(.*)(<br>$|<br><tr>|<br>[0-9][[:punct:]]|<br>[[:alpha:]]+\\b)";
     ActHeaderRegEx = "<tr bgcolor[^>]+>[[:space:]]*<td[^>]*>[0-9]+</td>.+</tr>"; // actually it is regex for action header
     ActBodyRegEx = "[[:space:]]*<tr bgcolor[^>]+>[[:space:]]*<td[^>]*>.*</td>[[:space:]]*<td colspan[^>]+>(.*)</td>[[:space:]]*</tr>"; // actually it is regex for action body
-    AA_ID_RegEx = "AA_ID=([0-9]+)";
+    AA_ID_RegEx = "edit.php\\?AA_ID=([0-9]+)";
     iTMSTimesheetsRegEx = "<tr><td nowrap >([^<]+)</td><td nowrap >([^<]+)</td><td[^>]*>([^<]+)</td><td>([^<]+)</td></tr>";
     TasksSeparators = ";,\n\r";
     Separators = " —– -*+|:~#@$%^\t";
@@ -359,9 +359,9 @@ void CSettings::LoadSettings()
     }
     if (links.empty()) // load default set of URLs
     {
-        links.push_back(link("Alternative TMS","http://scc1.softcomputer.com/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-                             "http://scc1.softcomputer.com/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",
-                             "http://scc1.softcomputer.com/~alttms/relatives.php?Client=%CLIENT%&ID=%ID%",
+        links.push_back(link("Alternative TMS", "http://websrv1.softcomputer.com/alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
+                             "http://websrv1.softcomputer.com/alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",
+                             "http://websrv1.softcomputer.com/alttms/relatives.php?Client=%CLIENT%&ID=%ID%",
                              0,0,0,0,false,"","",false,"",""));
         links.push_back(link("iTMS","https://www.softcomputer.com/itms/gentaskdetails.php?Client=%CLIENT%&ID=%ID%",
                              "https://www.softcomputer.com/itms/tms_related.php?Client=%CLIENT%&ID=%ID%",
@@ -545,6 +545,7 @@ void CSettings::LoadSettings()
     ActHeaderRegEx.ReleaseBuffer();
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"AA_ID regex",REG_SZ,(LPBYTE)AA_ID_RegEx.GetBuffer(512),512);
     AA_ID_RegEx.ReleaseBuffer();
+    if (AA_ID_RegEx.Find("edit.php") == -1) AA_ID_RegEx = "edit.php\\?AA_ID=([0-9]+)";
     Reg.ReadValue(RegistryKey+"\\"+FormatSubKey,"iTMS Timesheets regex",REG_SZ,(LPBYTE)iTMSTimesheetsRegEx.GetBuffer(512),512);
     iTMSTimesheetsRegEx.ReleaseBuffer();
 
@@ -874,7 +875,7 @@ user-defined SIF record with the default one?",szWinName,MB_YESNO|MB_ICONQUESTIO
         // adding RelatedTasksURL to "Alternative TMS" and "Usual TMS"
         if (Reg.KeyPresent(RegistryKey+"\\"+LinksSubKey+"\\Alternative TMS"))
         {
-            CString Str = "http://scc1.softcomputer.com/~alttms/relatives.php?Client=%CLIENT%&ID=%ID%";
+            CString Str = "http://websrv1.softcomputer.com/alttms/relatives.php?Client=%CLIENT%&ID=%ID%";
             Reg.AddValue(RegistryKey+"\\"+LinksSubKey+"\\Alternative TMS","RelatedTasksURL",REG_SZ,(const BYTE*)LPCTSTR(Str),Str.GetLength()+1);
         }
         if (Reg.KeyPresent(RegistryKey+"\\"+LinksSubKey+"\\Usual TMS"))
@@ -914,9 +915,9 @@ void CSettings::SaveLinksSettings()
 //  saving new settings
     if (links.empty()) // load default set of URLs
     {
-        links.push_back(link("Alternative TMS","http://scc1.softcomputer.com/~alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
-            "http://scc1.softcomputer.com/~alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",
-            "http://scc1.softcomputer.com/~alttms/relatives.php?Client=%CLIENT%&ID=%ID%",
+        links.push_back(link("Alternative TMS", "http://websrv1.softcomputer.com/alttms/viewtask.php?Client=%CLIENT%&ID=%ID%",
+            "http://websrv1.softcomputer.com/alttms/showtasks.php?ParentClient=%CLIENT%&ParentID=%ID%",
+            "http://websrv1.softcomputer.com/alttms/relatives.php?Client=%CLIENT%&ID=%ID%",
             0,0,0,0,false,"","",false,"",""));
         links.push_back(link("iTMS","https://www.softcomputer.com/itms/gentaskdetails.php?Client=%CLIENT%&ID=%ID%",
             "https://www.softcomputer.com/itms/tms_related.php?Client=%CLIENT%&ID=%ID%",

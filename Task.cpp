@@ -107,7 +107,7 @@ bool TASK::IsTaskNameValid(const char *OriginalTask, CString &sClientName, CStri
         {
             expr.SetExpression(temp,true);
         }
-        catch (bad_expression)
+        catch (const bad_expression &)
         {
             return false;
         }
@@ -277,7 +277,7 @@ int TASK::ParseHTMLForParentTask(CString &TaskToFind, const CString &HTML)
     {
         expr.SetExpression("TMS Parent:.+____ ____",true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         TaskToFind = "Cannot find parent task for "+TaskToFind;
         return 1;
@@ -292,7 +292,7 @@ int TASK::ParseHTMLForParentTask(CString &TaskToFind, const CString &HTML)
     {
         expr.SetExpression("TMS Parent:.+<A.+>([^[:space:]]+)</a>",true); // sub-expression ([^[:space:]]+) should contain parent task name)
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         TaskToFind = "Cannot find parent task for "+TaskToFind;
         return 1;
@@ -317,7 +317,7 @@ int TASK::ParseHTMLForParentDefect(CString &DefectToFind, const CString &HTML)
     {
         expr.SetExpression("<title>.+ / SoftTest / Defect Info / @",true);      
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return 2;
     }
@@ -330,7 +330,7 @@ int TASK::ParseHTMLForParentDefect(CString &DefectToFind, const CString &HTML)
     {
         expr.SetExpression("<title>.+ / SoftTest / Defect Info / 0@",true);      
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return 2;
     }
@@ -385,7 +385,7 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
     {
         expr.SetExpression("<A class='childLink'.+</a>",true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return 1;
     }
@@ -398,7 +398,7 @@ int TASK::ParseHTMLForChildTasks(const CString &ParentTask, const CString &HTML,
         // regular expression used to find task's details (name, product, status)
         expr.SetExpression("<A class='childLink'.+Status:</b>(.+)<br>.+Product:</b>(.+)<br>.+\'>(.+)</a>",true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return 1;
     }
@@ -444,9 +444,9 @@ int TASK::ParseHTMLForSPCtasks(const CString &HTML, std::vector<CHILD> &Tasks)
     RegEx expr; // regular expression object used to find tasks in HTML page
     try
     {
-        expr.SetExpression("(<ul type=disc>)*<li><div.+(&nbsp;?){5,}.*</td></tr>",true);
+        expr.SetExpression("(<ul type=disc style=[^>]+>)*<li><div.+(&nbsp;?){5,}.*</td></tr>",true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return 1;
     }
@@ -462,9 +462,9 @@ int TASK::ParseHTMLForSPCtasks(const CString &HTML, std::vector<CHILD> &Tasks)
         try
         {
             // regular expression object used to find task's details (level, name)
-            expr.SetExpression("((?:<ul type=disc>)*)<li><div.+\"><b>(.+)</b></a>.+</td></tr>",true);
+            expr.SetExpression("((?:<ul type=disc style=[^>]+>)*)<li><div.+\"><b>(.+)</b></a>.+</td></tr>",true);
         }
-        catch (bad_expression)
+        catch (const bad_expression &)
         {
             return 1;
         }
@@ -480,15 +480,14 @@ int TASK::ParseHTMLForSPCtasks(const CString &HTML, std::vector<CHILD> &Tasks)
             }
             CString level = expr.Matched(1) ? expr.What(1).c_str() : "";
             Child.level = 0;
-            int pos = 0;
-            while ((pos = level.Find("<ul type=disc>")) != -1)
+            int pos = -1;
+            while ((pos = level.Find("<ul type=disc", pos + 1)) != -1)
             {
-                level.Delete(pos,lstrlen("<ul type=disc>"));
                 Child.level++;
             }
             if (Child.level == 0)
             {
-                Child.level = 1;
+                Child.level = 2;
             }
             // parse remaining cells (product, status, MSP)
             try
@@ -496,7 +495,7 @@ int TASK::ParseHTMLForSPCtasks(const CString &HTML, std::vector<CHILD> &Tasks)
                 // regular expression object used to find task's details (product, status, MSP)
                 expr.SetExpression("<td[^>]*>([^<]*)</td>",true);
             }
-            catch (bad_expression)
+            catch (const bad_expression &)
             {
                 return 1;
             }
@@ -560,7 +559,7 @@ void TASK::ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskAc
             expr.SetExpression(Settings.ActHeaderRegEx+Settings.ActBodyRegEx,true);
         }
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return;
     }
@@ -570,14 +569,14 @@ void TASK::ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskAc
     {
         if (QB)
         {
-            expr.SetExpression("<td[^>]*>([0-9]+)</td>[[:space:]]*<td[^>]*>(<a[^>]*>.+</a>|[NY])</td>[[:space:]]*<td[^>]*>([^<]+)</td>[[:space:]]*<td[^>]*>([^<]+)</td>[[:space:]]*<td[^>]*>[[:space:]]*<a[^>]*>(.+</a>.*)</td>[[:space:]]*<td[^>]*>(.+)</td>[[:space:]]*<td[^>]*>[[:space:]]*<a[^>]*>(.+</a>.*)</td>",true);
+            expr.SetExpression("<td[^>]*>([0-9]+)</td>[[:space:]]*<td[^>]*>(<a[^>]*>.+</a>|[NY])</td>[[:space:]]*<td[^>]*><span[^>]*>([^<]+)</span></td>[[:space:]]*<td[^>]*>([^<]+)</td>[[:space:]]*<td[^>]*>[[:space:]]*<a[^>]*>(.+</a>.*)</td>[[:space:]]*<td[^>]*>(.+)</td>[[:space:]]*<td[^>]*>[[:space:]]*<a[^>]*>(.+</a>.*)</td>",true);
         }
         else
         {
-            expr.SetExpression("<td[^>]*>([0-9]+)</td>[[:space:]]*<td[^>]*>(<a[^>]*>.+</a>|[NY])</td>[[:space:]]*<td[^>]*>([^<]+)</td>[[:space:]]*<td[^>]*>([^<]+)</td>[[:space:]]*<td[^>]*>[[:space:]]*<a[^>]*>(.+</a>.*)</td>[[:space:]]*<td[^>]*>(.+)</td>[[:space:]]*<td[^>]*>[[:space:]]*<a[^>]*>(.+</a>.*)</td>[[:space:]]*</tr>"+Settings.ActBodyRegEx,true);
+            expr.SetExpression("<td[^>]*>([0-9]+)</td>[[:space:]]*<td[^>]*>(<a[^>]*>.+</a>|[NY])</td>[[:space:]]*<td[^>]*><span[^>]*>([^<]+)</span></td>[[:space:]]*<td[^>]*>([^<]+)</td>[[:space:]]*<td[^>]*>[[:space:]]*<a[^>]*>(.+</a>.*)</td>[[:space:]]*<td[^>]*>(.+)</td>[[:space:]]*<td[^>]*>[[:space:]]*<a[^>]*>(.+</a>.*)</td>[[:space:]]*</tr>"+Settings.ActBodyRegEx,true);
         }
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return;
     }
@@ -645,7 +644,7 @@ void TASK::ParseHTMLForAA_ID(const CString &HTML, CString &AA_ID)
     {
         expr.SetExpression(Settings.AA_ID_RegEx,true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         AA_ID = "";
         return;
@@ -673,7 +672,7 @@ void TASK::ParseHTMLForTimesheets(const CString &HTML, std::vector<CString> &Tim
     {
         expr.SetExpression(Settings.iTMSTimesheetsRegEx,true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return;
     }
@@ -710,7 +709,7 @@ void TASK::ParseActionForRequirements(const CString &Action, CString &Output)
     {
         expr.SetExpression(Settings.iTMSRtmRegEx,true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return;
     }
@@ -755,7 +754,7 @@ bool TASK::FilterTask(const CString &string, const CString &mask)
     {
         expr.SetExpression(temp,true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return false;
     }

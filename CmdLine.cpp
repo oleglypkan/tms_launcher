@@ -94,7 +94,7 @@ void CmdLine::StringToArgv(const char *CommandLine, std::vector<CString> &params
 
 void CmdLine::ShowUsage()
 {
-    CString Usage = "The following command line parameters are correct:\n\n\
+    CString Usage = "The following command line parameters are supported:\n\n\
 TMS_Launcher -p [-name \"PCC\"] in out\n\
     - get the list of parent tasks for the given ones\n\n\
 TMS_Launcher -c [-name \"TCD\"] [-prod \".X\"] [-stat \"C1\"] in out\n\
@@ -110,7 +110,7 @@ TMS_Launcher -t [-name \"OLEG L\"] in out\n\
 TMS_Launcher -inf [-name \"PCC\"] [-prod \".X\"] [-stat \"C1\"] [-msp \"LABG4.0.4.5\"] in out\n\
     - get information (product, status, MSP) for the given tasks\n\n\
 TMS_Launcher -exp \"expression\" in out\n\
-    - get timesheets for the given tasks";
+    - determine if given tasks match regular expression";
     MessageBox(NULL, Usage, szWinName, MB_OK | MB_ICONINFORMATION);
 }
 
@@ -235,7 +235,7 @@ void CmdLine::ParseCmdLine(const char *CommandLine)
             {
                 expr.SetExpression(Parameters[i],true);
             }
-            catch (bad_expression)
+            catch (const bad_expression &)
             {
                 CString Message = "", IncorrectParam = "";
                 switch(i)
@@ -326,9 +326,16 @@ void CmdLine::PrintSubExpressions(const CString &Message, const char *OriginalTa
     // filter that allows to use regular expressions
     RegEx expr;
     expr.SetExpression(temp,true);
-    if (!expr.Search(Message,match_any))
+    try
     {
-        exclude = !exclude;
+        if (!expr.Search(Message,match_any))
+        {
+            exclude = !exclude;
+        }
+    }
+    catch (const std::runtime_error &)
+    {
+        return;
     }
 
     if (!exclude)
@@ -351,7 +358,7 @@ void CmdLine::GetInformationAboutTask(const CString &Message, const char *Origin
     {
         expr.SetExpression(": <a title=\"View Task\".+<b>"+Client+"-"+ID+"</b></a>.+\"Add Task To Timesheet\".+(<td[^>]*>[^<]*</td>){4}<td[^>]*>([^<]+)</td><td[^>]*>([^<]+)</td>(<td[^>]*>[^<]*</td>){3}<td[^>]*>((&nbsp;?){5}[^<]*)</td>",true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return;
     }
@@ -424,7 +431,7 @@ void CmdLine::GetActionsFromTasks(TASK &task, const CString &Message, const char
 }
 
 void CmdLine::GetParentTasksList(TASK &task, const CString &Message, const char *OriginalTask, ofstream &OutFile, CString &Client, bool IsDefect)
-{                        
+{
     CString ParentTask = OriginalTask;
 
     if (IsDefect) // get parent for SoftTest defect
@@ -478,7 +485,7 @@ void CmdLine::GetParentTasksList(TASK &task, const CString &Message, const char 
 }
 
 void CmdLine::GetChildTasksList(TASK &task, const CString &Message, const char *OriginalTask, ofstream &OutFile, CString &Client, const CString &ID, bool IsDefect, const char type)
-{                        
+{
     CString ParentTask = OriginalTask;
 
     if (IsDefect) // get children for SoftTest defect
@@ -601,8 +608,6 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
         return;
     }
 
-    CAmHttpSocket Req;
-
     // Print request specific title
     switch (type)
     {
@@ -639,6 +644,8 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
             OutFile << "-----------------------------------------------------------" << endl;
             break;
     }
+
+    CAmHttpSocket Req;
 
     while (!InFile.eof())
     {
@@ -761,36 +768,12 @@ void CmdLine::ProcessInputFile(const char *InputFileName, const char *OutputFile
                                 break;
                         }
                     }
-#ifdef DEBUG
-Req.OutFile = &OutFile;
-OutFile << "GetHeaders started" << endl;
-#endif
-                    CString reply = Req.GetHeaders(Request);
-#ifdef DEBUG
-OutFile << "GetPageStatusCode: " << Req.GetPageStatusCode() << endl;
-#endif
-                    if (Req.GetPageStatusCode() == 401) // Authorization Required
-                    {
-                        CAmHttpSocket::InsertLoginPassword(Request,Settings.links[index].Login,Settings.links[index].Password);
-#ifdef DEBUG
-OutFile << "GetHeaders started with authorization" << endl;
-#endif
-                        reply = Req.GetHeaders(Request);
-#ifdef DEBUG
-OutFile << "GetPageStatusCode: " << Req.GetPageStatusCode() << endl;
-#endif
-                    }
-#ifdef DEBUG
-OutFile << "GetPage started" << endl;
-#endif
-                    Message = Req.GetPage(Request);
-#ifdef DEBUG
-OutFile << "GetPage finished" << endl;
-#endif
+                    Req.DownloadHtmlPage(Request, Message, Settings.links[index].Login, Settings.links[index].Password);
+
                     OutFile.width(16);
                     OutFile.setf(OutFile.left);
 
-                    if (Message.IsEmpty() || (Message.Find("You don't have access to this site") != -1))
+                    if (Message.IsEmpty())
                     {
                         OutFile << Tasks[i] << "- error occured during reading task, probably incorrect login/password or request was timed out" << endl;
                         if ((type != 'p') && (type != 'i') && (type != 'e')) OutFile << endl;

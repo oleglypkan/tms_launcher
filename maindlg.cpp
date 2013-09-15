@@ -851,15 +851,11 @@ void CMainDlg::Replace_AA_ID(CString &Request, CString &Message, int index)
         return;
     }
     CAmHttpSocket Req;
-    CString reply = Req.GetHeaders(Message);
-    if (Req.GetPageStatusCode() == 401) // Authorization Required
-    {
-        CAmHttpSocket::InsertLoginPassword(Message,Settings.links[index].Login,Settings.links[index].Password);
-        reply = Req.GetHeaders(Message);
-    }
-    Message = Req.GetPage(Message);
+    CString URL = Message;
+    Req.DownloadHtmlPage(URL, Message, Settings.links[index].Login, Settings.links[index].Password);
+
     TASK task;
-    task.ParseHTMLForAA_ID(Message,Message);
+    task.ParseHTMLForAA_ID(Message, Message);
     if (Message.IsEmpty())
     {
         MyMessageBox(m_hWnd,"Error while getting AA_ID parameter",szWinName,MB_ICONERROR);
@@ -868,24 +864,19 @@ void CMainDlg::Replace_AA_ID(CString &Request, CString &Message, int index)
     }
     else
     {
-        Request.Replace("%AA_ID%",Message);
+        Request.Replace("%AA_ID%", Message);
     }
 }
 
 void CMainDlg::CreateRequestForHF(const char *sIDName, const char *Ext, CString &Request)
 {
-    CString Message = "";
-    CAmHttpSocket Req;
+    CString Message;
     Request = Settings.HfLinkAll;
     Request.Replace("%ID%", sIDName);
-    CString reply = Req.GetHeaders(Request);
-    if (Req.GetPageStatusCode() != 200) // some problems with loading web-page
-    {
-        MyMessageBox(m_hWnd,"Error while loading page with hotfix",szWinName,MB_ICONERROR);
-        Request = "";
-        return;
-    }
-    Message = Req.GetPage(Request);
+
+    CAmHttpSocket Req;
+    Req.DownloadHtmlPage(Request, Message);
+
     if (Message.IsEmpty())
     {
         MyMessageBox(m_hWnd,"Error while loading page with hotfix",szWinName,MB_ICONERROR);
@@ -899,7 +890,7 @@ void CMainDlg::CreateRequestForHF(const char *sIDName, const char *Ext, CString 
         temp.Format("<a href=.+hotfixID=([0-9]+)[^0-9][^>]+>1.%s%s</a>", sIDName, Ext);
         expr.SetExpression(temp,true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         Request = "";
         return;
@@ -1047,17 +1038,13 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, const
                 Request = "";
                 break;
             }
-            CString Message = "";
-            CAmHttpSocket Req;
+            CString Message;
             Request.Format(Settings.iTMSviewTask, sClientName, tempID);
-            CString reply = Req.GetHeaders(Request);
-            if (Req.GetPageStatusCode() == 401) // Authorization Required
-            {
-                CAmHttpSocket::InsertLoginPassword(Request,Settings.links[index].Login,Settings.links[index].Password);
-                reply = Req.GetHeaders(Request);
-            }
-            Message = Req.GetPage(Request);
-            if (Message.IsEmpty() || (Message.Find("You don't have access to this site") != -1))
+
+            CAmHttpSocket Req;
+            Req.DownloadHtmlPage(Request, Message, Settings.links[index].Login,Settings.links[index].Password);
+
+            if (Message.IsEmpty())
             {
                 MyMessageBox(m_hWnd,"Error while opening parent task",szWinName,MB_ICONERROR);
                 Request = "";
@@ -1159,7 +1146,10 @@ void CMainDlg::CreateRequest(const char *sClientName, const char *sIDName, const
     {
         if (!Settings.links[index].Login.IsEmpty() && !Settings.links[index].Password.IsEmpty())
         {
-            CAmHttpSocket::InsertLoginPassword(Request,Settings.links[index].Login,Settings.links[index].Password);
+            if (Settings.links[index].Login.FindOneOf("\\/@:") == -1 && Settings.links[index].Password.FindOneOf("\\/@:") == -1)
+            {
+                CAmHttpSocket::InsertLoginPassword(Request,Settings.links[index].Login,Settings.links[index].Password);
+            }
         }
         Request.Insert(0,"\"");
         Request += "\"";
@@ -1700,7 +1690,7 @@ bool MatchNoCase(const char *string, const char *pattern)
     {
         expr.SetExpression(reg_exp,true);
     }
-    catch (bad_expression)
+    catch (const bad_expression &)
     {
         return false;
     }
