@@ -14,6 +14,10 @@
  static char verid[]="@(#)$RCSfile: Registry.cpp,v $$Revision: 1.7 $$Date: 2007/12/17 17:09:23Z $"; 
 #endif
 
+ Registry::Registry(HKEY hMainKeyParam):hMainKey(hMainKeyParam),hKey(NULL),dwDisposition(0)
+ {
+ };
+
 void Registry::AddValue(LPCTSTR lpSubKey,LPCTSTR lpValueName,DWORD dwType,const BYTE *lpData,DWORD dwSizeOfData)
 {
     RegCreateKeyEx(hMainKey,                   // handle of an open key 

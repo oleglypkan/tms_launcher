@@ -20,7 +20,7 @@ class Registry
     HKEY hMainKey,hKey;
     DWORD dwDisposition;
 public:
-    Registry(HKEY hMainKeyParam) {hMainKey=hMainKeyParam; hKey=NULL;}
+    Registry(HKEY hMainKeyParam);
     void AddValue(LPCTSTR lpSubKey,LPCTSTR lpValueName,DWORD dwType,const BYTE *lpData,DWORD dwSizeOfData);
     void DeleteKey(LPCTSTR lpSubKey, LPCTSTR lpValueName); // dwType-REG_DWORD,REG_BINARY,REG_SZ,etc.
     bool DeleteKeyIncludingSubKeys(HKEY hKey, LPCTSTR lpSubKey);

@@ -50,7 +50,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
         _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     #endif
 
-    HANDLE hMutex;
+    HANDLE hMutex = NULL;
 
     if (lstrlen(lpstrCmdLine) == 0)
     {

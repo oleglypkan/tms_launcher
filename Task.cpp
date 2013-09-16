@@ -173,10 +173,9 @@ void TASK::SimpleParseTasks(const char *strTasks, std::vector<CString> &Tasks)
     CString sTasks = strTasks;
     Tasks.clear();
 
-    int pos = -1;
     while (!sTasks.IsEmpty())
     {
-        pos = sTasks.FindOneOf(Settings.TasksSeparators);
+        int pos = sTasks.FindOneOf(Settings.TasksSeparators);
         if (pos == -1)
         {
             pos = sTasks.GetLength();
@@ -202,13 +201,12 @@ bool TASK::ComplexParseTasks(const char *strTasks, std::vector<TASKNAME> &Tasks,
     CString sTasks = strTasks;
 
     items = 0;
-    int pos = -1;
     bool AllTasksValid = true;
     CString Client, Sep, ID, Ext, Project;
 
     while (!sTasks.IsEmpty())
     {
-        pos = sTasks.FindOneOf(Settings.TasksSeparators);
+        int pos = sTasks.FindOneOf(Settings.TasksSeparators);
         if (pos == -1)
         {
             pos = sTasks.GetLength();
@@ -359,8 +357,7 @@ int TASK::ParseHTMLForChildDefects(const CString &HTML, std::vector<CString> &Ta
     }
     while (pos != -1)
     {
-        CString Child = "";
-        Child = HTML.Left(pos);
+        CString Child = HTML.Left(pos);
         Child = Child.Right(Child.GetLength()-Child.ReverseFind('>')-1);
         Tasks.push_back(Child);
         pos = HTML.Find("</a><br />",pos+1);
@@ -602,7 +599,7 @@ void TASK::ParseHTMLForActions(const CString &HTML, std::vector<CString> &TaskAc
             tmp = expr.Matched(1) ? expr.What(1).c_str() : ""; // action #
             tmp.TrimLeft(); tmp.TrimRight();
             Result.Format("%-4s", tmp);
-            tmp = expr.Matched(2) ? expr.What(2).c_str() : ""; // view action (Y/N)
+            // expr.What(2).c_str() is view action (Y/N), it is not used
             tmp = expr.Matched(3) ? expr.What(3).c_str() : ""; // action date
             tmp.TrimLeft(); tmp.TrimRight();
             Output.Format("%-12s", tmp);

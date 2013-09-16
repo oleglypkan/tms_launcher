@@ -50,6 +50,7 @@ CMainDlg::CMainDlg()
     TimerIsSet = 0;
     user32 = NULL;
     SetLayeredWindowAttributes = NULL;
+    Expanded = false;
 }
 
 LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/)

@@ -1347,7 +1347,6 @@ bool CSettings::IsDefectInRegistry(const char *Client, CString &ValueName, CStri
 {
     ValueName = "";
     DataValue = "";
-    DWORD DWordSize=sizeof(DWORD);
     DWORD MaxValueNameLength = 255;
     DWORD MaxValueLength = 16000;
     int defects_number = 0;

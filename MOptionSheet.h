@@ -474,7 +474,7 @@ template<class TSelectionCtrl, class TBase = COptionSheet>
 class COptionSheetDialogImpl : public TBase
 {
 public:
-    COptionSheetDialogImpl(int IDD) : m_IDD(IDD) {}
+    COptionSheetDialogImpl(int IDD) : m_IDD(IDD), m_Modal(false) {}
 
     // Create sheet and display it.
     int DoModal(HWND hWndParent = ::GetActiveWindow(), LPARAM dwInitParam = NULL)

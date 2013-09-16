@@ -377,8 +377,7 @@ void CAmHttpSocket::Base64Encode(CString &string)
     int count = Binary.GetLength() / 6 - PaddingChars;
     for (int i = 0; i < count; i++)
     {
-        CString temp = "";
-        temp = Binary.Left(6);
+        CString temp = Binary.Left(6);
         Binary.Delete(0,6);
         // binary to decimal
         int Result = 0;
@@ -460,8 +459,7 @@ bool CAmHttpSocket::Base64Decode(CString &string)
     string = "";
     for (int i = 0; i < count; i++)
     {
-        CString temp = "";
-        temp = Binary.Left(8);
+        CString temp = Binary.Left(8);
         Binary.Delete(0,8);
         // binary to decimal
         int Result = 0;

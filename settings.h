@@ -38,7 +38,7 @@ struct defect
         BrowserParameters = Parameters;
     }
 
-    const defect& operator=(const defect& def)
+    defect& operator=(const defect& def)
     {
         if (this == &def) return *this;
         ClientID = def.ClientID;
@@ -88,7 +88,7 @@ struct link
         BrowserPath = OpenInBrowser;
         BrowserParameters = Parameters;
     }
-    const link& operator=(const link& Link)
+    link& operator=(const link& Link)
     {
         if (this == &Link) return *this;
         Caption = Link.Caption;

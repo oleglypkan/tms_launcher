@@ -74,8 +74,7 @@ void CmdLine::StringToArgv(const char *CommandLine, std::vector<CString> &params
                 // searching for closing double quote
                 int end = Line.Find('\"',start+1);
                 if (end == -1) return;
-                CString temp = "";
-                temp = Line.Left(end+1);
+                CString temp = Line.Left(end+1);
                 temp.TrimLeft('\"');
                 temp.TrimRight('\"');
                 params.push_back(temp);

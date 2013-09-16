@@ -31,7 +31,7 @@ public:
         ID = id;
         Ext = ext;
     }
-    const TASKNAME& operator=(const TASKNAME& task_name)
+    TASKNAME& operator=(const TASKNAME& task_name)
     {
         if (this == &task_name) return *this;
         Client = task_name.Client;
